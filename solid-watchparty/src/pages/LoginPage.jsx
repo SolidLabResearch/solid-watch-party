@@ -5,6 +5,8 @@ import {
 	useSession,
 } from '@inrupt/solid-ui-react';
 
+/* NOTE(Elias): component imports */
+import SWLoginButton from '../components/SWLoginButton'
 
 const authOptions = {
 	clientName:	"solid-watchparty",
@@ -20,17 +22,19 @@ function LoginPage()
 
 	return (
 		<>
-      <div>
-      	<h1 className="sw-fs-1">solid-watchparty</h1>
-				<form>
-					<input type="text" name="oidcIssuerField" value={oidcIssuer}
-								 onChange={(e) => setOidcIssuer(e.target.value)}/>
-					<LoginButton authOptions={authOptions}
-											 oidcIssuer={oidcIssuer}
-											 redirectUrl={window.location.protocol + '//' + window.location.host + '/home'}
-											 onError={console.error}/>
-				</form>
-      </div>
+				<div className="h-full w-full flex justify-center items-center">
+						<form className="w-1/2">
+							<h1 className="sw-fs-2 font-bold mb-5">Login</h1>
+							<input className="sw-input w-full rgb-1" type="text" name="oidcIssuerField"
+									   value={oidcIssuer} type="url" placeholder="oidcIssuer"
+										 onChange={(e) => setOidcIssuer(e.target.value)}/>
+							<SWLoginButton className="my-4"
+														 authOptions={authOptions}
+														 oidcIssuer={oidcIssuer}
+														 redirectUrl={window.location.protocol + '//' + window.location.host + '/home'}
+														 onError={console.error}/>
+						</form>
+				</div>
     </>
   )
 }
