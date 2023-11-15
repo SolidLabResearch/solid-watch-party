@@ -1,10 +1,24 @@
-import { useState } from 'react'
-import LoginPage from './pages/LoginPage'
+/* NOTE(Elias): library imports */
+import {
+	createBrowserRouter,
+	RouterProvider
+} from 'react-router-dom';
+
+/* NOTE(Elias): page imports */
+import LoginPage from './pages/LoginPage';
+import HomePage from './pages/HomePage';
+
+
+const router = createBrowserRouter([
+	{path: "/",				element: <LoginPage/>},
+	{path: "/home",		element: <HomePage/>},
+]);
 
 function App() {
 	return (
-		<LoginPage/>
+			<RouterProvider router={router}/>
 	);
 }
+
 
 export default App;
