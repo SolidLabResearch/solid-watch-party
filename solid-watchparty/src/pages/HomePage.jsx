@@ -5,31 +5,112 @@ import {
   CombinedDataProvider,
 } from "@inrupt/solid-ui-react";
 
+function MessageComponent({me, msg}) {
+	if (me = msg.person) {
+		return (
+			<div className="pb-2 flex">
+				<div className="rgb-bg-solid w-8 h-8 rounded-max mr-3 flex justify-center items-center font-bold">
+				 SQ
+				</div>
+				<div className="pb-2">
+					<div className="w-fit w-max flex items-baseline">
+						<p className="font-bold rgb-1 mr-2">{msg.person}</p>
+						<p className="rgb-2 text-sm">{msg.time}</p>
+					</div>
+					<div className="rgb-1 w-fit w-max">
+						<p>{msg.message}</p>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
+	return (
+		<div className="pb-2 flex items-center">
+			<div className="w-fit pr-3">
+			 SQ
+			</div>
+			<div className="pb-2">
+				<div className="rgb-2 px-2 w-fit w-max">
+					<p>{msg.person}</p>
+				</div>
+				<div className="rgb-bg-1 p-2 sw-border w-fit w-max">
+					<p>{msg.message}</p>
+				</div>
+			</div>
+		</div>
+	);
+}
 
 function HomePage() {
 	const { session } = useSession();
 	console.log(session.info)
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	/* NOTE(Elias): This is for testing purposes!! */
+	const messages = [
+		{ time: "15:30:45", person: "Bob bobber", message: "Hi!" },
+		{ time: "15:30:45", person: "B.O.B.", message: "Hello!" },
+		{ time: "15:30:45", person: "Bob bobber", message: "This is the final message!" },
+		{ time: "15:30:45", person: "Bob bobber", message: "Hi!" },
+		{ time: "15:30:45", person: "Bob bobber", message: "Hi!" },
+		{ time: "15:30:45", person: "Bob bobber", message: "Hi!" },
+		{ time: "15:30:45", person: "Bob bobber", message: "Hi!" },
+		{ time: "15:30:45", person: "B.O.B.", message: "Hello!" },
+		{ time: "15:30:45", person: "Bob bobber", message: "This is the final message!" },
+		{ time: "15:30:45", person: "B.O.B.", message: "Hello!" },
+		{ time: "15:30:45", person: "Bob bobber", message: "This is the final message!" },
+		{ time: "15:30:45", person: "B.O.B.", message: "Hello!" },
+		{ time: "15:30:45", person: "Bob bobber", message: "This is the final message!" },
+		{ time: "15:30:45", person: "B.O.B.", message: "Hello!" },
+		{ time: "15:30:45", person: "Bob bobber", message: "This is the final message!" },
+		{ time: "15:30:45", person: "Bob bobber", message: "Hi!" },
+		{ time: "15:30:45", person: "B.O.B.", message: "Hello!" },
+		{ time: "15:30:45", person: "Bob bobber", message: "This is the final message!" },
+	]
+	const myName = "Bob bobber";
+	////////////////////////////////////////////////////////////////////////////////////////////////
+
+ // TODO(Elias): Change <Text ... > to custom services after they have been written
+
 	return (
-		<>
-			<p>This is the homepage! 🎉</p>
-			{session.info.isLoggedIn ? (
-					<div>
-						<p> You are logged in succesfully :)</p>
-				    <CombinedDataProvider
-							datasetUrl={session.info.webId}
-							thingUrl={session.info.webId}
-						>
-				    <Text properties={[
-                "http://www.w3.org/2006/vcard/ns#fn",
-                "http://xmlns.com/foaf/0.1/name",
-              ]} />
-						        </CombinedDataProvider>
+		<div className="w-full h-full p-8">
+			<div className="w-full flex justify-between mb-10">
+				{session.info.isLoggedIn ? (
+						<div>
+							<label className="">User: </label>
+							<CombinedDataProvider
+								datasetUrl={session.info.webId}
+								thingUrl={session.info.webId}
+							>
+							<Text className="rgb-fg-solid font-bold" properties={[
+									"http://www.w3.org/2006/vcard/ns#fn",
+									"http://xmlns.com/foaf/0.1/name",
+								]} />
+											</CombinedDataProvider>
+						</div>
+				) : (
+						<p className="rgb-alert font-bold">Failed to authenticate!</p>
+				)}
+				<label className="font-bold">solid-watchparty</label>
+			</div>
+			<div className="flex h-3/4">
+				<div className="w-2/3 sw-border mr-2 h-full rgb-bg-2 flex justify-center items-center">
+					<p>The video player is not implemented at the moment. 😔</p>
+				</div>
+				<div className="w-1/3 rgb-bg-2 sw-border h-full p-3 flex flex-col justify-between mb-2">
+					<div className="overflow-auto">
+						{messages.map((msg) => <MessageComponent msg={myName, msg}/>)}
 					</div>
-			) : (
-					<p> Something went wrong :(</p>
-			)}
-		</>
+					<div className="flex flex-between items-center">
+						<input className="h-fit p-1 rgb-bg-1 sw-border w-full"></input>
+						<div className="ml-1 rgb-bg-3 rgb-3 w-8 h-8 sw-border flex justify-center items-center font-bold">
+							<button>. </button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	);
 }
 

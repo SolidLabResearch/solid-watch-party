@@ -44,8 +44,8 @@ a:hover
 
 .sw-border
 {
-  border: 2px solid #555;
-  border-radius: 6px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
 }
 
 .sw-fs-1
@@ -151,7 +151,12 @@ a:hover
   margin: 0;
 }
 
-input:focus
+input
 {
-  border: 2px solid #f00;
+	all: unset;
+}
+
+.rounded-max
+{
+	border-radius: 120px;
 }
