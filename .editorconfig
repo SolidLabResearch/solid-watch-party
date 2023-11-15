@@ -1,11 +1,20 @@
 root = true
 
 
-[*.{js,css,txt}]
+[*.{txt,css,md}]
 end_of_line = lf
 insert_final_newline = true
 charset = utf-8
 trim_trailing_whitespace = true
-indent_style = space
+indent_style = tab
 indent_size = 4
-max_line_length = 120
+max_line_length = 80
+
+[*.{js,jsx}]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+indent_style = tab
+indent_size = 2
+max_line_length = 80
