@@ -1,4 +1,4 @@
-@import url("https://use.typekit.net/dgr3vqv.css");
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800&display=swap');
 
 ::selection
 {
@@ -15,9 +15,9 @@ html, body
   -ms-overflow-style: none;
   scrollbar-width:    none;
   height:             100vh;
-  color:              #fff;
-  background-color:   #0D1117;
-  font-family:        franklin-gothic-atf, sans-serif;
+  color:              #000;
+  background-color:   #fff;
+  font-family:		  'Inter', sans-serif;
   font-weight:        400;
   font-size:          13px;
 }
@@ -27,21 +27,21 @@ html, body
   height: 100%;
 }
 
+button
+{
+	all: unset;
+}
+
 a
 {
-  color:              #bbb !important;
+  color:              #555 !important;
   text-decoration:    none !important;
 }
 
 a:hover
 {
-  color:              #fff !important;
+  color:              #000 !important;
   text-decoration:    none !important;
-}
-
-.btn:focus ,.btn:active {
-   outline: none !important;
-   box-shadow: none;
 }
 
 .sw-border
@@ -87,22 +87,32 @@ a:hover
 
 .rgb-1
 {
-  color: #fff;
+  color: #000;
 }
 
 .rgb-2
 {
-  color: #bbb;
+  color: #666;
 }
 
-.rgb-bg-2
+.rgb-3
 {
-  background-color:   #0D1117;
+  color: #fff;
 }
 
 .rgb-bg-1
 {
-  background-color:   #10161D;
+  background-color:   #fff;
+}
+
+.rgb-bg-2
+{
+  background-color:   #f6f6fa;
+}
+
+.rgb-bg-3
+{
+  background-color:   #000;
 }
 
 .rgb-bg-tr
@@ -117,10 +127,33 @@ a:hover
 
 .rgb-fg-solid
 {
-  color:   #7C4DFF;
+  color: #7C4DFF;
 }
 
 .rgb-alert
 {
   color: #f33;
+}
+
+.sw-btn
+{
+@apply w-fit;
+@apply font-bold;
+@apply py-2 px-4;
+@apply rounded;
+}
+
+.sw-input
+{
+  text-align: left;
+  background-color: #0000;
+  border: 2px solid #ddd;
+  border-radius: 3px;
+  padding: 4px 6px;
+  margin: 0;
+}
+
+input:focus
+{
+  border: 2px solid #f00;
 }
