@@ -3,6 +3,7 @@ import {
 	createBrowserRouter,
 	RouterProvider
 } from 'react-router-dom';
+import { SessionProvider } from '@inrupt/solid-ui-react'
 
 /* NOTE(Elias): page imports */
 import LoginPage from './pages/LoginPage';
@@ -16,7 +17,9 @@ const router = createBrowserRouter([
 
 function App() {
 	return (
-			<RouterProvider router={router}/>
+			<SessionProvider>
+				<RouterProvider router={router}/>
+			</SessionProvider>
 	);
 }
 
