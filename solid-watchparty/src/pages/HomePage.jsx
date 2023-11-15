@@ -6,10 +6,9 @@ import {
 } from "@inrupt/solid-ui-react";
 
 function MessageComponent({me, msg}) {
-	if (me = msg.person) {
-		return (
+	return (
 			<div className="pb-2 flex">
-				<div className="rgb-bg-solid w-8 h-8 rounded-max mr-3 flex justify-center items-center font-bold">
+				<div className="w-8 h-8 mr-3 flex justify-center items-center">
 				 SQ
 				</div>
 				<div className="pb-2">
@@ -23,23 +22,6 @@ function MessageComponent({me, msg}) {
 				</div>
 			</div>
 		);
-	}
-
-	return (
-		<div className="pb-2 flex items-center">
-			<div className="w-fit pr-3">
-			 SQ
-			</div>
-			<div className="pb-2">
-				<div className="rgb-2 px-2 w-fit w-max">
-					<p>{msg.person}</p>
-				</div>
-				<div className="rgb-bg-1 p-2 sw-border w-fit w-max">
-					<p>{msg.message}</p>
-				</div>
-			</div>
-		</div>
-	);
 }
 
 function HomePage() {
@@ -103,10 +85,8 @@ function HomePage() {
 						{messages.map((msg) => <MessageComponent msg={myName, msg}/>)}
 					</div>
 					<div className="flex flex-between items-center">
-						<input className="h-fit p-1 rgb-bg-1 sw-border w-full"></input>
-						<div className="ml-1 rgb-bg-3 rgb-3 w-8 h-8 sw-border flex justify-center items-center font-bold">
-							<button>. </button>
-						</div>
+						<input className="px-2 h-9 rgb-bg-1 sw-border w-full"></input>
+						<button className="btn ml-1 rgb-bg-3 rgb-3 w-9 h-9 sw-border flex justify-center items-center font-bold">></button>
 					</div>
 				</div>
 			</div>
