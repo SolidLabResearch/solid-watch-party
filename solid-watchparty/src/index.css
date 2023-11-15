@@ -1,0 +1,126 @@
+@import url("https://use.typekit.net/dgr3vqv.css");
+
+::selection
+{
+  background-color:   #09f9;
+}
+
+body::-webkit-scrollbar
+{
+  display: none;
+}
+
+html, body
+{
+  -ms-overflow-style: none;
+  scrollbar-width:    none;
+  height:             100vh;
+  color:              #fff;
+  background-color:   #0D1117;
+  font-family:        franklin-gothic-atf, sans-serif;
+  font-weight:        400;
+  font-size:          13px;
+}
+
+#root
+{
+  height: 100%;
+}
+
+a
+{
+  color:              #bbb !important;
+  text-decoration:    none !important;
+}
+
+a:hover
+{
+  color:              #fff !important;
+  text-decoration:    none !important;
+}
+
+.btn:focus ,.btn:active {
+   outline: none !important;
+   box-shadow: none;
+}
+
+.sw-border
+{
+  border: 2px solid #555;
+  border-radius: 6px;
+}
+
+.sw-fs-1
+{
+  font-size: 36px; 
+}
+
+.sw-fs-2
+{
+  font-size: 21px;
+}
+
+.sw-fs-3
+{
+  font-size: 17px;
+}
+
+.sw-fs-4
+{
+  font-size: 14px;
+}
+
+.sw-fw-1
+{
+  font-weight: 700;
+}
+
+.sw-fw-2
+{
+  font-weight: 500;
+}
+
+.sw-fw-3
+{
+  font-weight: 400;
+}
+
+.rgb-1
+{
+  color: #fff;
+}
+
+.rgb-2
+{
+  color: #bbb;
+}
+
+.rgb-bg-2
+{
+  background-color:   #0D1117;
+}
+
+.rgb-bg-1
+{
+  background-color:   #10161D;
+}
+
+.rgb-bg-tr
+{
+  background-color:   #0000;
+}
+
+.rgb-bg-solid
+{
+  background-color:   #7C4DFF;
+}
+
+.rgb-fg-solid
+{
+  color:   #7C4DFF;
+}
+
+.rgb-alert
+{
+  color: #f33;
+}
