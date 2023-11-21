@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import {
 	LoginButton,
-	useSession,
 } from '@inrupt/solid-ui-react';
 
 /* NOTE(Elias): component imports */

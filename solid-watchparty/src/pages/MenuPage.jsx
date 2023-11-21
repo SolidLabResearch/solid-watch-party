@@ -30,7 +30,7 @@ function MenuPage()
 					</form>
 					<div className="my-8">
 						<p className="sw-fs-4">Or create a new room </p>
-						<button className="sw-btn w-32 my-2" onClick={RoomSolidService.createNewRoom}>Create room</button>
+						<button className="sw-btn w-32 my-2" onClick={() => RoomSolidService.createNewRoom(session, "new room")}>Create room</button>
 					</div>
 				</div>
 			</div>
