@@ -13,8 +13,7 @@ const authOptions = {
 
 function LoginPage()
 {
-	const [oidcIssuer, setOidcIssuer] = useState(
-			"http://localhost:3000/");
+	const [oidcIssuer, setOidcIssuer] = useState("http://localhost:3000/");
 
 	return (
 		<>

@@ -1,4 +1,6 @@
 
+/* TODO(Elias): Is this the correct way of doing this? Is it even guaranteed that the card is there and at that
+ * location? */
 export function getPodUrl(webId) {
     let url = new URL(webId);
     url = url.origin + url.pathname;
@@ -15,3 +17,5 @@ export function urlify(str)
 	return str.toLowerCase().split(' ').join('-').replace(/[^a-zA-Z0-9-_]/g, '');
 }
 
+
+// http://localhost:3000/P1/rooms/new-room2023-11-21t153957921z
