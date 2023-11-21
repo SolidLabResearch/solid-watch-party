@@ -52,7 +52,7 @@ a:hover
 
 .sw-border
 {
-  border: 1px solid var(--col-fg2);
+  border: 1px solid var(--col-fg4);
   border-radius: 3px;
 }
 

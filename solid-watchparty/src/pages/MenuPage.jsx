@@ -4,7 +4,10 @@ import {
 } from '@inrupt/solid-ui-react';
 
 /* NOTE(Elias): component imports */
-import SWNavbar from '../components/SWNavbar'
+import SWNavbar from '../components/SWNavbar';
+
+/* NOTE(Elias): service imports */
+import RoomSolidService from '../services/room.solidservice.js';
 
 const authOptions = {
 	clientName:	"solid-watchparty",
@@ -16,7 +19,7 @@ function MenuPage()
 	console.log('logged in?: ' + session.info.isLoggedIn);
 
 	return (
-		<div className="hv-90">
+		<div className="h-2/3">
 			<SWNavbar/>
 			<div className="h-full w-full flex justify-center items-center">
 				<div className="w-1/2">
@@ -27,7 +30,7 @@ function MenuPage()
 					</form>
 					<div className="my-8">
 						<p className="sw-fs-4">Or create a new room </p>
-						<button className="sw-btn w-32 my-2">Create room</button>
+						<button className="sw-btn w-32 my-2" onClick={RoomSolidService.createNewRoom}>Create room</button>
 					</div>
 				</div>
 			</div>

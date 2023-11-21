@@ -18,7 +18,7 @@ function SWNavbar()
 							datasetUrl={session.info.webId}
 							thingUrl={session.info.webId}
 						>
-							<Text className="rgb-fg-solid font-bold" properties={[
+							<Text className="sw-fw-1" properties={[
 									"http://www.w3.org/2006/vcard/ns#fn",
 									"http://xmlns.com/foaf/0.1/name",
 								]} />

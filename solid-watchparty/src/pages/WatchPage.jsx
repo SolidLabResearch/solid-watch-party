@@ -1,9 +1,14 @@
+/* NOTE(Elias): Library Imports */
 import {
   LoginButton,
   Text,
   useSession,
   CombinedDataProvider,
 } from "@inrupt/solid-ui-react";
+
+/* NOTE(Elias): Component Imports */
+import SWNavbar from '../components/SWNavbar'
+
 
 function MessageComponent({me, msg}) {
 	return (
@@ -57,8 +62,9 @@ function WatchPage() {
  // TODO(Elias): Add Navbar back
 
 	return (
-		<div className="w-full h-full p-8">
-			<div className="flex h-3/4">
+		<div className="w-full h-full">
+			<SWNavbar/>
+			<div className="flex h-3/4 px-8">
 				<div className="w-2/3 sw-border mr-2 h-full rgb-bg-2 flex justify-center items-center">
 					<p>The video player is not implemented at the moment. 😔</p>
 				</div>
@@ -68,7 +74,9 @@ function WatchPage() {
 					</div>
 					<div className="flex flex-between items-center">
 						<input className="px-2 h-9 rgb-bg-1 sw-border w-full"></input>
-						<button className="btn ml-1 rgb-bg-3 rgb-3 w-9 h-9 sw-border flex justify-center items-center font-bold">POST</button>
+						<button className="btn ml-1 rgb-bg-3 rgb-3 w-9 h-9 sw-border flex justify-center items-center font-bold">
+							POST
+						</button>
 					</div>
 				</div>
 			</div>
