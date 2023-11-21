@@ -7,12 +7,14 @@ import { SessionProvider } from '@inrupt/solid-ui-react'
 
 /* NOTE(Elias): page imports */
 import LoginPage from './pages/LoginPage';
-import HomePage from './pages/HomePage';
+import MenuPage from './pages/MenuPage';
+import WatchPage from './pages/WatchPage';
 
 
 const router = createBrowserRouter([
-	{path: "/",				element: <LoginPage/>},
-	{path: "/home",		element: <HomePage/>},
+	{path: "/",					element: <LoginPage/>},
+	{path: "/menu",			element: <MenuPage/>},
+	{path: "/watch",		element: <WatchPage/>},
 ]);
 
 function App() {

@@ -1,9 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800&display=swap');
+@import "tailwind.css";
+@import "colors.css";
+@import "fonts.css";
 
 ::selection
 {
   background-color:   #09f9;
 }
+
+#root
+{
+  height: 100%;
+}
+
+/* NOTE(Elias): Base HTML tags */
 
 body::-webkit-scrollbar
 {
@@ -20,143 +30,60 @@ html, body
   font-size:          13px;
 }
 
-#root
-{
-  height: 100%;
-}
-
-button
+input, button, a
 {
 	all: unset;
-}
-
-a
-{
-  color:              #555 !important;
-  text-decoration:    none !important;
 }
 
 a:hover
 {
-  color:              #000 !important;
+  color:              var(--col-fg2) !important;
   text-decoration:    none !important;
 }
 
-.sw-border
-{
-  border: 1px solid #ddd;
-  border-radius: 3px;
-}
-
-.sw-fs-1
-{
-  font-size: 36px;
-}
-
-.sw-fs-2
-{
-  font-size: 21px;
-}
-
-.sw-fs-3
-{
-  font-size: 17px;
-}
-
-.sw-fs-4
-{
-  font-size: 14px;
-}
-
-.sw-fw-1
-{
-  font-weight: 700;
-}
-
-.sw-fw-2
-{
-  font-weight: 500;
-}
-
-.sw-fw-3
-{
-  font-weight: 400;
-}
-
-.rgb-1
-{
-  color: #000;
-}
-
-.rgb-2
-{
-  color: #666;
-}
-
-.rgb-3
-{
-  color: #fff;
-}
-
-.rgb-bg-1
-{
-  background-color:   #fff;
-}
-
-.rgb-bg-2
-{
-  background-color:   #f6f6fa;
-}
-
-.rgb-bg-3
-{
-  background-color:   #000;
-}
-
-.rgb-bg-tr
-{
-  background-color:   #0000;
-}
-
-.rgb-bg-solid
-{
-  background-color:   #7C4DFF;
-}
-
-.rgb-fg-solid
-{
-  color: #7C4DFF;
-}
-
-.rgb-alert
-{
-  color: #f33;
-}
-
-.sw-btn
-{
-@apply w-fit;
-@apply font-bold;
-@apply py-2 px-4;
-@apply rounded;
-}
-
-.sw-input
-{
-  text-align: left;
-  background-color: #0000;
-  border: 2px solid #ddd;
-  border-radius: 3px;
-  padding: 4px 6px;
-  margin: 0;
-}
-
-input
-{
-	all: unset;
-}
+/* NOTE(Elias): Utility tags */
 
 .rounded-max
 {
 	border-radius: 120px;
 }
+
+/* NOTE(Elias): sw tags */
+
+.sw-border
+{
+  border: 1px solid var(--col-fg2);
+  border-radius: 3px;
+}
+
+.sw-btn
+{
+	@apply w-fit;
+	@apply font-bold;
+	@apply py-2 px-4;
+	@apply rounded;
+	color: var(--col-fg3);
+	background-color: var(--col-bg3);
+}
+
+.sw-btn:hover
+{
+	background-color: var(--col-bg4);
+}
+
+.sw-btn:active
+{
+	color: var(--col-fg2);
+	background-color: var(--col-bg2);
+}
+
+.sw-input
+{
+  text-align: left;
+  background-color: var(--col-trans);
+  border: 2px solid var(--col-fg2);
+  border-radius: 3px;
+  padding: 4px 6px;
+  margin: 0;
+}
+

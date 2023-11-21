@@ -24,7 +24,7 @@ function MessageComponent({me, msg}) {
 		);
 }
 
-function HomePage() {
+function WatchPage() {
 	const { session } = useSession();
 	console.log(session.info)
 
@@ -65,12 +65,12 @@ function HomePage() {
 								datasetUrl={session.info.webId}
 								thingUrl={session.info.webId}
 							>
-							<Text className="rgb-fg-solid font-bold" properties={[
-									"http://www.w3.org/2006/vcard/ns#fn",
-									"http://xmlns.com/foaf/0.1/name",
-								]} />
-											</CombinedDataProvider>
-						</div>
+								<Text className="rgb-fg-solid font-bold" properties={[
+										"http://www.w3.org/2006/vcard/ns#fn",
+										"http://xmlns.com/foaf/0.1/name",
+									]} />
+							</CombinedDataProvider>
+					</div>
 				) : (
 						<p className="rgb-alert font-bold">Failed to authenticate!</p>
 				)}
@@ -86,7 +86,7 @@ function HomePage() {
 					</div>
 					<div className="flex flex-between items-center">
 						<input className="px-2 h-9 rgb-bg-1 sw-border w-full"></input>
-						<button className="btn ml-1 rgb-bg-3 rgb-3 w-9 h-9 sw-border flex justify-center items-center font-bold">></button>
+						<button className="btn ml-1 rgb-bg-3 rgb-3 w-9 h-9 sw-border flex justify-center items-center font-bold">POST</button>
 					</div>
 				</div>
 			</div>
@@ -94,4 +94,4 @@ function HomePage() {
 	);
 }
 
-export default HomePage;
+export default WatchPage;

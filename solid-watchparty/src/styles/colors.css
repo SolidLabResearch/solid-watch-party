@@ -1,0 +1,75 @@
+:root {
+	--col-fg1: #000;
+	--col-fg2: #777;
+	--col-fg3: #fff;
+	--col-fg4: #ddd;
+
+	--col-bg1: #fff;
+	--col-bg2: #f6f6f6;
+	--col-bg3: #000;
+	--col-bg4: #444;
+
+	--col-solid: #7C4DFF;
+	--col-alert: #f33;
+
+	--col-trans: #0000;
+}
+
+/* NOTE(Elias): Frontend Coloring Tags */
+.rgb-1
+{
+  color: var(--col-fg1);
+}
+
+.rgb-2
+{
+  color: var(--col-fg2);
+}
+
+.rgb-3
+{
+  color: var(--col-fg3);
+}
+
+.rgb-solid
+{
+  color: var(--col-solid);
+}
+
+.rgb-alert
+{
+  color: var(--col-alert);
+}
+
+/* NOTE(Elias): Background Coloring Tags */
+.rgb-bg-1
+{
+  background-color: var(--col-bg1);
+}
+
+.rgb-bg-2
+{
+  background-color: var(--col-bg2);
+}
+
+.rgb-bg-3
+{
+  background-color: var(--col-bg3);
+}
+
+.rgb-bg-4
+{
+  background-color: var(--col-bg4);
+}
+
+.rgb-bg-tr
+{
+  background-color: var(--col-trans);
+}
+
+.rgb-bg-solid
+{
+  background-color: var(--solid);
+}
+
+
