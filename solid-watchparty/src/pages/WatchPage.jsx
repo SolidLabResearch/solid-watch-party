@@ -54,28 +54,10 @@ function WatchPage() {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
  // TODO(Elias): Change <Text ... > to custom services after they have been written
+ // TODO(Elias): Add Navbar back
 
 	return (
 		<div className="w-full h-full p-8">
-			<div className="w-full flex justify-between mb-10">
-				{session.info.isLoggedIn ? (
-						<div>
-							<label className="">User: </label>
-							<CombinedDataProvider
-								datasetUrl={session.info.webId}
-								thingUrl={session.info.webId}
-							>
-								<Text className="rgb-fg-solid font-bold" properties={[
-										"http://www.w3.org/2006/vcard/ns#fn",
-										"http://xmlns.com/foaf/0.1/name",
-									]} />
-							</CombinedDataProvider>
-					</div>
-				) : (
-						<p className="rgb-alert font-bold">Failed to authenticate!</p>
-				)}
-				<label className="font-bold">solid-watchparty</label>
-			</div>
 			<div className="flex h-3/4">
 				<div className="w-2/3 sw-border mr-2 h-full rgb-bg-2 flex justify-center items-center">
 					<p>The video player is not implemented at the moment. 😔</p>

@@ -25,7 +25,7 @@ function LoginPage()
 							<input className="sw-input w-full" type="url" name="oidcIssuerField"
 									   value={oidcIssuer} placeholder="oidcIssuer"
 										 onChange={(e) => setOidcIssuer(e.target.value)}/>
-							<SWLoginButton className="my-4"
+							<SWLoginButton className="my-4 w-fit"
 														 authOptions={authOptions}
 														 oidcIssuer={oidcIssuer}
 														 redirectUrl={window.location.protocol + '//' + window.location.host + '/menu'}
