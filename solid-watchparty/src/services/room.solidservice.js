@@ -5,7 +5,7 @@ import {
   saveSolidDatasetAt,
   addStringNoLocale,
   setThing,
-  getThing,
+  getThingAll,
   createThing,
   buildThing,
 } from '@inrupt/solid-client';
@@ -22,13 +22,12 @@ RoomSolidService
 	async createNewRoom(session, name)
 	{
 		if (!session || !session.info || !session.info.isLoggedIn) {
-			console.log("Interrupt creating new room: invalid session");
+			console.log("Interrupt: invalid user session");
 			return { interrupt: "invalid session", userMsg: "The session has ended, log in again" };
 		}
 
 		const now = new Date();
 
-		// TODO(Elias): add a thingUrl so we can tell what this document is
 		const newRoom = buildThing(buildThing({name: name}))
 			.addStringNoLocale(SCHEMA_ORG + 'name', name)
 			.addDatetime(SCHEMA_ORG + 'dateCreated', now)
@@ -53,21 +52,25 @@ RoomSolidService
 	async joinRoom(session, roomUrl)
 	{
 		if (!session || !session.info || !session.info.isLoggedIn) {
-			console.log("Interrupt creating new room: invalid session");
+			console.log("Interrupt: invalid user session");
 			return { interrupt: "invalid session", userMsg: "The session has ended, log in again" };
 		}
 
 		try {
 				const dataset = await getSolidDataset(roomUrl);
+				const things = getThingAll(dataset);
 
-				 // TODO(Elias): change the '...' with the thingUrl
-				 room = buildThing(getThing(dataset, '...'))
+				if (things.length < 1) {
+					console.log("Interrupt: invalid resource");
+					return { interrupt: "invalid resource", userMsg: "The given room does not exist"};
+				}
+
+				// TODO(Elias): Possibly do some validations instead of assuming that we have a correct room resource
+				const updatedRoom = buildThing(things[0])
 					.addUrl(SCHEMA_ORG + 'participant', session.info.webId)
 					.build();
 
-				const updatedDataset = setThing(dataset, room);
-				await saveSolidDatasetAt(roomUrl, updatedDataset);
-
+				await saveSolidDatasetAt(roomUrl, setThing(dataset, updatedRoom));
 				console.log('joined room: ', roomUrl);
 		} catch (error) {
 			console.error('Error joining room: ', error)
