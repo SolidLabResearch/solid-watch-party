@@ -23,7 +23,7 @@ RoomSolidService
 	{
 		if (!session || !session.info || !session.info.isLoggedIn) {
 			console.log("Interrupt: invalid user session");
-			return { interrupt: "invalid session", userMsg: "The session has ended, log in again" };
+			return { interrupt: "invalid session", interruptMsg: "The session has ended, log in again" };
 		}
 
 		const now = new Date();
@@ -45,7 +45,7 @@ RoomSolidService
 			return savedDataset
 		} catch (error) {
 			console.error('Error creating new room: ', error)
-			return { error: error, errormsg: 'error creating new room'};
+			return { error: error, errorMsg: 'error creating new room'};
 		}
 	}
 
@@ -53,7 +53,7 @@ RoomSolidService
 	{
 		if (!session || !session.info || !session.info.isLoggedIn) {
 			console.log("Interrupt: invalid user session");
-			return { interrupt: "invalid session", userMsg: "The session has ended, log in again" };
+			return { interrupt: "invalid session", interruptMsg: "The session has ended, log in again" };
 		}
 
 		try {
@@ -62,7 +62,7 @@ RoomSolidService
 
 				if (things.length < 1) {
 					console.log("Interrupt: invalid resource");
-					return { interrupt: "invalid resource", userMsg: "The given room does not exist"};
+					return { interrupt: "invalid resource", interruptMsg: "The given room does not exist"};
 				}
 
 				// TODO(Elias): Possibly do some validations instead of assuming that we have a correct room resource
@@ -70,11 +70,12 @@ RoomSolidService
 					.addUrl(SCHEMA_ORG + 'participant', session.info.webId)
 					.build();
 
-				await saveSolidDatasetAt(roomUrl, setThing(dataset, updatedRoom));
+				const savedDataset = await saveSolidDatasetAt(roomUrl, setThing(dataset, updatedRoom));
 				console.log('joined room: ', roomUrl);
+				return savedDataset
 		} catch (error) {
 			console.error('Error joining room: ', error)
-			return { error: error, errormsg: 'error joining room'};
+			return { error: error, errorMsg: 'Failed to join the room, make sure you have the correct url'};
 		}
 	}
 

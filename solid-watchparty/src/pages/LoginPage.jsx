@@ -18,7 +18,7 @@ function LoginPage()
 
 	return (
 		<SWPageWrapper className="flex justify-center items-center">
-			<form className="w-1/2">
+			<div className="w-1/2">
 				<h1 className="sw-fs-2 font-bold mb-5">Login</h1>
 				<input className="sw-input w-full" type="url" name="oidcIssuerField"
 							 value={oidcIssuer} placeholder="oidcIssuer"
@@ -28,7 +28,7 @@ function LoginPage()
 											 oidcIssuer={oidcIssuer}
 											 redirectUrl={window.location.protocol + '//' + window.location.host + '/menu'}
 											 onError={console.error}/>
-			</form>
+			</div>
 		</SWPageWrapper>
   )
 }

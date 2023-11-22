@@ -31,7 +31,6 @@ function MessageComponent({me, msg}) {
 
 function WatchPage() {
 	const { session } = useSession();
-	console.log(session.info)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	/* NOTE(Elias): This is for testing purposes!! */
