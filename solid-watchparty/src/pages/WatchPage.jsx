@@ -7,7 +7,7 @@ import {
 } from "@inrupt/solid-ui-react";
 
 /* NOTE(Elias): Component Imports */
-import SWNavbar from '../components/SWNavbar'
+import SWPageWrapper from '../components/SWPageWrapper'
 
 
 function MessageComponent({me, msg}) {
@@ -62,9 +62,8 @@ function WatchPage() {
  // TODO(Elias): Add Navbar back
 
 	return (
-		<div className="w-full h-full">
-			<SWNavbar/>
-			<div className="flex h-3/4 px-8">
+		<SWPageWrapper>
+			<div className="w-full flex h-[512px] px-8">
 				<div className="w-2/3 sw-border mr-2 h-full rgb-bg-2 flex justify-center items-center">
 					<p>The video player is not implemented at the moment. 😔</p>
 				</div>
@@ -80,7 +79,7 @@ function WatchPage() {
 					</div>
 				</div>
 			</div>
-		</div>
+		</SWPageWrapper>
 	);
 }
 
