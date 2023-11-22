@@ -14,6 +14,9 @@ import {
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 import { getPodUrl, urlify } from '../utils/urlUtils';
 
+/* NOTE(Elias): Config imports */
+import { ROOMS_ROOT, MESSAGES_ROOT } from '../config.js'
+
 
 class
 RoomSolidService
@@ -28,7 +31,8 @@ RoomSolidService
 
 		const now = new Date();
 
-		const newRoom = buildThing(buildThing({name: name}))
+		/* TODO(Elias): Add a type, so agents know what this is */
+		const newRoom = buildThing(buildThing())
 			.addStringNoLocale(SCHEMA_ORG + 'name', name)
 			.addDatetime(SCHEMA_ORG + 'dateCreated', now)
       .addUrl(SCHEMA_ORG + 'creator', session.info.webId)
@@ -36,9 +40,9 @@ RoomSolidService
 			.build();
 		const dataset = setThing(createSolidDataset(), newRoom);
 
-		/* TODO(Elias): Abstract this to a config file or something and think about a better url than rooms/ */
-		/* TODO(Elias): Possibly give the user the ability to give a path */
-		const datasetUrl = `${getPodUrl(session.info.webId)}/watchparties/myRooms/${urlify(name + now.toISOString())}`
+		/* TODO(Elias): Possibly give the user the ability to give a path, what would be cool is some kind of finder that
+		 * would open */
+		const datasetUrl = `${getPodUrl(session.info.webId)}/${ROOMS_ROOT}/${urlify(name + now.toISOString())}`
 
 		try {
 			const savedDataset = await saveSolidDatasetAt(datasetUrl, dataset)
@@ -66,7 +70,7 @@ RoomSolidService
 					return { interrupt: "invalid resource", interruptMsg: "The given room does not exist"};
 				}
 
-				// TODO(Elias): Possibly do some validations instead of assuming that we have a correct room resource
+				/* TODO(Elias): Possibly do some validations instead of assuming that we have a correct room resource */
 				const updatedRoom = buildThing(things[0])
 					.addUrl(SCHEMA_ORG + 'participant', session.info.webId)
 					.build();
@@ -78,6 +82,28 @@ RoomSolidService
 			console.error('Error joining room: ', error)
 			return { error: error, errorMsg: 'Failed to join the room, make sure you have the correct url'};
 		}
+	}
+
+	async sendMessage(session, message, roomUrl)
+	{
+		if (!session || !session.info || !session.info.isLoggedIn) {
+			console.log("Interrupt: invalid user session");
+			return { interrupt: "invalid session", interruptMsg: "The session has ended, log in again" };
+		}
+
+		const now = new Date();
+
+		/* TODO(Elias): Add a type, so agents know what this is */
+		const newMessage = buildThing(createThing())
+			.addStringNoLocale(SCHEMA_ORG + 'name', name)
+			.addurl(SCHEMA_ORG + 'isPartOf', roomurl)
+			.addUrl(SCHEMA_ORG + 'sender', session.info.webId)
+			.addUrl(SCHEMA_ORG + 'dateSent', now)
+		const dataset = setThing(createSolidDataset(), newMessage);
+
+		/* TODO(Elias): Possibly give the user the ability to give a path, what would be cool is some kind of finder that
+		 * would open */
+		// const datasetUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/${urlify(name + now.toISOString())}`
 	}
 
 }

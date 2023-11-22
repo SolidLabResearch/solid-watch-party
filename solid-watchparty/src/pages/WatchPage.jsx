@@ -34,6 +34,8 @@ function WatchPage() {
 	const [searchParams] = useSearchParams();
 	const roomUrl = decodeURIComponent(searchParams.get('room'));
 
+	/* TODO(Elias): !! Register a user to the watchparty from the room !! */
+
 	/* TODO(Elias): Prevent spam */
 	const submitMessage = (e) => {
 		e.preventDefault();

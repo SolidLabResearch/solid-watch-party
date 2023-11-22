@@ -62,7 +62,7 @@ function MenuPage()
 					<button className="sw-btn w-32 ml-3" onClick={joinRoomClicked}>Join room</button>
 				</div>
 				<div className="my-8">
-					<p className="sw-fs-4">Or create a new room </p>
+					<p className="sw-fs-4">Or create a new room</p>
 					<button className="sw-btn w-32 my-2" onClick={createRoomClicked}>Create room</button>
 				</div>
 			</div>
