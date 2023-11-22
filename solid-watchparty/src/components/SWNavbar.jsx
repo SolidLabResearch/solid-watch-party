@@ -10,6 +10,7 @@ function SWNavbar()
 	const { session } = useSession();
 
 	if (session.info.isLoggedIn) {
+		/* TODO(Elias): Change <Text ... > to custom services after they have been written */
 		return (
 			<div className="w-full flex justify-between p-8 grow-0">
 				{session.info.isLoggedIn ? (

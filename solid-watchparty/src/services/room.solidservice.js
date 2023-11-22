@@ -37,7 +37,8 @@ RoomSolidService
 		const dataset = setThing(createSolidDataset(), newRoom);
 
 		/* TODO(Elias): Abstract this to a config file or something and think about a better url than rooms/ */
-		const datasetUrl = `${getPodUrl(session.info.webId)}/rooms/${urlify(name + now.toISOString())}`
+		/* TODO(Elias): Possibly give the user the ability to give a path */
+		const datasetUrl = `${getPodUrl(session.info.webId)}/watchparties/myRooms/${urlify(name + now.toISOString())}`
 
 		try {
 			const savedDataset = await saveSolidDatasetAt(datasetUrl, dataset)

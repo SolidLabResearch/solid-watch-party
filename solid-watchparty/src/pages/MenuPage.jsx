@@ -19,8 +19,8 @@ function MenuPage()
 {
 	const { session } = useSession();
 	const navigateTo = useNavigate();
-	const [roomUrl, setRoomUrl] = useState("");
 
+	const [roomUrl, setRoomUrl] = useState("");
 
 	const joinRoomClicked = async (e) => {
 		/* TODO(Elias): Add the ability to give a name to the room instead of "new room" */
@@ -34,7 +34,7 @@ function MenuPage()
 			return;
 		}
 
-		navigateTo('/watch');
+		navigateTo('/watch?room=' + encodeURIComponent(result.internal_resourceInfo.sourceIri));
 	};
 
 	const createRoomClicked = async (e) => {
@@ -48,8 +48,7 @@ function MenuPage()
 			return;
 		}
 
-		console.log(result)
-		navigateTo('/watch');
+		navigateTo('/watch?room=' + encodeURIComponent(result.internal_resourceInfo.sourceIri));
 	};
 
 
