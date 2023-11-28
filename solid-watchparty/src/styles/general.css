@@ -28,6 +28,8 @@ html, body
   font-family:		  'Inter', sans-serif;
   font-weight:        400;
   font-size:          13px;
+  background-color:	  var(--col-bg1);
+  color:			  var(--col-fg1);
 }
 
 input, button, a
@@ -80,7 +82,7 @@ a:hover
 .sw-input
 {
   text-align: left;
-  background-color: var(--col-trans);
+  background-color: var(--col-bg2);
   border: 2px solid var(--col-fg2);
   border-radius: 3px;
   padding: 4px 6px;

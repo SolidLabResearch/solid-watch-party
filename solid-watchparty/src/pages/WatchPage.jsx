@@ -10,6 +10,9 @@ import { useSearchParams } from 'react-router-dom';
 /* NOTE(Elias): Component Imports */
 import SWPageWrapper from '../components/SWPageWrapper'
 
+/* NOTE(Elias): Service Imports */
+import RoomSolidService from '../services/room.solidservice.js'
+
 
 function MessageComponent({me, msg}) {
 	return (
@@ -39,14 +42,11 @@ function WatchPage() {
 	/* TODO(Elias): Prevent spam */
 	const submitMessage = (e) => {
 		e.preventDefault();
-
-		const message = e.target.msgInput.value;
-		if (message === ' ') {
+		const message = e.target.msgInput.value.trim();
+		if (message.length === 0) {
 			return;
 		}
-
-		console.log(roomUrl, message);
-
+		RoomSolidService.createMessage(session, message, roomUrl);
 		e.target.msgInput.value = '';
 	}
 
