@@ -62,7 +62,7 @@ a:hover
 {
 	@apply font-bold;
 	@apply py-2 px-4;
-	@apply rounded;
+	border-radius: 3px;
 	@apply text-center;
 	color: var(--col-fg3);
 	background-color: var(--col-bg3);
@@ -81,11 +81,35 @@ a:hover
 
 .sw-input
 {
-  text-align: left;
-  background-color: var(--col-bg2);
-  border: 2px solid var(--col-fg2);
-  border-radius: 3px;
-  padding: 4px 6px;
-  margin: 0;
+	text-align: left;
+	background-color: var(--col-bg2);
+	border: 2px solid var(--col-fg2);
+	border-radius: 3px;
+	padding: 4px 6px;
+	margin: 0;
 }
 
+.sw-hr
+{
+	padding: 0px 0px;
+	margin: 12px 0px;
+	border: 1px solid var(--col-bg4);
+}
+
+.sw-card-pressable
+{
+	@apply font-bold;
+	@apply text-center;
+	border-radius: 3px;
+}
+
+.sw-card-pressable:hover
+{
+	background-color: var(--col-bg1);
+}
+
+.sw-card-pressable:active
+{
+	color: var(--col-fg3);
+	background-color: var(--col-bg3);
+}

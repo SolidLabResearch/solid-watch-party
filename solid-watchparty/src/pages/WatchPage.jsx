@@ -11,10 +11,12 @@ import { useSearchParams } from 'react-router-dom';
 import SWPageWrapper from '../components/SWPageWrapper'
 
 /* NOTE(Elias): Service Imports */
-import RoomSolidService from '../services/room.solidservice.js'
+import MessageSolidService from '../services/message.solidservice.js'
 
 
-function MessageComponent({me, msg}) {
+function
+MessageComponent({me, msg})
+{
 	return (
 			<div className="pb-2 flex">
 				<div className="pb-2">
@@ -30,7 +32,9 @@ function MessageComponent({me, msg}) {
 		);
 }
 
-function WatchPage() {
+function
+WatchPage()
+{
 	const { session } = useSession();
 
 	/* TODO(Elias): Add error handling, what if there is no parameter */
@@ -46,12 +50,15 @@ function WatchPage() {
 		if (message.length === 0) {
 			return;
 		}
-		RoomSolidService.createMessage(session, message, roomUrl);
+		MessageSolidService.createMessage(session, message, roomUrl);
 		e.target.msgInput.value = '';
 	}
 
 	return (
 		<SWPageWrapper>
+			<div className="px-8 py-4 rgb-2">
+				<p>{roomUrl}</p>
+			</div>
 			<div className="w-full flex h-[512px] px-8">
 				<div className="w-full rgb-bg-2 sw-border h-full p-3 flex flex-col justify-between mb-2">
 					<div className="overflow-auto">
