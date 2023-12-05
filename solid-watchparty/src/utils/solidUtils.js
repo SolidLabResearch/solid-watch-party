@@ -8,7 +8,7 @@ doesResourceExist(url)
 		return { exists: true, error: null }
 	} catch(error) {
 		if (error.statusCode === 404) {
-			return { exists: false, error: error }
+			return { exists: false, error: null }
 		}
 		return { error: error }
 	}

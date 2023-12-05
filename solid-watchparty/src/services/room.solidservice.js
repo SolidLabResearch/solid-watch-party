@@ -65,30 +65,40 @@ RoomSolidService
 			return { interrupt: "no url", interruptMsg: "No url was provided" }
 		}
 
-		const outboxUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
-		const doesExist = await doesResourceExist(outboxUrl);
+		const messagesFileUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
+		let doesExist = await doesResourceExist(messagesFileUrl);
 		if (doesExist.exists === true) {
 			return {result: roomUrl};
 		}
-
-		const newOutbox = buildThing(createThing())
-			.addUrl(RDF.type, SCHEMA_ORG + 'CreativeWorkSeries')
-			.addUrl(SCHEMA_ORG + 'about', roomUrl)
-			.addUrl(SCHEMA_ORG + 'creator', session.info.webId)
-			.build()
+		doesExist = await doesResourceExist(roomUrl);
+		if (doesExist.exists === false) {
+			return { error: 'Error: Room does not exist' };
+		}
 
 		try {
-			const savedOutbox = await saveSolidDatasetAt(outboxUrl, setThing(createSolidDataset(), newOutbox));
-			/* TODO(Elias): Add validations */
-			const roomDataset = await getSolidDataset(roomUrl);
-			const room = buildThing(getThingAll(roomDataset)[0])
-				.addUrl(SCHEMA_ORG + 'attendee', session.info.webId)
-				.addUrl(SCHEMA_ORG + 'subjectOf', asUrl(newOutbox, outboxUrl))
+			console.log('hi')
+			const newOutbox = buildThing(createThing())
+				.addUrl(RDF.type, SCHEMA_ORG + 'CreativeWorkSeries')
+				.addUrl(SCHEMA_ORG + 'about', roomUrl)
+				.addUrl(SCHEMA_ORG + 'creator', session.info.webId)
 				.build();
-			await saveSolidDatasetAt(roomUrl, setThing(roomDataset, room));
-			return { roomUrl: asUrl(room, roomUrl) };
+			const outboxUrl = asUrl(newOutbox, messagesFileUrl);
+			const savedOutbox = await saveSolidDatasetAt(outboxUrl, setThing(createSolidDataset(), newOutbox));
+			console.log('hi2')
+
+			const roomFileUrl = roomUrl.split('#')[0]
+			const roomDataset = await getSolidDataset(roomFileUrl);
+			console.log(roomDataset)
+			const updatedRoom = buildThing(getThingAll(roomDataset)[0])
+				.addUrl(SCHEMA_ORG + 'attendee', session.info.webId)
+				.addUrl(SCHEMA_ORG + 'subjectOf', outboxUrl)
+				.build();
+			console.log('hi3')
+			await saveSolidDatasetAt(roomFileUrl, setThing(roomDataset, updatedRoom));
+
+
+			return { roomUrl: asUrl(updatedRoom, roomFileUrl) };
 		} catch (error) {
-			console.error('Error joining room: ', error)
 			return { error: error, errorMsg: 'Failed to join the room, make sure you have the correct url'};
 		}
 	}

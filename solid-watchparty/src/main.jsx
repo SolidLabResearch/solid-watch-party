@@ -5,8 +5,8 @@ import './styles/general.css'
 
 import App from './App.jsx'
 
+  //<React.StrictMode>
+  //</React.StrictMode>,
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
     <App/>
-  </React.StrictMode>,
 )

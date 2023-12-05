@@ -30,21 +30,21 @@ function SWNavbar()
 								</CombinedDataProvider>
 						</div>
 					) : (
-							<p className="rgb-alert font-bold">Failed to authenticate!</p>
+							<p className="rgb-alert sw-fw-1">Failed to authenticate!</p>
 					)}
 				</div>
-				<div className="flex font-bold items-center">
+				<div className="flex sw-fw-1 items-center">
 					<img className="mr-2" src={Logo} width="36px"/>
 					<p>Watchparty</p>
 				</div>
-				<label className="font-bold basis-1/4 text-right">solid-watchparty</label>
+				<label className="sw-fw-1 basis-1/4 text-right">solid-watchparty-v0</label>
 			</div>
 		);
 	} else {
 		/* TODO(Elias): make an alternative header for the not logged in pages */
 		return (
 				<div className="w-full flex justify-center p-8">
-					<div className="flex font-bold items-center">
+					<div className="flex sw-fw-1 items-center">
 						<img className="mr-2" src={Logo} width="36px"/>
 						<p>Watchparty</p>
 					</div>

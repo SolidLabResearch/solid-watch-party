@@ -19,7 +19,7 @@ function LoginPage()
 	return (
 		<SWPageWrapper className="flex justify-center items-center">
 			<div className="w-1/2">
-				<h1 className="sw-fs-2 font-bold mb-5">Login</h1>
+				<h1 className="sw-fs-2 sw-fw-1 mb-5">Login</h1>
 				<input className="sw-input w-full" type="url" name="oidcIssuerField"
 							 value={oidcIssuer} placeholder="oidcIssuer"
 							 onChange={(e) => setOidcIssuer(e.target.value)}/>
