@@ -1,34 +1,34 @@
 :root {
-	/*
-	--col-fg1: #fff;
-	--col-fg2: #bbb;
-	--col-fg3: #000;
-	--col-fg4: #555;
+  /*
+  --col-fg1: #fff;
+  --col-fg2: #bbb;
+  --col-fg3: #000;
+  --col-fg4: #555;
 
-	--col-bg1: #10161D;
-	--col-bg2: #19232e;
-	--col-bg3: #fff;
-	--col-bg4: #bbb;
+  --col-bg1: #10161D;
+  --col-bg2: #19232e;
+  --col-bg3: #fff;
+  --col-bg4: #bbb;
 
-	--col-solid: #7C4DFF;
-	--col-alert: #f33;
+  --col-solid: #7C4DFF;
+  --col-alert: #f33;
 
-	--col-trans: #0000;
-	*/
-	--col-fg1: #000;
-	--col-fg2: #777;
-	--col-fg3: #fff;
-	--col-fg4: #ddd;
+  --col-trans: #0000;
+  */
+  --col-fg1: #000;
+  --col-fg2: #777;
+  --col-fg3: #fff;
+  --col-fg4: #ddd;
 
-	--col-bg1: #fff;
-	--col-bg2: #f6f6f6;
-	--col-bg3: #000;
-	--col-bg4: #444;
+  --col-bg1: #fff;
+  --col-bg2: #f6f6f6;
+  --col-bg3: #000;
+  --col-bg4: #444;
 
-	--col-solid: #7C4DFF;
-	--col-alert: #f33;
+  --col-solid: #7C4DFF;
+  --col-alert: #f33;
 
-	--col-trans: #0000;
+  --col-trans: #0000;
 }
 
 /* NOTE(Elias): Frontend Coloring Tags */

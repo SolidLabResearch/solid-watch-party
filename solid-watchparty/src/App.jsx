@@ -1,7 +1,7 @@
 /* NOTE(Elias): library imports */
 import {
-	createBrowserRouter,
-	RouterProvider
+  createBrowserRouter,
+  RouterProvider
 } from 'react-router-dom';
 import { SessionProvider } from '@inrupt/solid-ui-react'
 
@@ -12,17 +12,17 @@ import WatchPage from './pages/WatchPage';
 
 
 const router = createBrowserRouter([
-	{path: "/",					element: <LoginPage/>},
-	{path: "/menu",			element: <MenuPage/>},
-	{path: "/watch",		element: <WatchPage/>},
+  {path: "/", element: <LoginPage/>},
+  {path: "/menu", element: <MenuPage/>},
+  {path: "/watch", element: <WatchPage/>},
 ]);
 
 function App() {
-	return (
-			<SessionProvider>
-				<RouterProvider router={router}/>
-			</SessionProvider>
-	);
+  return (
+      <SessionProvider>
+        <RouterProvider router={router}/>
+      </SessionProvider>
+  );
 }
 
 

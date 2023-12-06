@@ -1,5 +1,4 @@
 import {
-  LoginButton,
   Text,
   useSession,
   CombinedDataProvider,
@@ -40,19 +39,16 @@ function SWNavbar()
 				<label className="sw-fw-1 basis-1/4 text-right">solid-watchparty-v0</label>
 			</div>
 		);
-	} else {
-		/* TODO(Elias): make an alternative header for the not logged in pages */
-		return (
-				<div className="w-full flex justify-center p-8">
-					<div className="flex sw-fw-1 items-center">
-						<img className="mr-2" src={Logo} width="36px"/>
-						<p>Watchparty</p>
-					</div>
-				</div>
-		);
 	}
-
-	return <></>
+	/* TODO(Elias): make an alternative header for the not logged in pages */
+	return (
+			<div className="w-full flex justify-center p-8">
+				<div className="flex sw-fw-1 items-center">
+					<img className="mr-2" src={Logo} width="36px"/>
+					<p>Watchparty</p>
+				</div>
+			</div>
+	);
 }
 
 export default SWNavbar;
