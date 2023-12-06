@@ -34,7 +34,6 @@ WatchPage()
         setState({isLoading: false, hasAccess: false, messageSeriesStreams: null});
         return;
       }
-
       const messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(session, roomUrl);
       if (result.error || result.interrupt) {
         setState({isLoading: false, hasAccess: false, messageSeriesStreams: null});

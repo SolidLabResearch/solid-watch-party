@@ -43,7 +43,6 @@ MenuPage()
     navigateTo('/watch?room=' + encodeURIComponent(result.roomUrl));
   };
 
-  /* TODO(Elias): Add pastRooms */
   return (
     <SWPageWrapper className="flex justify-center items-center">
       <div className="w-1/2">
