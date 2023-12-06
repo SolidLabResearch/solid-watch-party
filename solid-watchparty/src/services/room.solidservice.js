@@ -76,7 +76,6 @@ RoomSolidService
 		}
 
 		try {
-			console.log('hi')
 			const newOutbox = buildThing(createThing())
 				.addUrl(RDF.type, SCHEMA_ORG + 'CreativeWorkSeries')
 				.addUrl(SCHEMA_ORG + 'about', roomUrl)
@@ -84,16 +83,13 @@ RoomSolidService
 				.build();
 			const outboxUrl = asUrl(newOutbox, messagesFileUrl);
 			const savedOutbox = await saveSolidDatasetAt(outboxUrl, setThing(createSolidDataset(), newOutbox));
-			console.log('hi2')
 
 			const roomFileUrl = roomUrl.split('#')[0]
 			const roomDataset = await getSolidDataset(roomFileUrl);
-			console.log(roomDataset)
 			const updatedRoom = buildThing(getThingAll(roomDataset)[0])
 				.addUrl(SCHEMA_ORG + 'attendee', session.info.webId)
 				.addUrl(SCHEMA_ORG + 'subjectOf', outboxUrl)
 				.build();
-			console.log('hi3')
 			await saveSolidDatasetAt(roomFileUrl, setThing(roomDataset, updatedRoom));
 
 

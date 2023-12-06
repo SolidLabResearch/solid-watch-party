@@ -64,6 +64,7 @@ MessageSolidService
 
 			let message = buildThing(createThing())
 				.addUrl(RDF.type, SCHEMA_ORG + 'Message')
+				.addUrl(SCHEMA_ORG + 'sender', session.info.webId)
 				.addUrl(SCHEMA_ORG + 'isPartOf', asUrl(outbox, messageUrl))
 				.addDatetime(SCHEMA_ORG + 'dateSent', now)
 				.addStringNoLocale(SCHEMA_ORG + 'text', messageLiteral)
@@ -83,57 +84,43 @@ MessageSolidService
 		}
 	}
 
-	async getMessageStream(session, roomUrl) {
+	async getOutboxesStream(session, roomUrl) {
+		if (!inSession(session)) {
+			return { interrupt: "invalid session", interruptMsg: "The session has ended, log in again" };
+		}
+		const query =`
+PREFIX schema: <${SCHEMA_ORG}>
+SELECT ?messageSeries
+WHERE {
+  ?eventSeries a schema:EventSeries .
+  ?eventSeries schema:subjectOf ?messageSeries .
+}`;
+
+		const queryEngine = new QueryEngine();
+    const resultStream = await queryEngine.queryBindings(query, { sources: [roomUrl] });
+		return resultStream;
+	}
+
+	async getMessageStream(session, messageBoxUrl) {
 		if (!inSession(session)) {
 			return { interrupt: "invalid session", interruptMsg: "The session has ended, log in again" };
 		}
 
-		console.log('asdf')
-		const messageUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
-		let	messagesDataset = await getSolidDataset(messageUrl);
-		const messageThings = getThingAll(messagesDataset);
-
-		let outbox = null;
-		for (let thing in messageThings) {
-			const type = getUrlAll(messageThings[thing], "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")[0];
-			if (type === SCHEMA_ORG + 'CreativeWorkSeries') {
-				outbox = messageThings[thing];
-				break;
-			}
-		}
-		if (!outbox) {
-			throw { error: "no outbox present" }
-		}
-
 		const sparqlQuery = `
 PREFIX schema: <${SCHEMA_ORG}>
-SELECT ?message ?dateSent ?text WHERE {
-	?message a schema:Message;
-	schema:isPartOf <${asUrl(outbox, messageUrl)}>;
-	schema:dateSent ?dateSent;
-	schema:text ?text.
+SELECT ?message ?dateSent ?sender ?text
+WHERE {
+	?message a schema:Message .
+	?outbox schema:hasPart ?message .
+	?message schema:dateSent ?dateSent .
+	?message schema:sender ?sender .
+	?message schema:text ?text .
 }
 `;
 
-		console.log(sparqlQuery)
-		console.log(messageUrl)
 		const queryEngine = new QueryEngine();
-    const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [messageUrl] });
-		return;
-		console.log('test')
-
-    resultStream.on('data', (data) => {
-        console.log('New message:', data);
-    });
-    resultStream.on('error', (error) => {
-        console.error('Error in message stream:', error);
-				console.log('ending stream')
-				stream.close();
-    });
-    resultStream.on('end', () => {
-        console.log('Message stream ended');
-				stream.close();
-    });
+    const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [messageBoxUrl] });
+		return resultStream;
 	}
 
 }

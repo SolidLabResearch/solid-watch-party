@@ -18,18 +18,23 @@ import SWPageWrapper from '../components/SWPageWrapper'
 import RoomSolidService from '../services/room.solidservice.js';
 import MessageSolidService from '../services/message.solidservice.js'
 
+/* NOTE(Elias): Service Imports */
+import { displayDate } from '../utils/general.js'
+
 function
-MessageComponent({me, msg})
+MessageComponent({msg})
 {
 	return (
 			<div className="pb-2 flex">
+				<div className="w-6 h-6 m-2 rgb-bg-3 rounded-max">
+				</div>
 				<div className="pb-2">
 					<div className="w-fit w-max flex items-baseline">
-						<p className="sw-fw-1 rgb-1 mr-2">{msg.person}</p>
-						<p className="rgb-2 text-sm">{msg.time}</p>
+						<p className="sw-fw-1 mr-2">{msg.sender}</p>
+						<p className="rgb-2 text-sm">{displayDate(msg.date)}</p>
 					</div>
 					<div className="rgb-1 w-fit w-max">
-						<p>{msg.message}</p>
+						<p>{msg.text}</p>
 					</div>
 				</div>
 			</div>
@@ -39,7 +44,8 @@ MessageComponent({me, msg})
 function
 WatchPage()
 {
-	const [ state, setState ] = useState({isLoading: false, hasAccess: false});
+	const [ state, setState ] = useState({isLoading: false, hasAccess: false,
+																			 msgStream: null, outboxesStream: null});
 	const [ messages, setMessages ] = useState([]);
 	const { session } = useSession();
 
@@ -47,24 +53,42 @@ WatchPage()
 	const [searchParams] = useSearchParams();
 	const roomUrl = decodeURIComponent(searchParams.get('room'));
 
-
 	/* TODO(Elias): Redirect to login if session is not valid */
 	useEffect(() => {
 		const fetch = async () => {
-			setState({isLoading: true, hasAccess: state.hasAccess});
+			setState({isLoading: true, hasAccess: state.hasAccess, msgStream: state.msgStream});
 			const result = await RoomSolidService.joinRoom(session, roomUrl)
 			if (result.error || result.interrupt) {
-				console.log(result.error)
-				setState({isLoading: false, hasAccess: false});
+				setState({isLoading: false, hasAccess: false, msgStream: null});
 				return;
 			}
-			setState({isLoading: false, hasAccess: true});
+
+			const outboxesStream = await MessageSolidService.getOutboxesStream(session, roomUrl);
+			if (result.error || result.interrupt) {
+				setState({isLoading: false, hasAccess: false, msgStream: null});
+				return;
+			}
+			outboxesStream.on('data', async (data) => {
+				const messageSeriesUrl = data.get('messageSeries').value
+				const msgStream = await MessageSolidService.getMessageStream(session, messageSeriesUrl);
+				if (result.error || result.interrupt) {
+					return;
+				}
+				msgStream.on('data', (data) => {
+					const msg = {
+						text:		data.get('text').value,
+						sender:	data.get('sender').value,
+						date:		new Date(data.get('dateSent').value),
+						key:		messages.length
+					};
+					setMessages(messages => [...messages, msg].sort(
+								(m1, m2) => (m1.date > m2.date) ? 1 : ((m1.date < m2.date) ? -1 :  0)));
+				})
+			})
+			setState({isLoading: false, hasAccess: true, msgStream: null, outboxesStream: outboxesStream});
 		}
 		fetch();
-		MessageSolidService.getMessageStream(session, roomUrl);
 	}, [session, roomUrl])
-
-
 
 	/* TODO(Elias): Prevent spam */
 	const submitMessage = (e) => {
@@ -76,7 +100,6 @@ WatchPage()
 		MessageSolidService.createMessage(session, message, roomUrl);
 		e.target.msgInput.value = '';
 	}
-
 
 	let pageContent = (<div/>);
 	if (state.isLoading) {
@@ -103,7 +126,7 @@ WatchPage()
 				<div className="w-full flex h-[512px] px-8">
 					<div className="w-full rgb-bg-2 sw-border h-full p-3 flex flex-col justify-between mb-2">
 						<div className="overflow-auto">
-							{[].map((msg) => <MessageComponent msg={myName, msg}/>)}
+							{messages.map((msg) => <MessageComponent msg={msg}/>)}
 						</div>
 						<form className="flex flex-between items-center" onSubmit={submitMessage}>
 							<input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full"></input>
