@@ -24,6 +24,20 @@ Welcome to Solid Watchparty, a platform designed for shared media viewing experi
    npm start
    ```
 
+## :construction: Status of the project
+
+This project is in active development. This in an overview of the progress:
+1. **Watchparty Application:**
+    - [x] Authentication with solid pod providers
+    - [x] Creating new rooms and joining rooms
+    - [x] Sending, retrieving and displaying messages
+    - [ ] Watching a video stream
+    - [ ] Video stream syncing and controls
+    - [ ] Polishing
+2. **Statistics dashboard:**
+    - *details to be determined*
+
+
 ## :scroll: Documentation
 
 For detailed information about the project structure, setup, technology stack, and development guidelines, please refer to our [Solid Watchparty Developer Handbook](https://gitlab.ilabt.imec.be/maavdnbr/watch-party/-/wikis/Developer-Handbook).
