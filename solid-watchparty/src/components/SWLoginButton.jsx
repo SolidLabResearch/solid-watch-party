@@ -4,12 +4,11 @@ import { LoginButton } from '@inrupt/solid-ui-react';
 
 function SWLoginButton(props)
 {
-  // TODO(Elias): At the moment it is possible to click inside the div and not on the button :(
   return (
-    <div className={"sw-btn rgb-bg-3 rgb-3" + ' ' + props.className}>
       <LoginButton authOptions={props.authOptions} oidcIssuer={props.oidcIssuer}
-        redirectUrl={props.redirectUrl} onError={console.error}/>
-    </div>
+        redirectUrl={props.redirectUrl} onError={console.error}>
+        <button className={"sw-btn rgb-bg-3 rgb-3" + ' ' + props.className}>Log In</button>
+      </LoginButton>
   );
 }
 

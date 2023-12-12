@@ -27,7 +27,7 @@ RoomSolidService
   async createNewRoom(session, name)
   {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "The session has ended, log in again" };
+      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again!" };
     }
 
     const now = new Date();
@@ -41,8 +41,6 @@ RoomSolidService
     const dataset = setThing(createSolidDataset(), newRoom);
     const roomUrl = `${getPodUrl(session.info.webId)}/${ROOMS_ROOT}/${urlify(name + now.toISOString())}`;
 
-    /* TODO(Elias): Possibly give the user the ability to give a path, what would be cool is some kind of finder that
-     * would open or a settings page */
     try {
       await saveSolidDatasetAt(roomUrl, dataset);
       return { roomUrl: asUrl(newRoom, roomUrl) };
@@ -55,7 +53,7 @@ RoomSolidService
   async joinRoom(session, roomUrl)
   {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "The session has ended, log in again" }
+      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again!" }
     } else if (!roomUrl) {
       return { interrupt: "no url", interruptMsg: "No url was provided" }
     }

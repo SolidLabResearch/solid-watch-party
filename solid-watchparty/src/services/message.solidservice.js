@@ -28,11 +28,9 @@ MessageSolidService
   async createMessage(session, messageLiteral, roomUrl)
   {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "The session has ended, log in again" };
+      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again" };
     }
 
-    /* TODO(Elias): Possibly give the user the ability to give a path, what would be cool is some kind of finder that
-     * would open */
     const messageUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
     const now = new Date();
 
@@ -81,7 +79,7 @@ MessageSolidService
 
   async getMessageSeriesStream(session, roomUrl) {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "The session has ended, log in again" };
+      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again" };
     }
     const query =`
 PREFIX schema: <${SCHEMA_ORG}>

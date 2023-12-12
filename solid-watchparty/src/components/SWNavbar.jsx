@@ -40,7 +40,6 @@ function SWNavbar()
       </div>
     );
   }
-  /* TODO(Elias): make an alternative header for the not logged in pages */
   return (
       <div className="w-full flex justify-center p-8">
         <div className="flex sw-fw-1 items-center">
