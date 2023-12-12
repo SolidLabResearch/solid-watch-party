@@ -17,5 +17,6 @@ doesResourceExist(url)
 export function
 inSession(session)
 {
-	return !(!session || !session.info || !session.info.isLoggedIn);
+	return session && session.info && session.info.isLoggedIn;
 }
+

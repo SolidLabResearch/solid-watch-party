@@ -1,9 +1,17 @@
 /* NOTE(Elias): libary imports */
-import { useState } from 'react';
+import {
+  useState,
+  useEffect
+} from 'react';
+import { useSession } from "@inrupt/solid-ui-react";
+import { useNavigate } from 'react-router-dom';
 
 /* NOTE(Elias): component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
 import SWLoginButton from '../components/SWLoginButton'
+
+/* NOTE(Elias): Util imports */
+import { inSession } from '../utils/solidUtils';
 
 const authOptions = {
   clientName:  "solid-watchparty",
@@ -12,9 +20,17 @@ const authOptions = {
 function LoginPage()
 {
   const [oidcIssuer, setOidcIssuer] = useState("http://localhost:3000/");
+  const { session, sessionRequestInProgress } = useSession();
+  const navigateTo = useNavigate();
+
+  useEffect(() => {
+    if (!sessionRequestInProgress && inSession(session)) {
+      navigateTo('/menu');
+    }
+  }, [session, sessionRequestInProgress])
 
   return (
-    <SWPageWrapper className="flex justify-center items-center">
+    <SWPageWrapper className="flex justify-center items-center" mustBeAuthenticated={false}>
       <div className="w-1/2">
         <h1 className="sw-fs-2 sw-fw-1 mb-5">Login</h1>
         <input className="sw-input w-full" type="url" name="oidcIssuerField"

@@ -23,3 +23,4 @@ export function displayDate(date) {
                `${zeroPad(date.getHours())}:${zeroPad(date.getMinutes())}`;
     }
 }
+

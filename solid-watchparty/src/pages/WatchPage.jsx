@@ -110,7 +110,7 @@ WatchPage()
     );
   }
   return (
-    <SWPageWrapper className="h-full">
+    <SWPageWrapper className="h-full" mustBeAuthenticated={true}>
       {pageContent}
     </SWPageWrapper>
   );

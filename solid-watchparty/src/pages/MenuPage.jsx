@@ -44,7 +44,7 @@ MenuPage()
   };
 
   return (
-    <SWPageWrapper className="flex justify-center items-center">
+    <SWPageWrapper className="flex justify-center items-center" mustBeAuthenticated={true}>
       <div className="w-1/2">
         <h1 className="sw-fs-1 sw-fw-1 mb-5">Rooms</h1>
         <div className="flex">
