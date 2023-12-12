@@ -7,6 +7,7 @@ import PropTypes from 'prop-types';
 /* NOTE(Elias): Component imports */
 import SWNavbar from './SWNavbar'
 import SWFooter from './SWFooter'
+import SWLoadingIcon from './SWLoadingIcon';
 
 /* NOTE(Elias): Util imports */
 import { inSession } from '../utils/solidUtils';
@@ -24,13 +25,15 @@ function SWPageWrapper({children, className, mustBeAuthenticated})
     }
   }, [session, sessionRequestInProgress])
 
-  // TODO(Elias): Add loading icon
   return (
     <div className="h-full flex flex-col justify-between">
       <SWNavbar/>
       <div className={"h-full w-full " + className}>
         { sessionRequestInProgress ? (
-            <p> Autenticating... </p>
+            <div className="flex flex-col items-center">
+              <SWLoadingIcon className="w-6 h-6 mb-3"/>
+              <p className="sw-fw-1">Autenticating...</p>
+            </div>
         ) : (
             children
         )}

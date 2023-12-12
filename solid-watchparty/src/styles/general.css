@@ -88,6 +88,13 @@ a:hover
   background-color: var(--col-bg2);
 }
 
+.sw-btn-loading
+{
+  @apply py-2 px-4;
+  border-radius: 3px;
+  background-color: var(--col-bg2);
+}
+
 .sw-input
 {
   text-align: left;

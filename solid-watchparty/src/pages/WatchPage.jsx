@@ -9,6 +9,7 @@ import { useSearchParams } from 'react-router-dom';
 /* NOTE(Elias): Component Imports */
 import SWPageWrapper from '../components/SWPageWrapper'
 import MessageComponent from '../components/SWMessageComponent'
+import SWLoadingIcon from '../components/SWLoadingIcon';
 
 /* NOTE(Elias): Service Imports */
 import RoomSolidService from '../services/room.solidservice.js';
@@ -25,7 +26,6 @@ WatchPage()
   const [searchParams] = useSearchParams();
   const roomUrl = decodeURIComponent(searchParams.get('room'));
 
-  /* TODO(Elias): Redirect to login if session is not valid */
   useEffect(() => {
     const fetch = async () => {
       setState({isLoading: true, hasAccess: false, messageSeriesStreams: null});
@@ -40,7 +40,6 @@ WatchPage()
         return;
       }
       messageSeriesStreams.on('data', async (data) => {
-        // TODO(Elias): Removal of messages
         const messageSeriesUrl = data.get('messageSeries').value
         const messageStream = await MessageSolidService.getMessageStream(session, messageSeriesUrl);
         if (result.error || result.interrupt) {
@@ -62,7 +61,6 @@ WatchPage()
     fetch();
   }, [session, roomUrl])
 
-  /* TODO(Elias): Prevent spam */
   const submitMessage = (e) => {
     e.preventDefault();
     const message = e.target.msgInput.value.trim();
@@ -75,10 +73,12 @@ WatchPage()
 
   let pageContent = (<div/>);
   if (state.isLoading) {
-    /* TODO(Elias): Add loading icon */
     pageContent = (
       <div className="w-full h-full flex justify-center items-center">
-        <p> Loading...</p>
+          <div className="flex flex-col items-center">
+            <SWLoadingIcon className="w-6 h-6 mb-3"/>
+            <p className="sw-fw-1">Loading Room...</p>
+          </div>
       </div>
     );
   } else if (!state.hasAccess) {
