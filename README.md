@@ -1,6 +1,7 @@
-**:warning: This project is in active development and has not had any releases!**
-
-<div style="height: 50px"></div>
+|| Status|
+|-|-|
+|**:bookmark:** |**Development Milestone 1 ~ Barebones Chat Application**
+|**:rocket:** |**:warning: No releases yet**
 
 <img src="https://raw.githubusercontent.com/CommunitySolidServer/CommunitySolidServer/main/templates/images/solid.svg"
  alt="[Solid logo]" height="56"/>
