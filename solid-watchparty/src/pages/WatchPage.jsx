@@ -15,10 +15,14 @@ import SWLoadingIcon from '../components/SWLoadingIcon';
 import RoomSolidService from '../services/room.solidservice.js';
 import MessageSolidService from '../services/message.solidservice.js'
 
+/* NOTE(Elias): Util Imports */
+import { parseMessage } from '../utils/messageParser.js';
+
 function
 WatchPage()
 {
   const [ state, setState ] = useState({isLoading: false, hasAccess: false, messageSeriesStreams: null});
+  const [ input, setInput ] = useState('');
   const [ messages, setMessages ] = useState([]);
   const { session } = useSession();
 
@@ -63,12 +67,11 @@ WatchPage()
 
   const submitMessage = (e) => {
     e.preventDefault();
-    const message = e.target.msgInput.value.trim();
-    if (message.length === 0) {
+    if (input.length === 0) {
       return;
     }
-    MessageSolidService.createMessage(session, message, roomUrl);
-    e.target.msgInput.value = '';
+    MessageSolidService.createMessage(session, input, roomUrl);
+    setInput('');
   }
 
   let pageContent = (<div/>);
@@ -101,7 +104,9 @@ WatchPage()
               {messages.map((message) => <MessageComponent message={message} key={message.key}/>)}
             </div>
             <form className="flex flex-between items-center" onSubmit={submitMessage}>
-              <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full"></input>
+              <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full"
+                     onChange={(e) => setInput(parseMessage(e.target.value))}
+                     value={input}/>
               <button className="sw-btn hidden"> P </button>
             </form>
           </div>
