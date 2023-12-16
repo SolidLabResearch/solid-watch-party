@@ -8,8 +8,9 @@ import { useSearchParams } from 'react-router-dom';
 
 /* NOTE(Elias): Component Imports */
 import SWPageWrapper from '../components/SWPageWrapper'
-import MessageComponent from '../components/SWMessageComponent'
+import SWMessageComponent from '../components/SWMessageComponent'
 import SWLoadingIcon from '../components/SWLoadingIcon';
+import SWAutoScrollDiv from '../components/SWAutoScrollDiv';
 
 /* NOTE(Elias): Service Imports */
 import RoomSolidService from '../services/room.solidservice.js';
@@ -100,9 +101,9 @@ WatchPage()
         </div>
         <div className="w-full flex h-[512px] px-8">
           <div className="w-full rgb-bg-2 sw-border h-full p-3 flex flex-col justify-between mb-2">
-            <div className="overflow-auto">
-              {messages.map((message) => <MessageComponent message={message} key={message.key}/>)}
-            </div>
+            <SWAutoScrollDiv className="overflow-auto mb-2">
+              {messages.map((message) => <SWMessageComponent message={message} key={message.key}/>)}
+            </SWAutoScrollDiv>
             <form className="flex flex-between items-center" onSubmit={submitMessage}>
               <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full"
                      onChange={(e) => setInput(parseMessage(e.target.value))}

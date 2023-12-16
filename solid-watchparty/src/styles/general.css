@@ -10,7 +10,17 @@
 }
 
 ::-webkit-scrollbar {
-    width: 0px;
+    width: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--col-trans);
+    border-radius: 360px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--col-bg5);
+    border-radius: 360px;
 }
 
 #root
