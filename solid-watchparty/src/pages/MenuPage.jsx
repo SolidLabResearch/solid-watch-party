@@ -14,29 +14,14 @@ import RoomSolidService from '../services/room.solidservice';
 
 /* NOTE(Elias): util imports */
 import { doesResourceExist } from '../utils/solidUtils';
+import {
+  validateAll,
+  validateRequired,
+  validateIsUrl,
+  validateLength
+} from '../utils/validationUtils';
 
 
-function validateAll(field, setField, validations)
-{
-  for (let i = 0; i < validations.length; ++i) {
-    if (!validations[i].run(field.value)) {
-      setField({ value: field.value, alertMsg: validations[i].message });
-      return false;
-    }
-  }
-  return true;
-}
-
-function validateRequired(string) {
-  return string.length > 0;
-}
-
-function validateIsUrl(string) {
-  return string.includes('https://') || string.includes('http://');
-}
-function validateLength(string, min, max) {
-  return string.length >= min && string.length < max;
-}
 
 function
 MenuPage()
