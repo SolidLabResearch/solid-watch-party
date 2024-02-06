@@ -3,7 +3,7 @@ import dashjs from 'dashjs';
 
 
 // TODO(Elias): In the future support also LIVE streams
-export default function SWVideoPlayer({src, className, title, controls=true}) {
+export default function SWVideoPlayer({src, startDate, className, title, controls=true}) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -11,13 +11,19 @@ export default function SWVideoPlayer({src, className, title, controls=true}) {
     if (videoRef.current) {
       player = dashjs.MediaPlayer().create();
       player.initialize(videoRef.current, src, true);
+      if (src) {
+        const now = new Date();
+        player.on(dashjs.MediaPlayer.events.CAN_PLAY, () => {
+            player.seek((now - startDate)/1000);
+        });
+      }
     }
     return () => {
       if (player) {
         player.reset();
       }
     };
-  }, [src]);
+  }, [src, startDate]);
 
   return (
     <div className={className + " relative"}>

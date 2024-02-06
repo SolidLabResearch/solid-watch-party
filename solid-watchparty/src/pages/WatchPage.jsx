@@ -21,6 +21,7 @@ WatchPage() {
   const [parentHeight, setParentHeight] = useState('auto');
   const [modalIsShown, setModalIsShown] = useState(false);
   const [newDashLink, setNewDashLink] = useState(null);
+  const [dashSrc, setDashSrc] = useState(null);
   const iframeRef = useRef(null);
 
   const { session } = useSession();
@@ -28,6 +29,24 @@ WatchPage() {
 
   const [searchParams] = useSearchParams();
   const roomUrl = decodeURIComponent(searchParams.get('room'));
+
+  useEffect(() => {
+    let videoObjectStream = null;
+    const fetch = async () => {
+      videoObjectStream = await EventsSolidService.getVideoObjectStream(session, roomUrl);
+      videoObjectStream.on('data', (data) => {
+        const newDashsrc = {
+          src:        data.get('dashLink').value,
+          startDate:  new Date(data.get('startDate').value)
+        };
+        setDashSrc(newDashsrc);
+      });
+    }
+    fetch();
+    return (() => {
+      videoObjectStream?.close();
+    });
+  }, [session, roomUrl])
 
   const updateChatHeight = () => {
     if (iframeRef.current) {
@@ -40,8 +59,6 @@ WatchPage() {
     window.addEventListener("resize", updateChatHeight, false);
   }, []);
 
-  // NOTE(Elias): Example DASH stream:
-  // https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd
   return (
     <SWPageWrapper className="h-full" mustBeAuthenticated={true}>
       <div className="px-8 py-4 rgb-2">
@@ -49,7 +66,7 @@ WatchPage() {
       </div>
       <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
         <div className="w-2/3 h-fit flex rgb-bg-2 sw-border" ref={iframeRef}>
-          <SWVideoPlayer className="w-full aspect-video" src="" title=""/>
+          <SWVideoPlayer className="w-full aspect-video" startDate={dashSrc?.startDate} src={dashSrc?.src} title=""/>
         </div>
         <SWChatComponent roomUrl={roomUrl} />
       </div>
@@ -71,7 +88,7 @@ WatchPage() {
                   onClick={() => {
                     EventsSolidService.newWatchingEvent(session, roomUrl, newDashLink)
                     setNewDashLink(null)
-                    console.log('EVENT HYPE!!!');
+                    setModalIsShown(false);
                   }}>
             Start
           </button>
