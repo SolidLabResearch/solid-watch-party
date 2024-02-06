@@ -20,8 +20,7 @@ import { doesResourceExist, inSession } from '../utils/solidUtils';
 import { ROOMS_ROOT, MESSAGES_ROOT } from '../config.js'
 
 
-class
-RoomSolidService
+class RoomSolidService
 {
 
   async createNewRoom(session, name)

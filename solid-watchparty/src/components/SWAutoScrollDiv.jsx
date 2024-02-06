@@ -28,7 +28,7 @@ function AutoScrollDiv({children, className})
 }
 
 AutoScrollDiv.propTypes = {
-    children:   PropTypes.object,
+    children:   PropTypes.node,
     className:  PropTypes.string,
 }
 

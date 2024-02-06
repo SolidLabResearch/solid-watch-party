@@ -44,7 +44,7 @@ function SWPageWrapper({children, className, mustBeAuthenticated})
 }
 
 SWPageWrapper.propTypes = {
-    children:               PropTypes.object,
+    children:               PropTypes.node,
     className:              PropTypes.string,
     mustBeAuthenticated:    PropTypes.bool.isRequired,
 };
