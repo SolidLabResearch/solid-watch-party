@@ -1,4 +1,4 @@
-/* NOTE(Elias): Library imports */
+/* library imports */
 import {
   getSolidDataset,
   saveSolidDatasetAt,
@@ -12,12 +12,12 @@ import {
 import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine } from '@incremunica/query-sparql-incremental';
 
-/* NOTE(Elias): Util imports */
+/* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 import { getPodUrl, urlify } from '../utils/urlUtils';
 import { doesResourceExist, inSession } from '../utils/solidUtils';
 
-/* NOTE(Elias): Config imports */
+/* config imports */
 import { MESSAGES_ROOT } from '../config.js'
 
 
@@ -40,7 +40,7 @@ MessageSolidService
     }
 
     try {
-      let  messagesDataset = await getSolidDataset(messageUrl);
+      let messagesDataset = await getSolidDataset(messageUrl);
       const messageThings = getThingAll(messagesDataset);
 
       let outbox = null;
@@ -81,6 +81,7 @@ MessageSolidService
     if (!inSession(session)) {
       return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again" };
     }
+
     const query =`
 PREFIX schema: <${SCHEMA_ORG}>
 SELECT ?messageSeries

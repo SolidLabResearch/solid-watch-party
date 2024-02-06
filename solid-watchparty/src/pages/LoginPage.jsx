@@ -1,4 +1,4 @@
-/* NOTE(Elias): libary imports */
+/* Libary imports */
 import {
   useState,
   useEffect
@@ -6,11 +6,11 @@ import {
 import { useSession } from "@inrupt/solid-ui-react";
 import { useNavigate } from 'react-router-dom';
 
-/* NOTE(Elias): component imports */
+/* Component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
 import SWLoginButton from '../components/SWLoginButton'
 
-/* NOTE(Elias): Util imports */
+/* Util imports */
 import { inSession } from '../utils/solidUtils';
 
 const authOptions = {

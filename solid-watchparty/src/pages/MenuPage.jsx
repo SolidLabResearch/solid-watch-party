@@ -1,18 +1,18 @@
-/* NOTE(Elias): libary imports */
+/* libary imports */
 import {
   useSession,
 } from '@inrupt/solid-ui-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-/* NOTE(Elias): component imports */
+/* component imports */
 import SWPageWrapper from '../components/SWPageWrapper';
 import SWLoadingIcon from '../components/SWLoadingIcon';
 
-/* NOTE(Elias): service imports */
+/* service imports */
 import RoomSolidService from '../services/room.solidservice';
 
-/* NOTE(Elias): util imports */
+/* util imports */
 import { doesResourceExist } from '../utils/solidUtils';
 import {
   validateAll,
@@ -20,7 +20,6 @@ import {
   validateIsUrl,
   validateLength
 } from '../utils/validationUtils';
-
 
 
 function

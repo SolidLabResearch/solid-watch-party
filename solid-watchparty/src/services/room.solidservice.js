@@ -1,4 +1,4 @@
-/* NOTE(Elias): Library imports */
+/* library imports */
 import {
   createSolidDataset,
   getSolidDataset,
@@ -11,12 +11,12 @@ import {
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
 
-/* NOTE(Elias): Util imports */
+/* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 import { getPodUrl, urlify } from '../utils/urlUtils';
 import { doesResourceExist, inSession } from '../utils/solidUtils';
 
-/* NOTE(Elias): Config imports */
+/* config imports */
 import { ROOMS_ROOT, MESSAGES_ROOT } from '../config.js'
 
 
@@ -90,6 +90,7 @@ RoomSolidService
       return { error: error, errorMsg: 'Failed to join the room, make sure you have the correct url'};
     }
   }
+
 }
 
 export default new RoomSolidService();

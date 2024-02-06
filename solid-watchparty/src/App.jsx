@@ -1,12 +1,11 @@
-
-/* NOTE(Elias): library imports */
+/* library imports */
 import {
   createBrowserRouter,
   RouterProvider
 } from 'react-router-dom';
 import { SessionProvider } from '@inrupt/solid-ui-react'
 
-/* NOTE(Elias): page imports */
+/* page imports */
 import LoginPage from './pages/LoginPage';
 import MenuPage from './pages/MenuPage';
 import WatchPage from './pages/WatchPage';

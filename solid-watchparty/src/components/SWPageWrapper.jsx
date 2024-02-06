@@ -1,15 +1,15 @@
-/* NOTE(Elias): libary imports */
+/* libary imports */
 import { useEffect } from 'react';
 import { useSession } from "@inrupt/solid-ui-react";
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
-/* NOTE(Elias): Component imports */
+/* component imports */
 import SWNavbar from './SWNavbar'
 import SWFooter from './SWFooter'
 import SWLoadingIcon from './SWLoadingIcon';
 
-/* NOTE(Elias): Util imports */
+/* util imports */
 import { inSession } from '../utils/solidUtils';
 
 
