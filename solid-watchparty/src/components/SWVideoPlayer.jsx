@@ -12,9 +12,9 @@ export default function SWVideoPlayer({src, startDate, className, title, control
       player = dashjs.MediaPlayer().create();
       player.initialize(videoRef.current, src, true);
       if (src) {
-        const now = new Date();
-        player.on(dashjs.MediaPlayer.events.CAN_PLAY, () => {
-            player.seek((now - startDate)/1000);
+        player.on(dashjs.MediaPlayer.events.PLAYBACK_STARTED, () => {
+          const now = new Date();
+          player.seek((now - startDate)/1000);
         });
       }
     }

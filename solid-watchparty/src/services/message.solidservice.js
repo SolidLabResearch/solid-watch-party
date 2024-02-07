@@ -24,7 +24,6 @@ import { MESSAGES_ROOT } from '../config.js'
 class
 MessageSolidService
 {
-
   async createMessage(session, messageLiteral, roomUrl)
   {
     if (!inSession(session)) {

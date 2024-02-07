@@ -39,12 +39,15 @@ WatchPage() {
           src:        data.get('dashLink').value,
           startDate:  new Date(data.get('startDate').value)
         };
+        console.log('===============================\nVideoObject Update Received\nlast videoObjectStream start:\t', dashSrc?.startDate, '\nnew videoObjectStream start:\t', newDashsrc.startDate);
         setDashSrc(newDashsrc);
       });
     }
     fetch();
     return (() => {
-      videoObjectStream?.close();
+      if (videoObjectStream) {
+        videoObjectStream.close();
+      }
     });
   }, [session, roomUrl])
 
