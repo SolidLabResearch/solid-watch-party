@@ -31,7 +31,7 @@ This project is in active development. This in an overview of the progress:
     - [x] Authentication with solid pod providers
     - [x] Creating new rooms and joining rooms
     - [x] Sending, retrieving and displaying messages
-    - [ ] Watching a video stream
+    - [x] Watching a video stream
     - [ ] Video stream syncing and controls
     - [ ] Polishing
 2. **Statistics dashboard:**
