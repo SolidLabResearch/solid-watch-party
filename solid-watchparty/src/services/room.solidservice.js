@@ -26,7 +26,7 @@ class RoomSolidService
   async createNewRoom(session, name)
   {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again!" };
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" };
     }
 
     const now = new Date();
@@ -52,9 +52,9 @@ class RoomSolidService
   async joinRoom(session, roomUrl)
   {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again!" }
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
     } else if (!roomUrl) {
-      return { interrupt: "no url", interruptMsg: "No url was provided" }
+      return { error: "no url", errorMsg: "No url was provided" }
     }
 
     const messagesFileUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;

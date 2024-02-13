@@ -23,12 +23,13 @@ import { ROOMS_ROOT, MESSAGES_ROOT } from '../config.js'
 class EventsSolidService {
 
   async newWatchingEvent(session, roomUrl, dashLink) {
+    console.log('newWatchingEvent: START')
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again!" }
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
     } else if (!roomUrl) {
-      return { interrupt: "no room url", interruptMsg: "No room url was provided" }
+      return { error: "no room url", errorMsg: "No room url was provided" }
     } else if (!dashLink) {
-      return { interrupt: "no video url", interruptMsg: "No video url was provided" }
+      return { error: "no video url", errorMsg: "No video url was provided" }
     }
 
     let newVideoObject = buildThing(createThing())
@@ -49,19 +50,18 @@ class EventsSolidService {
         .addUrl(SCHEMA_ORG + 'workFeatured', videoObjectUrl)
         .build();
       roomDataset = setThing(roomDataset, newWatchingEvent);
-      console.log('hallo')
-
       await saveSolidDatasetAt(roomFileUrl, roomDataset);
     } catch (error) {
       console.log(error)
     }
+    console.log('newWatchingEvent: END')
   }
 
   async getVideoObjectStream(session, roomUrl) {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again!" }
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
     } else if (!roomUrl) {
-      return { interrupt: "no room url", interruptMsg: "No room url was provided" }
+      return { error: "no room url", errorMsg: "No room url was provided" }
     }
 
     const sparqlQuery = `

@@ -1,7 +1,7 @@
 /* libary imports */
 import { useEffect } from 'react';
 import { useSession } from "@inrupt/solid-ui-react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
 /* component imports */
@@ -18,10 +18,11 @@ function SWPageWrapper({children, className, mustBeAuthenticated})
 {
   const { session, sessionRequestInProgress } = useSession();
   const navigateTo = useNavigate();
+  const currentLocation = useLocation();
 
   useEffect(() => {
     if (mustBeAuthenticated && !sessionRequestInProgress && !inSession(session)) {
-      navigateTo('/');
+      navigateTo('/', {state: {from: currentLocation.pathname + currentLocation.search}});
     }
   }, [session, sessionRequestInProgress])
 

@@ -27,7 +27,7 @@ MessageSolidService
   async createMessage(session, messageLiteral, roomUrl)
   {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again" };
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again" };
     }
 
     const messageUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
@@ -78,7 +78,7 @@ MessageSolidService
 
   async getMessageSeriesStream(session, roomUrl) {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again" };
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again" };
     }
 
     const query =`
@@ -96,18 +96,19 @@ WHERE {
 
   async getMessageStream(session, messageBoxUrl) {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "The session has ended, log in again" };
+      return { error: "invalid session", errorMsg: "The session has ended, log in again" };
     }
 
     const sparqlQuery = `
 PREFIX schema: <${SCHEMA_ORG}>
-SELECT ?message ?dateSent ?sender ?text
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT ?message ?dateSent ?text ?sender
 WHERE {
   ?message a schema:Message .
   ?outbox schema:hasPart ?message .
   ?message schema:dateSent ?dateSent .
-  ?message schema:sender ?sender .
   ?message schema:text ?text .
+  ?message schema:sender ?sender .
 }
 `;
 

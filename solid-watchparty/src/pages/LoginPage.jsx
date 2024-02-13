@@ -4,7 +4,7 @@ import {
   useEffect
 } from 'react';
 import { useSession } from "@inrupt/solid-ui-react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 /* Component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
@@ -22,13 +22,9 @@ function LoginPage()
   const [oidcIssuer, setOidcIssuer] = useState("http://localhost:3000/");
   const { session, sessionRequestInProgress } = useSession();
   const navigateTo = useNavigate();
+  const currentLocation = useLocation();
 
-  useEffect(() => {
-    if (!sessionRequestInProgress && inSession(session)) {
-      navigateTo('/menu');
-    }
-  }, [session, sessionRequestInProgress])
-
+  const redirectLocation = (currentLocation.state?.from || "/menu");
   return (
     <SWPageWrapper className="flex justify-center items-center" mustBeAuthenticated={false}>
       <div className="w-1/2">
@@ -39,7 +35,7 @@ function LoginPage()
         <SWLoginButton className="my-4 w-fit"
                        authOptions={authOptions}
                        oidcIssuer={oidcIssuer}
-                       redirectUrl={window.location.protocol + '//' + window.location.host + '/menu'}
+                       redirectUrl={window.location.protocol + '//' + window.location.host + redirectLocation}
                        onError={console.error}/>
       </div>
     </SWPageWrapper>

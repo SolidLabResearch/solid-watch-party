@@ -41,8 +41,8 @@ MenuPage()
     ])
     if (isValid) {
       const result = await doesResourceExist(roomUrl);
-      if (result.error || result.interrupt) {
-        setRoomUrl({value: roomUrl.value, alertMsg: result.errorMsg || result.interruptMsg});
+      if (result.error) {
+        setRoomUrl({value: roomUrl.value, alertMsg: result.errorMsg});
       } else if (!result.exists) {
         setRoomUrl({value: roomUrl.value, alertMsg: "Room does not exist"});
       } else {
@@ -60,8 +60,8 @@ MenuPage()
     ])
     if (isValid) {
       const result = await RoomSolidService.createNewRoom(session, roomName.value)
-      if (result.error || result.interrupt) {
-        setRoomName({value: roomName.value, alertMsg: result.errorMsg || result.interruptMsg});
+      if (result.error) {
+        setRoomName({value: roomName.value, alertMsg: result.errorMsg});
       } else {
         navigateTo('/watch?room=' + encodeURIComponent(result.roomUrl));
       }
