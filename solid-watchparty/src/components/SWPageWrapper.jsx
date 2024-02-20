@@ -24,7 +24,7 @@ function SWPageWrapper({children, className, mustBeAuthenticated})
     if (mustBeAuthenticated && !sessionRequestInProgress && !inSession(session)) {
       navigateTo('/', {state: {from: currentLocation.pathname + currentLocation.search}});
     }
-  }, [session, sessionRequestInProgress])
+  }, [session, sessionRequestInProgress, currentLocation, navigateTo, mustBeAuthenticated])
 
   return (
     <div className="h-full flex flex-col justify-between">

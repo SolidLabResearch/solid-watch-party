@@ -1,9 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import dashjs from 'dashjs';
 
 
 // TODO(Elias): In the future support also LIVE streams
-export default function SWVideoPlayer({src, startDate, className, title, controls=true}) {
+// TODO(Elias): In the future support also mp4's
+function SWVideoPlayer({src, startDate, className, controls=true}) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -31,3 +33,12 @@ export default function SWVideoPlayer({src, startDate, className, title, control
     </div>
   );
 }
+
+SWVideoPlayer.propTypes = {
+    className:    PropTypes.string,
+    controls:     PropTypes.bool,
+    startDate:    PropTypes.date,
+    src:          PropTypes.object
+};
+
+export default SWVideoPlayer;

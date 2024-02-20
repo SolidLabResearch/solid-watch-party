@@ -1,29 +1,19 @@
 /* Libary imports */
-import {
-  useState,
-  useEffect
-} from 'react';
-import { useSession } from "@inrupt/solid-ui-react";
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, } from 'react';
+import { useLocation } from 'react-router-dom';
 
 /* Component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
 import SWLoginButton from '../components/SWLoginButton'
 
-/* Util imports */
-import { inSession } from '../utils/solidUtils';
-
 const authOptions = {
   clientName:  "solid-watchparty",
 };
 
-function LoginPage()
+export default function LoginPage()
 {
   const [oidcIssuer, setOidcIssuer] = useState("http://localhost:3000/");
-  const { session, sessionRequestInProgress } = useSession();
-  const navigateTo = useNavigate();
   const currentLocation = useLocation();
-
   const redirectLocation = (currentLocation.state?.from || "/menu");
   return (
     <SWPageWrapper className="flex justify-center items-center" mustBeAuthenticated={false}>
@@ -41,6 +31,3 @@ function LoginPage()
     </SWPageWrapper>
   )
 }
-
-
-export default LoginPage;

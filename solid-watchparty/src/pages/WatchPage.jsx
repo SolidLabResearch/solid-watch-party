@@ -1,26 +1,17 @@
 /* library imports */
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { useSearchParams } from 'react-router-dom';
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
-import SWLoadingIcon from '../components/SWLoadingIcon';
 import SWChatComponent from '../components/SWChatComponent';
 import SWModal from '../components/SWModal';
 import SWVideoPlayer from '../components/SWVideoPlayer';
 
 /* service imports */
 import RoomSolidService from '../services/room.solidservice.js';
-import MessageSolidService from '../services/message.solidservice.js';
 import EventsSolidService from '../services/events.solidservice.js';
-
-/* uitil imports */
-import {inSession} from '../utils/solidUtils.js';
-
-
-function logNewVideoObject(oldDash, newDash) {
-}
 
 
 function WatchPage() {

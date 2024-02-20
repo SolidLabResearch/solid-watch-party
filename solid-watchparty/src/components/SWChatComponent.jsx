@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+/* library imports */
+import { useState, useEffect, } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
-import { useSearchParams } from 'react-router-dom';
+import PropTypes from 'prop-types';
 
 /* component imports */
 import SWMessageComponent from '../components/SWMessageComponent'
@@ -8,14 +9,13 @@ import SWAutoScrollDiv from '../components/SWAutoScrollDiv';
 import SWLoadingIcon from '../components/SWLoadingIcon';
 
 /* service imports */
-import RoomSolidService from '../services/room.solidservice.js';
 import MessageSolidService from '../services/message.solidservice.js'
 
 /* util imports */
-import {inSession} from '../utils/solidUtils.js';
-import {parseMessage} from '../utils/messageParser.js';
+import { parseMessage } from '../utils/messageParser.js';
 
-export default function SWChatComponent({roomUrl, joined}) {
+
+function SWChatComponent({roomUrl, joined}) {
   const [state, setState] = useState({isLoading: true, hasAccess: false});
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -40,7 +40,7 @@ export default function SWChatComponent({roomUrl, joined}) {
       messageSeriesStreams.on('data', async (data) => {
         // console.log('addition', data.diff)
         // console.log('NEW MESSAGESTREAM ACQUIRED')
-        const messageStream = await MessageSolidService.getMessageStream(session, data.get('messageSeries').value);
+        let messageStream = await MessageSolidService.getMessageStream(session, data.get('messageSeries').value);
         messageStreams.push(messageStream);
         if (messageStream.error) {
           messageStream = null;
@@ -124,5 +124,11 @@ export default function SWChatComponent({roomUrl, joined}) {
         {pageContent}
       </div>
   );
-
 }
+
+SWChatComponent.propTypes = {
+  roomUrl:  PropTypes.string,
+  joined:   PropTypes.bool,
+}
+
+export default SWChatComponent;

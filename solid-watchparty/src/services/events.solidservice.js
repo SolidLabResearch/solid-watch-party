@@ -1,10 +1,8 @@
 /* library imports */
 import {
-  createSolidDataset,
   getSolidDataset,
   saveSolidDatasetAt,
   setThing,
-  getThingAll,
   createThing,
   buildThing,
   asUrl,
@@ -14,11 +12,7 @@ import { QueryEngine } from '@incremunica/query-sparql-incremental';
 
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
-import { getPodUrl, urlify } from '../utils/urlUtils';
-import { doesResourceExist, inSession } from '../utils/solidUtils';
-
-/* config imports */
-import { ROOMS_ROOT, MESSAGES_ROOT } from '../config.js'
+import { inSession } from '../utils/solidUtils';
 
 class EventsSolidService {
 

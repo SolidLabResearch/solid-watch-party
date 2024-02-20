@@ -1,6 +1,7 @@
 /* libary imports */
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
+
 
 function AutoScrollDiv({children, className})
 {

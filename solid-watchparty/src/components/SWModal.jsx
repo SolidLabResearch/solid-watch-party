@@ -1,4 +1,6 @@
-export default function SWModal({children, className, setIsShown}) {
+import PropTypes from 'prop-types';
+
+function SWModal({children, className, setIsShown}) {
   const outsideClicked = () => {
     setIsShown(false);
   }
@@ -11,3 +13,11 @@ export default function SWModal({children, className, setIsShown}) {
       </div>
   );
 }
+
+SWModal.propTypes = {
+    children:     PropTypes.node,
+    className:    PropTypes.string,
+    setIsShown:   PropTypes.func
+};
+
+export default SWModal;
