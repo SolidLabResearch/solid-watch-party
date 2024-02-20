@@ -37,8 +37,8 @@ function SWVideoPlayer({src, startDate, className, controls=true}) {
 SWVideoPlayer.propTypes = {
     className:    PropTypes.string,
     controls:     PropTypes.bool,
-    startDate:    PropTypes.date,
-    src:          PropTypes.object
+    startDate:    PropTypes.instanceOf(Date),
+    src:          PropTypes.string
 };
 
 export default SWVideoPlayer;
