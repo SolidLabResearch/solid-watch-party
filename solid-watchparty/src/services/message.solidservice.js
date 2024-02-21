@@ -4,10 +4,13 @@ import {
   saveSolidDatasetAt,
   setThing,
   getThingAll,
+  getStringNoLocale,
+  getThing,
   createThing,
   buildThing,
   asUrl,
-  getUrlAll
+  getUrlAll,
+  getUrl,
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine } from '@incremunica/query-sparql-incremental';
@@ -115,6 +118,39 @@ WHERE {
     const queryEngine = new QueryEngine();
     const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [messageBoxUrl] });
     return resultStream;
+  }
+
+  async getMessageSeriesCreatorName(session, messageSeriesUrl) {
+    try {
+      let messagesDataset = await getSolidDataset(messageSeriesUrl);
+      const messageThings = getThingAll(messagesDataset);
+
+      const outboxThings = getThingAll(messagesDataset).filter(t =>
+        getUrlAll(t, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+          .includes(SCHEMA_ORG + 'CreativeWorkSeries')
+      );
+
+      if (outboxThings.length < 1) {
+        throw { error: "no outbox present" }
+      }
+      const outbox = outboxThings[0];
+
+      const creatorUrl = getUrl(outbox, "http://schema.org/creator");
+      console.log(creatorUrl)
+
+      let profileDataset = await getSolidDataset(creatorUrl);
+      let profileThing = getThing(profileDataset, creatorUrl);
+
+      const name = getStringNoLocale(profileThing, "http://xmlns.com/foaf/0.1/name");
+      if (!name) {
+        throw { error: "Name not found" };
+      }
+
+      return name;
+    } catch (error) {
+      console.error(error)
+      return {error: error}
+    }
   }
 
 }

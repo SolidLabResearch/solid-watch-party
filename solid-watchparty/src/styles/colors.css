@@ -1,4 +1,5 @@
 :root {
+    /*
   --col-fg1: #fff;
   --col-fg2: #bbb;
   --col-fg3: #000;
@@ -14,7 +15,7 @@
   --col-alert: #f33;
 
   --col-trans: #0000;
-  /*
+  */
   --col-fg1: #000;
   --col-fg2: #777;
   --col-fg3: #fff;
@@ -29,7 +30,6 @@
   --col-alert: #f33;
 
   --col-trans: #0000;
-  */
 }
 
 /* NOTE(Elias): Frontend Coloring Tags */

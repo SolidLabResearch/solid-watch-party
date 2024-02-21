@@ -36,10 +36,16 @@ function SWChatComponent({roomUrl, joined}) {
         setState({isLoading: false, hasAccess: false});
         return;
       }
-      // console.log('NOW LISTENING FOR MESSAGE STREAMS')
+      console.log('NOW LISTENING FOR MESSAGE STREAMS')
       messageSeriesStreams.on('data', async (data) => {
-        // console.log('addition', data.diff)
-        // console.log('NEW MESSAGESTREAM ACQUIRED')
+        console.log('NEW MESSAGESTREAM ACQUIRED')
+        const messageSeriesUrl = data.get('messageSeries').value;
+
+        let name = await MessageSolidService.getMessageSeriesCreatorName(session, messageSeriesUrl);
+        if (name.error) {
+          name = "anonymous";
+        }
+
         let messageStream = await MessageSolidService.getMessageStream(session, data.get('messageSeries').value);
         messageStreams.push(messageStream);
         if (messageStream.error) {
@@ -49,7 +55,7 @@ function SWChatComponent({roomUrl, joined}) {
         messageStream.on('data', (data) => {
           const message = {
             text:    data.get('text').value,
-            sender:  data.get('sender').value,
+            sender:  name,
             date:    new Date(data.get('dateSent').value),
             key:     (data.get('sender') + data.get('dateSent').value),
           };

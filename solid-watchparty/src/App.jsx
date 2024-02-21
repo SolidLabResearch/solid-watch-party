@@ -1,8 +1,5 @@
 /* library imports */
-import {
-  createBrowserRouter,
-  RouterProvider
-} from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { SessionProvider } from '@inrupt/solid-ui-react'
 
 /* page imports */
@@ -24,7 +21,6 @@ function App() {
       </SessionProvider>
   );
 }
-
 
 export default App;
 

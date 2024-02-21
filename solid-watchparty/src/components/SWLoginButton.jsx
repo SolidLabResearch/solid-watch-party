@@ -1,6 +1,6 @@
 /* libary imports */
-import PropTypes from 'prop-types';
 import { LoginButton } from '@inrupt/solid-ui-react';
+import PropTypes from 'prop-types';
 
 function SWLoginButton(props)
 {
