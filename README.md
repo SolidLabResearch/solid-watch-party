@@ -11,6 +11,8 @@ Welcome to Solid Watchparty, a platform designed for shared media viewing experi
 
 ## :zap: Quick Start
 
+
+### Frontend
 1. **Clone the Repository**
    ```
    git clone https://gitlab.ilabt.imec.be/maavdnbr/watch-party.git
@@ -21,8 +23,13 @@ Welcome to Solid Watchparty, a platform designed for shared media viewing experi
    ```
 3. **Run the Development Server**
    ```
-   npm start
+   npm run dev
    ```
+### Backend
+It is recommended to use the **Community Solid Server (CSS)** as backend while developing.
+More information is available on the [css github page](https://github.com/CommunitySolidServer/CommunitySolidServer).
+
+:warning: *At the moment the css must be ran in unsafe mode as not all privacy features are implemented yet!*
 
 ## :construction: Status of the project
 
