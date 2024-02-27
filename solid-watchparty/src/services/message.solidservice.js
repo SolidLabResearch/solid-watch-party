@@ -35,7 +35,6 @@ MessageSolidService
 
     const messageUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
     const now = new Date();
-
     const doesExist = await doesResourceExist(messageUrl);
     if (!doesExist) {
       return { error: "outbox does not exist", errorMsg: "You are not registered with this watchparty" };
@@ -83,7 +82,6 @@ MessageSolidService
     if (!inSession(session)) {
       return { error: "invalid session", errorMsg: "Your session is invalid, log in again" };
     }
-
     const query =`
 PREFIX schema: <${SCHEMA_ORG}>
 SELECT ?messageSeries
@@ -91,7 +89,6 @@ WHERE {
   ?eventSeries a schema:EventSeries .
   ?eventSeries schema:subjectOf ?messageSeries .
 }`;
-
     const queryEngine = new QueryEngine();
     const resultStream = await queryEngine.queryBindings(query, { sources: [roomUrl] });
     return resultStream;
@@ -101,7 +98,6 @@ WHERE {
     if (!inSession(session)) {
       return { error: "invalid session", errorMsg: "The session has ended, log in again" };
     }
-
     const sparqlQuery = `
 PREFIX schema: <${SCHEMA_ORG}>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
@@ -114,7 +110,6 @@ WHERE {
   ?message schema:sender ?sender .
 }
 `;
-
     const queryEngine = new QueryEngine();
     const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [messageBoxUrl] });
     return resultStream;
@@ -123,29 +118,21 @@ WHERE {
   async getMessageSeriesCreatorName(session, messageSeriesUrl) {
     try {
       let messagesDataset = await getSolidDataset(messageSeriesUrl);
-      const messageThings = getThingAll(messagesDataset);
-
       const outboxThings = getThingAll(messagesDataset).filter(t =>
         getUrlAll(t, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
           .includes(SCHEMA_ORG + 'CreativeWorkSeries')
       );
-
       if (outboxThings.length < 1) {
         throw { error: "no outbox present" }
       }
       const outbox = outboxThings[0];
-
       const creatorUrl = getUrl(outbox, "http://schema.org/creator");
-      console.log(creatorUrl)
-
       let profileDataset = await getSolidDataset(creatorUrl);
       let profileThing = getThing(profileDataset, creatorUrl);
-
       const name = getStringNoLocale(profileThing, "http://xmlns.com/foaf/0.1/name");
       if (!name) {
         throw { error: "Name not found" };
       }
-
       return name;
     } catch (error) {
       console.error(error)
