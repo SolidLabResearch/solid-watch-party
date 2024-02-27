@@ -1,6 +1,7 @@
-/* NOTE(Elias): libary imports */
-import React, { useEffect, useRef, useState } from 'react';
+/* libary imports */
+import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
+
 
 function AutoScrollDiv({children, className})
 {
@@ -28,7 +29,7 @@ function AutoScrollDiv({children, className})
 }
 
 AutoScrollDiv.propTypes = {
-    children:   PropTypes.object,
+    children:   PropTypes.node,
     className:  PropTypes.string,
 }
 

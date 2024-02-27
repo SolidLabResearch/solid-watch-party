@@ -1,123 +1,128 @@
-/* NOTE(Elias): Library Imports */
-import {
-  useState,
-  useEffect,
-} from 'react';
+/* library imports */
+import { useEffect, useState, useRef } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { useSearchParams } from 'react-router-dom';
 
-/* NOTE(Elias): Component Imports */
+/* component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
-import SWMessageComponent from '../components/SWMessageComponent'
-import SWLoadingIcon from '../components/SWLoadingIcon';
-import SWAutoScrollDiv from '../components/SWAutoScrollDiv';
+import SWChatComponent from '../components/SWChatComponent';
+import SWModal from '../components/SWModal';
+import SWVideoPlayer from '../components/SWVideoPlayer';
 
-/* NOTE(Elias): Service Imports */
+/* service imports */
 import RoomSolidService from '../services/room.solidservice.js';
-import MessageSolidService from '../services/message.solidservice.js'
+import EventsSolidService from '../services/events.solidservice.js';
 
-/* NOTE(Elias): Util Imports */
-import { parseMessage } from '../utils/messageParser.js';
 
-function
-WatchPage()
-{
-  const [ state, setState ] = useState({isLoading: false, hasAccess: false, messageSeriesStreams: null});
-  const [ input, setInput ] = useState('');
-  const [ messages, setMessages ] = useState([]);
-  const { session } = useSession();
+function WatchPage() {
+  const [parentHeight, setParentHeight] = useState('auto');
+  const [modalIsShown, setModalIsShown] = useState(false);
+  const [newDashLink, setNewDashLink] = useState(null);
+  const [dashSrc, setDashSrc] = useState(null);
+  const [joinedRoom, setJoinedRoom] = useState(false);
+  const iframeRef = useRef(null);
+  const {session, sessionRequestInProgress} = useSession();
 
   /* TODO(Elias): Add error handling, what if there is no parameter */
+
   const [searchParams] = useSearchParams();
   const roomUrl = decodeURIComponent(searchParams.get('room'));
 
+
   useEffect(() => {
+    let videoObjectStream = null;
+
     const fetch = async () => {
-      setState({isLoading: true, hasAccess: false, messageSeriesStreams: null});
-      const result = await RoomSolidService.joinRoom(session, roomUrl)
-      if (result.error || result.interrupt) {
-        setState({isLoading: false, hasAccess: false, messageSeriesStreams: null});
+      const joiningRoomResult = await RoomSolidService.joinRoom(session, roomUrl)
+      if (joiningRoomResult.error) {
+        console.error(joiningRoomResult.error);
         return;
       }
-      const messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(session, roomUrl);
-      if (result.error || result.interrupt) {
-        setState({isLoading: false, hasAccess: false, messageSeriesStreams: null});
+      setJoinedRoom(true);
+
+      videoObjectStream = await EventsSolidService.getVideoObjectStream(session, roomUrl);
+      if (videoObjectStream.error) {
+        console.error(videoObjectStream.error);
+        videoObjectStream = null;
         return;
       }
-      messageSeriesStreams.on('data', async (data) => {
-        const messageSeriesUrl = data.get('messageSeries').value
-        const messageStream = await MessageSolidService.getMessageStream(session, messageSeriesUrl);
-        if (result.error || result.interrupt) {
-          return;
+      console.log('NOW LISTENING FOR VIDEOS')
+
+      let dashPlaying = null;
+      videoObjectStream.on('data', (data) => {
+        console.log('NEW VIDEO ACQUIRED')
+        const newDashsrc = {
+          src:        data.get('dashLink').value,
+          startDate:  new Date(data.get('startDate').value)
+        };
+        console.log('===============================',
+                    '\nVideoObject Update Received',
+                    '\nlast videoObjectStream start:\t', dashPlaying?.startDate, dashPlaying?.src,
+                    '\nnew videoObjectStream start:\t', newDashsrc.startDate, newDashsrc.src,
+                    '\ndiff:\t', data.diff
+        );
+        if (!dashPlaying || newDashsrc.startDate >= dashPlaying.startDate) {
+          dashPlaying = newDashsrc;
+          setDashSrc(dashPlaying);
         }
-        messageStream.on('data', (data) => {
-          const message = {
-            text:    data.get('text').value,
-            sender:  data.get('sender').value,
-            date:    new Date(data.get('dateSent').value),
-            key:     (data.get('sender') + data.get('dateSent').value),
-          };
-          setMessages(messages => [...messages, message].sort(
-                (m1, m2) => (m1.date > m2.date) ? 1 : ((m1.date < m2.date) ? -1 :  0)));
-        })
-      })
-      setState({isLoading: false, hasAccess: true, messageSeriesStreams: messageSeriesStreams});
+      });
     }
     fetch();
-  }, [session, roomUrl])
+    return (() => {
+      if (videoObjectStream) {
+        videoObjectStream.close()
+      }
+    });
+  }, [session, roomUrl, sessionRequestInProgress])
 
-  const submitMessage = (e) => {
-    e.preventDefault();
-    if (input.length === 0) {
-      return;
+  const updateChatHeight = () => {
+    if (iframeRef.current) {
+      setParentHeight(`${iframeRef.current.clientHeight}px`);
     }
-    MessageSolidService.createMessage(session, input, roomUrl);
-    setInput('');
   }
 
-  let pageContent = (<div/>);
-  if (state.isLoading) {
-    pageContent = (
-      <div className="w-full h-full flex justify-center items-center">
-          <div className="flex flex-col items-center">
-            <SWLoadingIcon className="w-6 h-6 mb-3"/>
-            <p className="sw-fw-1">Loading Room...</p>
-          </div>
-      </div>
-    );
-  } else if (!state.hasAccess) {
-    pageContent = (
-      <div className="w-full h-full flex justify-center items-center">
-        <p className="rgb-alert sw-fw-1 sw-fs-2">
-          You do not have access to this room! <span className="sw-emoji">😢</span>
-        </p>
-      </div>
-    );
-  } else {
-    pageContent = (
-      <div>
-        <div className="px-8 py-4 rgb-2">
-          <p>{roomUrl}</p>
-        </div>
-        <div className="w-full flex h-[512px] px-8">
-          <div className="w-full rgb-bg-2 sw-border h-full p-3 flex flex-col justify-between mb-2">
-            <SWAutoScrollDiv className="overflow-auto mb-2">
-              {messages.map((message) => <SWMessageComponent message={message} key={message.key}/>)}
-            </SWAutoScrollDiv>
-            <form className="flex flex-between items-center" onSubmit={submitMessage}>
-              <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full"
-                     onChange={(e) => setInput(parseMessage(e.target.value))}
-                     value={input}/>
-              <button className="sw-btn hidden"> P </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    updateChatHeight();
+    window.addEventListener("resize", updateChatHeight, false);
+  }, [session, sessionRequestInProgress]);
+
   return (
     <SWPageWrapper className="h-full" mustBeAuthenticated={true}>
-      {pageContent}
+      <div className="px-8 py-4 rgb-2">
+        <p>{roomUrl}</p>
+      </div>
+      <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
+        <div className="w-2/3 h-fit flex rgb-bg-2 sw-border" ref={iframeRef}>
+          <SWVideoPlayer className="w-full aspect-video" startDate={dashSrc?.startDate} src={dashSrc?.src} title=""/>
+        </div>
+        <SWChatComponent roomUrl={roomUrl} joined={joinedRoom}/>
+      </div>
+      <div className="px-8 py-4 rgb-2">
+        <button className={`sw-btn flex-grow h-6 flex justify-center`} onClick={() => setModalIsShown(true)}>
+          Start new movie/clip
+        </button>
+      </div>
+
+      {(modalIsShown) ? (
+        <SWModal className="rgb-bg-2 p-12 sw-border z-10 w-1/2" setIsShown={setModalIsShown}>
+          <p className="sw-fs-2 sw-fw-1 my-4">Start new movie/clip</p>
+          <p className="sw-fs-4 sw-fw-1 my-2">Stream location</p>
+          <div className="my-2">
+            <input type="url" name="locator" className="sw-input w-full" placeholder="Stream Locator"
+                   onChange={(e) => setNewDashLink(e.target.value)} />
+          </div>
+          <button className={`sw-btn flex-grow h-6 mt-6 flex justify-center`}
+                  onClick={() => {
+                    EventsSolidService.newWatchingEvent(session, roomUrl, newDashLink)
+                    setNewDashLink(null)
+                    setModalIsShown(false);
+                  }}>
+            Start
+          </button>
+        </SWModal>
+      ) : (
+        <></>
+      )}
     </SWPageWrapper>
   );
 }

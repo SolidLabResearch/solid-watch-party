@@ -1,15 +1,15 @@
-/* NOTE(Elias): libary imports */
+/* libary imports */
 import { useEffect } from 'react';
 import { useSession } from "@inrupt/solid-ui-react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
-/* NOTE(Elias): Component imports */
+/* component imports */
 import SWNavbar from './SWNavbar'
 import SWFooter from './SWFooter'
 import SWLoadingIcon from './SWLoadingIcon';
 
-/* NOTE(Elias): Util imports */
+/* util imports */
 import { inSession } from '../utils/solidUtils';
 
 
@@ -18,12 +18,13 @@ function SWPageWrapper({children, className, mustBeAuthenticated})
 {
   const { session, sessionRequestInProgress } = useSession();
   const navigateTo = useNavigate();
+  const currentLocation = useLocation();
 
   useEffect(() => {
     if (mustBeAuthenticated && !sessionRequestInProgress && !inSession(session)) {
-      navigateTo('/');
+      navigateTo('/', {state: {from: currentLocation.pathname + currentLocation.search}});
     }
-  }, [session, sessionRequestInProgress])
+  }, [session, sessionRequestInProgress, currentLocation, navigateTo, mustBeAuthenticated])
 
   return (
     <div className="h-full flex flex-col justify-between">
@@ -44,7 +45,7 @@ function SWPageWrapper({children, className, mustBeAuthenticated})
 }
 
 SWPageWrapper.propTypes = {
-    children:               PropTypes.object,
+    children:               PropTypes.node,
     className:              PropTypes.string,
     mustBeAuthenticated:    PropTypes.bool.isRequired,
 };

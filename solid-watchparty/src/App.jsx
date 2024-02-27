@@ -1,12 +1,8 @@
-
-/* NOTE(Elias): library imports */
-import {
-  createBrowserRouter,
-  RouterProvider
-} from 'react-router-dom';
+/* library imports */
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { SessionProvider } from '@inrupt/solid-ui-react'
 
-/* NOTE(Elias): page imports */
+/* page imports */
 import LoginPage from './pages/LoginPage';
 import MenuPage from './pages/MenuPage';
 import WatchPage from './pages/WatchPage';
@@ -25,7 +21,6 @@ function App() {
       </SessionProvider>
   );
 }
-
 
 export default App;
 

@@ -1,4 +1,4 @@
-/* NOTE(Elias): Library imports */
+/* library imports */
 import {
   createSolidDataset,
   getSolidDataset,
@@ -11,23 +11,22 @@ import {
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
 
-/* NOTE(Elias): Util imports */
+/* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 import { getPodUrl, urlify } from '../utils/urlUtils';
 import { doesResourceExist, inSession } from '../utils/solidUtils';
 
-/* NOTE(Elias): Config imports */
+/* config imports */
 import { ROOMS_ROOT, MESSAGES_ROOT } from '../config.js'
 
 
-class
-RoomSolidService
+class RoomSolidService
 {
 
   async createNewRoom(session, name)
   {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again!" };
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" };
     }
 
     const now = new Date();
@@ -53,19 +52,15 @@ RoomSolidService
   async joinRoom(session, roomUrl)
   {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again!" }
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
     } else if (!roomUrl) {
-      return { interrupt: "no url", interruptMsg: "No url was provided" }
+      return { error: "no url", errorMsg: "No url was provided" }
     }
 
     const messagesFileUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
     let doesExist = await doesResourceExist(messagesFileUrl);
     if (doesExist.exists === true) {
       return {result: roomUrl};
-    }
-    doesExist = await doesResourceExist(roomUrl);
-    if (doesExist.exists === false) {
-      return { error: 'Error: Room does not exist' };
     }
 
     try {
@@ -90,6 +85,7 @@ RoomSolidService
       return { error: error, errorMsg: 'Failed to join the room, make sure you have the correct url'};
     }
   }
+
 }
 
 export default new RoomSolidService();

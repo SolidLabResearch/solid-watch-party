@@ -1,7 +1,7 @@
-/* NOTE(Elias): libary imports */
+/* libary imports */
 import PropTypes from 'prop-types';
 
-/* NOTE(Elias): Utils Imports */
+/* utils Imports */
 import { displayDate } from '../utils/general.js'
 
 function MessageComponent({message})

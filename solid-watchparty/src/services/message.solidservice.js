@@ -1,46 +1,43 @@
-/* NOTE(Elias): Library imports */
+/* library imports */
 import {
   getSolidDataset,
   saveSolidDatasetAt,
   setThing,
   getThingAll,
+  getStringNoLocale,
+  getThing,
   createThing,
   buildThing,
   asUrl,
-  getUrlAll
+  getUrlAll,
+  getUrl,
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine } from '@incremunica/query-sparql-incremental';
 
-/* NOTE(Elias): Util imports */
+/* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 import { getPodUrl, urlify } from '../utils/urlUtils';
-import { doesResourceExist, inSession } from '../utils/solidUtils';
+import { inSession } from '../utils/solidUtils';
 
-/* NOTE(Elias): Config imports */
+/* config imports */
 import { MESSAGES_ROOT } from '../config.js'
 
 
 class
 MessageSolidService
 {
-
   async createMessage(session, messageLiteral, roomUrl)
   {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again" };
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again" };
     }
 
     const messageUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
     const now = new Date();
 
-    const doesExist = await doesResourceExist(messageUrl);
-    if (!doesExist) {
-      return { error: "outbox does not exist", errorMsg: "You are not registered with this watchparty" };
-    }
-
     try {
-      let  messagesDataset = await getSolidDataset(messageUrl);
+      let messagesDataset = await getSolidDataset(messageUrl);
       const messageThings = getThingAll(messagesDataset);
 
       let outbox = null;
@@ -79,7 +76,7 @@ MessageSolidService
 
   async getMessageSeriesStream(session, roomUrl) {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "Your session is invalid, log in again" };
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again" };
     }
     const query =`
 PREFIX schema: <${SCHEMA_ORG}>
@@ -88,7 +85,6 @@ WHERE {
   ?eventSeries a schema:EventSeries .
   ?eventSeries schema:subjectOf ?messageSeries .
 }`;
-
     const queryEngine = new QueryEngine();
     const resultStream = await queryEngine.queryBindings(query, { sources: [roomUrl] });
     return resultStream;
@@ -96,24 +92,48 @@ WHERE {
 
   async getMessageStream(session, messageBoxUrl) {
     if (!inSession(session)) {
-      return { interrupt: "invalid session", interruptMsg: "The session has ended, log in again" };
+      return { error: "invalid session", errorMsg: "The session has ended, log in again" };
     }
-
     const sparqlQuery = `
 PREFIX schema: <${SCHEMA_ORG}>
-SELECT ?message ?dateSent ?sender ?text
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT ?message ?dateSent ?text ?sender
 WHERE {
   ?message a schema:Message .
   ?outbox schema:hasPart ?message .
   ?message schema:dateSent ?dateSent .
-  ?message schema:sender ?sender .
   ?message schema:text ?text .
+  ?message schema:sender ?sender .
 }
 `;
-
     const queryEngine = new QueryEngine();
     const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [messageBoxUrl] });
     return resultStream;
+  }
+
+  async getMessageSeriesCreatorName(session, messageSeriesUrl) {
+    try {
+      let messagesDataset = await getSolidDataset(messageSeriesUrl);
+      const outboxThings = getThingAll(messagesDataset).filter(t =>
+        getUrlAll(t, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+          .includes(SCHEMA_ORG + 'CreativeWorkSeries')
+      );
+      if (outboxThings.length < 1) {
+        throw { error: "no outbox present" }
+      }
+      const outbox = outboxThings[0];
+      const creatorUrl = getUrl(outbox, "http://schema.org/creator");
+      let profileDataset = await getSolidDataset(creatorUrl);
+      let profileThing = getThing(profileDataset, creatorUrl);
+      const name = getStringNoLocale(profileThing, "http://xmlns.com/foaf/0.1/name");
+      if (!name) {
+        throw { error: "Name not found" };
+      }
+      return name;
+    } catch (error) {
+      console.error(error)
+      return {error: error}
+    }
   }
 
 }
