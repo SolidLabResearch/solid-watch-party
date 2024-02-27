@@ -18,7 +18,7 @@ import { QueryEngine } from '@incremunica/query-sparql-incremental';
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 import { getPodUrl, urlify } from '../utils/urlUtils';
-import { doesResourceExist, inSession } from '../utils/solidUtils';
+import { inSession } from '../utils/solidUtils';
 
 /* config imports */
 import { MESSAGES_ROOT } from '../config.js'
@@ -35,10 +35,6 @@ MessageSolidService
 
     const messageUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
     const now = new Date();
-    const doesExist = await doesResourceExist(messageUrl);
-    if (!doesExist) {
-      return { error: "outbox does not exist", errorMsg: "You are not registered with this watchparty" };
-    }
 
     try {
       let messagesDataset = await getSolidDataset(messageUrl);

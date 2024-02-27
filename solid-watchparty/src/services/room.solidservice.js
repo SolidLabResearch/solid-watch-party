@@ -62,10 +62,6 @@ class RoomSolidService
     if (doesExist.exists === true) {
       return {result: roomUrl};
     }
-    doesExist = await doesResourceExist(roomUrl);
-    if (doesExist.exists === false) {
-      return { error: 'Error: Room does not exist' };
-    }
 
     try {
       const newOutbox = buildThing(createThing())
