@@ -8,7 +8,7 @@ import MenuPage from './pages/MenuPage';
 import WatchPage from './pages/WatchPage';
 
 /* config imports */
-import { BASEPATH } from 'config'
+import { BASEPATH } from './config'
 
 const router = createBrowserRouter([
   {path: (BASEPATH + "/"), element: <LoginPage/>},
