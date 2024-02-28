@@ -121,6 +121,28 @@ class EventsSolidService {
   }
 
 
+  async getControlActionStream(session, eventUrl) {
+    console.log('SETTING UP CONTROL ACTION LISTERNER');
+    if (!inSession(session)) {
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+    } else if (!eventUrl) {
+      return { error: "no event url", errorMsg: "No event url was provided" }
+    }
+
+    /* NOTE(Elias): Asssumes controlActions and event are in the same file */
+    const sparqlQuery = `
+      PREFIX schema: <${SCHEMA_ORG}>
+      SELECT ?controlAction ?type ?agent
+      WHERE {
+      }
+      `;
+
+    const queryEngine = new QueryEngine();
+    const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [eventUrl] });
+    return resultStream;
+  }
+
+
 }
 
 export default new EventsSolidService();

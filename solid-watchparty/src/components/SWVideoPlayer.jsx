@@ -9,15 +9,18 @@ import dashjs from 'dashjs';
 function SWVideoPlayer({className, videoURL, startDate, playButtonPressed}) {
   const videoRef = useRef(null);
 
+
+
+
+
   useEffect(() => {
     let player = null;
+
     if (videoRef.current) {
       player = dashjs.MediaPlayer().create();
       player.initialize(videoRef.current, videoURL, true);
       if (videoURL) {
         player.on(dashjs.MediaPlayer.events.PLAYBACK_STARTED, () => {
-          const now = new Date();
-          player.seek((now - startDate)/1000);
           playButtonPressed(true)
         });
         player.on(dashjs.MediaPlayer.events.PLAYBACK_PAUSED, () => {
@@ -25,6 +28,7 @@ function SWVideoPlayer({className, videoURL, startDate, playButtonPressed}) {
         })
       }
     }
+
     return () => {
       if (player) {
         player.reset();
@@ -42,7 +46,7 @@ function SWVideoPlayer({className, videoURL, startDate, playButtonPressed}) {
 SWVideoPlayer.propTypes = {
     className:    PropTypes.string,
     startDate:    PropTypes.instanceOf(Date),
-    videoURL:          PropTypes.string
+    videoURL:     PropTypes.string
 };
 
 export default SWVideoPlayer;

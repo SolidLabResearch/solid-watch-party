@@ -26,9 +26,8 @@ function WatchPage() {
   const [searchParams] = useSearchParams();
   const roomUrl = decodeURIComponent(searchParams.get('room'));
 
-
   useEffect(() => {
-    let videoObjectStream = null;
+    let watchingEventStream = null;
 
     const fetch = async () => {
       const joiningRoomResult = await RoomSolidService.joinRoom(session, roomUrl)
@@ -38,14 +37,14 @@ function WatchPage() {
       }
       setJoinedRoom(true);
 
-      videoObjectStream = await EventsSolidService.getWatchingEventStream(session, roomUrl);
-      if (videoObjectStream.error) {
-        console.error(videoObjectStream.error);
-        videoObjectStream = null;
+      watchingEventStream = await EventsSolidService.getWatchingEventStream(session, roomUrl);
+      if (watchingEventStream.error) {
+        console.error(watchingEventStream.error);
+        watchingEventStream = null;
         return;
       }
       let currentWatchingEvent = null;
-      videoObjectStream.on('data', (data) => {
+      watchingEventStream.on('data', (data) => {
         const receivedWatchingEvent = {
           eventURL:       data.get('watchingEvent').value,
           videoURL:       data.get('dashLink').value,
@@ -59,18 +58,39 @@ function WatchPage() {
     }
     fetch();
     return (() => {
-      if (videoObjectStream) {
-        videoObjectStream.close()
+      if (watchingEventStream) {
+        watchingEventStream.close();
       }
     });
   }, [session, roomUrl, sessionRequestInProgress])
+
+
+  useEffect(() => {
+    if (!watchingEvent) {
+      return;
+    }
+    let controlActionStream = null;
+    const fetch = async () => {
+      controlActionStream = await EventsSolidService.getControlActionStream(session, watchingEvent?.eventURL);
+      controlActionStream.on('data', (data) => {
+        console.log(data);
+      })
+    }
+    fetch();
+    return (() => {
+      if (controlActionStream) {
+        getControlActionStream.close();
+      }
+    });
+  }, [session, roomUrl, sessionRequestInProgress, watchingEvent])
+
+
 
   const updateChatHeight = () => {
     if (iframeRef.current) {
       setParentHeight(`${iframeRef.current.clientHeight}px`);
     }
   }
-
   useEffect(() => {
     updateChatHeight();
     window.addEventListener("resize", updateChatHeight, false);
@@ -99,7 +119,7 @@ function WatchPage() {
         </button>
       </div>
 
-      {(modalIsShown) ? (
+      {modalIsShown &&
         <SWModal className="rgb-bg-2 p-12 sw-border z-10 w-1/2" setIsShown={setModalIsShown}>
           <p className="sw-fs-2 sw-fw-1 my-4">Start new movie/clip</p>
           <p className="sw-fs-4 sw-fw-1 my-2">Stream location</p>
@@ -116,9 +136,8 @@ function WatchPage() {
             Start
           </button>
         </SWModal>
-      ) : (
-        <></>
-      )}
+      }
+
     </SWPageWrapper>
   );
 }
