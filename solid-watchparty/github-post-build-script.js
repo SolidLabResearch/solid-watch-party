@@ -6,7 +6,7 @@ const routes = [
   "/menu",
   "/watch"
 ];
-const dir = "./src/" + viteConfig.build.outDir;
+const dir = viteConfig.build.outDir;
 
 for (const route of routes) {
   fs.cpSync(dir + "/index.html", dir + route + "/index.html");
