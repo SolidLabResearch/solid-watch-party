@@ -39,6 +39,7 @@ jobs:
           cd solid-watchparty/
           npm install
           npm run build
+          npm run github-post-build
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
