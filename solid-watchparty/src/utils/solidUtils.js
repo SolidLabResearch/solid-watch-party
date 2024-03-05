@@ -1,4 +1,5 @@
 import { getSolidDataset, } from '@inrupt/solid-client';
+import { QueryEngine } from '@incremunica/query-sparql-incremental';
 
 export async function
 doesResourceExist(url)
@@ -19,4 +20,3 @@ inSession(session)
 {
 	return session && session.info && session.info.isLoggedIn;
 }
-
