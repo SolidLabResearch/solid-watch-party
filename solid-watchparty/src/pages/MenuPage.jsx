@@ -21,6 +21,8 @@ import {
   validateLength
 } from '../utils/validationUtils';
 
+/* config imports */
+import config from '../../config';
 
 function
 MenuPage()
@@ -46,7 +48,7 @@ MenuPage()
       } else if (!result.exists) {
         setRoomUrl({value: roomUrl.value, alertMsg: "Room does not exist"});
       } else {
-        navigateTo('/watch?room=' + encodeURIComponent(roomUrl.value));
+        navigateTo(`${config.baseDir}/watch?room=${encodeURIComponent(roomUrl.value)}`);
       }
     }
     setIsJoinLoading(false);
@@ -63,7 +65,7 @@ MenuPage()
       if (result.error) {
         setRoomName({value: roomName.value, alertMsg: result.errorMsg});
       } else {
-        navigateTo('/watch?room=' + encodeURIComponent(result.roomUrl));
+        navigateTo(`${config.baseDir}/watch?room=${encodeURIComponent(result.roomUrl)}`);
       }
     }
     setIsCreateLoading(false);

@@ -2,16 +2,17 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { SessionProvider } from '@inrupt/solid-ui-react'
 
-/* page imports */
 import LoginPage from './pages/LoginPage';
 import MenuPage from './pages/MenuPage';
 import WatchPage from './pages/WatchPage';
 
+/* config imports */
+import config from '../config';
 
-const router = createBrowserRouter([
-  {path: "/", element: <LoginPage/>},
-  {path: "/menu", element: <MenuPage/>},
-  {path: "/watch", element: <WatchPage/>},
+export const router = createBrowserRouter([
+  {path: (config.baseDir + "/"), element: <LoginPage/>},
+  {path: (config.baseDir + "/menu"), element: <MenuPage/>},
+  {path: (config.baseDir + "/watch"), element: <WatchPage/>},
 ]);
 
 function App() {
