@@ -3,6 +3,8 @@ import {
   getSolidDataset,
   saveSolidDatasetAt,
   setThing,
+  getThing,
+  addUrl,
   createThing,
   buildThing,
   asUrl,
@@ -16,8 +18,8 @@ import { inSession } from '../utils/solidUtils';
 
 class EventsSolidService {
 
+
   async newWatchingEvent(session, roomUrl, dashLink) {
-    console.log('newWatchingEvent: START')
     if (!inSession(session)) {
       return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
     } else if (!roomUrl) {
@@ -48,10 +50,10 @@ class EventsSolidService {
     } catch (error) {
       console.log(error)
     }
-    console.log('newWatchingEvent: END')
   }
 
-  async getVideoObjectStream(session, roomUrl) {
+
+  async getWatchingEventStream(session, roomUrl) {
     if (!inSession(session)) {
       return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
     } else if (!roomUrl) {
@@ -59,18 +61,88 @@ class EventsSolidService {
     }
 
     const sparqlQuery = `
-PREFIX schema: <${SCHEMA_ORG}>
-SELECT ?watchingEvent ?startDate ?videoObject ?dashLink
-WHERE {
-  ?watchingEvent a schema:Event .
-  ?watchingEvent schema:startDate ?startDate .
-  ?watchingEvent schema:workFeatured ?VideoObject .
-  ?videoObject schema:contentUrl ?dashLink .
-}
-`;
+      PREFIX schema: <${SCHEMA_ORG}>
+      SELECT ?watchingEvent ?startDate ?videoObject ?dashLink
+      WHERE {
+        ?watchingEvent a schema:Event .
+        ?watchingEvent schema:startDate ?startDate .
+        ?watchingEvent schema:workFeatured ?VideoObject .
+        ?videoObject schema:contentUrl ?dashLink .
+      }
+      `;
 
     const queryEngine = new QueryEngine();
     const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [roomUrl] });
+    return resultStream;
+  }
+
+
+  async saveControlAction(session, eventUrl, isPlay) {
+    //console.log('SAVE CONTROL ACTION:', isPlay, 'to', eventUrl)
+
+    if (!inSession(session)) {
+      console.error("invalid session")
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+    } else if (!eventUrl) {
+      console.error("no event url")
+      return { error: "no event url", errorMsg: "No watching event was provided" }
+    }
+
+    const actionType = (isPlay) ? 'ResumeAction' : 'SuspendAction';
+    const now = new Date();
+    const newControlAction = buildThing(createThing())
+      .addUrl(RDF.type, SCHEMA_ORG + actionType)
+      .addUrl(RDF.type, SCHEMA_ORG + 'ControlAction')
+      .addUrl(SCHEMA_ORG + 'agent', session.info.webId)
+      .addUrl(SCHEMA_ORG + 'object', eventUrl)
+      .addDatetime(SCHEMA_ORG + 'startTime', now)
+      .build();
+
+    try {
+      let roomDataset = await getSolidDataset(eventUrl);
+
+      roomDataset = setThing(roomDataset, newControlAction);
+
+      let eventThing = getThing(roomDataset, eventUrl);
+      if (!eventThing) {
+        return { error: "event not found", errorMsg: "The specified event was not found in the dataset" };
+      }
+
+      // TODO(Elias): only add event if different from latest
+      eventThing = buildThing(eventThing)
+        .addUrl(SCHEMA_ORG + 'ControlAction', asUrl(newControlAction, eventUrl))
+        .build();
+      roomDataset = setThing(roomDataset, eventThing);
+
+      const savedDataset = await saveSolidDatasetAt(eventUrl, roomDataset);
+      return savedDataset;
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+
+  async getControlActionStream(session, eventUrl) {
+    if (!inSession(session)) {
+      return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+    } else if (!eventUrl) {
+      return { error: "no event url", errorMsg: "No event url was provided" }
+    }
+
+    /* NOTE(Elias): Asssumes controlActions and event are in the same file */
+    const sparqlQuery = `
+      PREFIX schema: <${SCHEMA_ORG}>
+      SELECT ?controlAction ?actionType ?agent ?datetime
+      WHERE {
+        ?controlAction a schema:ControlAction .
+        ?controlAction a ?actionType .
+        ?controlAction schema:agent ?agent .
+        ?controlAction schema:object <${eventUrl}> .
+        ?controlAction schema:startTime ?datetime .
+      }
+      `;
+    const queryEngine = new QueryEngine();
+    const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [eventUrl] });
     return resultStream;
   }
 

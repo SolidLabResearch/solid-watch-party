@@ -13,24 +13,25 @@ import SWVideoPlayer from '../components/SWVideoPlayer';
 import RoomSolidService from '../services/room.solidservice.js';
 import EventsSolidService from '../services/events.solidservice.js';
 
+/* util imports */
+import { SCHEMA_ORG } from '../utils/schemaUtils';
+
 
 function WatchPage() {
   const [parentHeight, setParentHeight] = useState('auto');
   const [modalIsShown, setModalIsShown] = useState(false);
-  const [newDashLink, setNewDashLink] = useState(null);
-  const [dashSrc, setDashSrc] = useState(null);
+  const [inputVideoURL, setInputVideoURL] = useState(null);
+  const [watchingEvent, setWatchingEvent] = useState(null);
   const [joinedRoom, setJoinedRoom] = useState(false);
   const iframeRef = useRef(null);
   const {session, sessionRequestInProgress} = useSession();
 
   /* TODO(Elias): Add error handling, what if there is no parameter */
-
   const [searchParams] = useSearchParams();
   const roomUrl = decodeURIComponent(searchParams.get('room'));
 
-
   useEffect(() => {
-    let videoObjectStream = null;
+    let watchingEventStream = null;
 
     const fetch = async () => {
       const joiningRoomResult = await RoomSolidService.joinRoom(session, roomUrl)
@@ -40,47 +41,65 @@ function WatchPage() {
       }
       setJoinedRoom(true);
 
-      videoObjectStream = await EventsSolidService.getVideoObjectStream(session, roomUrl);
-      if (videoObjectStream.error) {
-        console.error(videoObjectStream.error);
-        videoObjectStream = null;
+      watchingEventStream = await EventsSolidService.getWatchingEventStream(session, roomUrl);
+      if (watchingEventStream.error) {
+        console.error(watchingEventStream.error);
+        watchingEventStream = null;
         return;
       }
-      console.log('NOW LISTENING FOR VIDEOS')
-
-      let dashPlaying = null;
-      videoObjectStream.on('data', (data) => {
-        console.log('NEW VIDEO ACQUIRED')
-        const newDashsrc = {
-          src:        data.get('dashLink').value,
-          startDate:  new Date(data.get('startDate').value)
+      let currentWatchingEvent = null;
+      watchingEventStream.on('data', (data) => {
+        const receivedWatchingEvent = {
+          eventURL:       data.get('watchingEvent').value,
+          videoURL:       data.get('dashLink').value,
+          startDate:      new Date(data.get('startDate').value)
         };
-        console.log('===============================',
-                    '\nVideoObject Update Received',
-                    '\nlast videoObjectStream start:\t', dashPlaying?.startDate, dashPlaying?.src,
-                    '\nnew videoObjectStream start:\t', newDashsrc.startDate, newDashsrc.src,
-                    '\ndiff:\t', data.diff
-        );
-        if (!dashPlaying || newDashsrc.startDate >= dashPlaying.startDate) {
-          dashPlaying = newDashsrc;
-          setDashSrc(dashPlaying);
+        if (!currentWatchingEvent || receivedWatchingEvent.startDate >= currentWatchingEvent.startDate) {
+          currentWatchingEvent = receivedWatchingEvent;
+          setWatchingEvent(currentWatchingEvent);
         }
       });
     }
     fetch();
     return (() => {
-      if (videoObjectStream) {
-        videoObjectStream.close()
+      if (watchingEventStream) {
+        watchingEventStream.close();
       }
     });
   }, [session, roomUrl, sessionRequestInProgress])
+
+
+  useEffect(() => {
+    if (!watchingEvent) {
+      return;
+    }
+    let controlActionStream = null;
+    const fetch = async () => {
+      controlActionStream = await EventsSolidService.getControlActionStream(session, watchingEvent?.eventURL);
+      controlActionStream.on('data', (data) => {
+        const actionType = data.get('actionType').value;
+        if (actionType === `${SCHEMA_ORG}ResumeAction`) {
+          console.log('VIDEO CONTROL: PLAY');
+        } else if (actionType === `${SCHEMA_ORG}SuspendAction`) {
+          console.log('VIDEO CONTROL: PAUZE');
+        }
+      })
+    }
+    fetch();
+    return (() => {
+      if (controlActionStream) {
+        controlActionStream.close();
+      }
+    });
+  }, [session, roomUrl, sessionRequestInProgress, watchingEvent])
+
+
 
   const updateChatHeight = () => {
     if (iframeRef.current) {
       setParentHeight(`${iframeRef.current.clientHeight}px`);
     }
   }
-
   useEffect(() => {
     updateChatHeight();
     window.addEventListener("resize", updateChatHeight, false);
@@ -93,7 +112,13 @@ function WatchPage() {
       </div>
       <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
         <div className="w-2/3 h-fit flex rgb-bg-2 sw-border" ref={iframeRef}>
-          <SWVideoPlayer className="w-full aspect-video" startDate={dashSrc?.startDate} src={dashSrc?.src} title=""/>
+          <SWVideoPlayer className="w-full aspect-video"
+                         videoURL={watchingEvent?.videoURL}
+                         startDate={watchingEvent?.startDate}
+                         playButtonPressed={(isPlay) => {
+                           EventsSolidService.saveControlAction(session, watchingEvent?.eventURL, isPlay)
+                         }}
+          />
         </div>
         <SWChatComponent roomUrl={roomUrl} joined={joinedRoom}/>
       </div>
@@ -103,26 +128,25 @@ function WatchPage() {
         </button>
       </div>
 
-      {(modalIsShown) ? (
+      {modalIsShown &&
         <SWModal className="rgb-bg-2 p-12 sw-border z-10 w-1/2" setIsShown={setModalIsShown}>
           <p className="sw-fs-2 sw-fw-1 my-4">Start new movie/clip</p>
           <p className="sw-fs-4 sw-fw-1 my-2">Stream location</p>
           <div className="my-2">
             <input type="url" name="locator" className="sw-input w-full" placeholder="Stream Locator"
-                   onChange={(e) => setNewDashLink(e.target.value)} />
+                   onChange={(e) => setInputVideoURL(e.target.value)} />
           </div>
           <button className={`sw-btn flex-grow h-6 mt-6 flex justify-center`}
                   onClick={() => {
-                    EventsSolidService.newWatchingEvent(session, roomUrl, newDashLink)
-                    setNewDashLink(null)
+                    EventsSolidService.newWatchingEvent(session, roomUrl, inputVideoURL)
+                    setInputVideoURL(null)
                     setModalIsShown(false);
                   }}>
             Start
           </button>
         </SWModal>
-      ) : (
-        <></>
-      )}
+      }
+
     </SWPageWrapper>
   );
 }
