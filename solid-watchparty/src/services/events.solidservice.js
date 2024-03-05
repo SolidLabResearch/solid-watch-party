@@ -78,7 +78,7 @@ class EventsSolidService {
 
 
   async saveControlAction(session, eventUrl, isPlay) {
-    console.log('SAVE CONTROL ACTION:', isPlay, 'to', eventUrl)
+    //console.log('SAVE CONTROL ACTION:', isPlay, 'to', eventUrl)
 
     if (!inSession(session)) {
       console.error("invalid session")
@@ -92,6 +92,7 @@ class EventsSolidService {
     const now = new Date();
     const newControlAction = buildThing(createThing())
       .addUrl(RDF.type, SCHEMA_ORG + actionType)
+      .addUrl(RDF.type, SCHEMA_ORG + 'ControlAction')
       .addUrl(SCHEMA_ORG + 'agent', session.info.webId)
       .addUrl(SCHEMA_ORG + 'object', eventUrl)
       .addDatetime(SCHEMA_ORG + 'startTime', now)
@@ -122,7 +123,6 @@ class EventsSolidService {
 
 
   async getControlActionStream(session, eventUrl) {
-    console.log('SETTING UP CONTROL ACTION LISTERNER');
     if (!inSession(session)) {
       return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
     } else if (!eventUrl) {
@@ -132,16 +132,19 @@ class EventsSolidService {
     /* NOTE(Elias): Asssumes controlActions and event are in the same file */
     const sparqlQuery = `
       PREFIX schema: <${SCHEMA_ORG}>
-      SELECT ?controlAction ?type ?agent
+      SELECT ?controlAction ?actionType ?agent ?datetime
       WHERE {
+        ?controlAction a schema:ControlAction .
+        ?controlAction a ?actionType .
+        ?controlAction schema:agent ?agent .
+        ?controlAction schema:object <${eventUrl}> .
+        ?controlAction schema:startTime ?datetime .
       }
       `;
-
     const queryEngine = new QueryEngine();
     const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [eventUrl] });
     return resultStream;
   }
-
 
 }
 

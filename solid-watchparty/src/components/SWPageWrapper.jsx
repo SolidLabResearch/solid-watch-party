@@ -12,6 +12,9 @@ import SWLoadingIcon from './SWLoadingIcon';
 /* util imports */
 import { inSession } from '../utils/solidUtils';
 
+/* import configs */
+import config from '../../config'
+
 
 /* NOTE(Elias): className has influence on how the component between the Navbar and footer is styled. */
 function SWPageWrapper({children, className, mustBeAuthenticated})
@@ -22,7 +25,7 @@ function SWPageWrapper({children, className, mustBeAuthenticated})
 
   useEffect(() => {
     if (mustBeAuthenticated && !sessionRequestInProgress && !inSession(session)) {
-      navigateTo('/', {state: {from: currentLocation.pathname + currentLocation.search}});
+      navigateTo(`${config.baseDir}`, {state: {from: currentLocation.pathname + currentLocation.search}});
     }
   }, [session, sessionRequestInProgress, currentLocation, navigateTo, mustBeAuthenticated])
 

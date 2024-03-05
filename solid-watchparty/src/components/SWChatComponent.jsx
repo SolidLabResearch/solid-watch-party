@@ -115,7 +115,7 @@ function SWChatComponent({roomUrl, joined}) {
             <SWAutoScrollDiv className="overflow-y-auto overflow-x-auto mb-2 shrink">
               {messages.map((message) => <SWMessageComponent message={message} key={message.key}/>)}
             </SWAutoScrollDiv>
-            <form autocomplete="off" className="grow-0 flex flex-between items-center" onSubmit={submitMessage}>
+            <form autoComplete="off" className="grow-0 flex flex-between items-center" onSubmit={submitMessage}>
               <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full"
                 onChange={(e) => setInput(parseMessage(e.target.value))}
                 value={input} type='text'/>

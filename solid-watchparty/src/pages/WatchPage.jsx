@@ -13,6 +13,10 @@ import SWVideoPlayer from '../components/SWVideoPlayer';
 import RoomSolidService from '../services/room.solidservice.js';
 import EventsSolidService from '../services/events.solidservice.js';
 
+/* util imports */
+import { SCHEMA_ORG } from '../utils/schemaUtils';
+
+
 function WatchPage() {
   const [parentHeight, setParentHeight] = useState('auto');
   const [modalIsShown, setModalIsShown] = useState(false);
@@ -73,13 +77,18 @@ function WatchPage() {
     const fetch = async () => {
       controlActionStream = await EventsSolidService.getControlActionStream(session, watchingEvent?.eventURL);
       controlActionStream.on('data', (data) => {
-        console.log(data);
+        const actionType = data.get('actionType').value;
+        if (actionType === `${SCHEMA_ORG}ResumeAction`) {
+          console.log('VIDEO CONTROL: PLAY');
+        } else if (actionType === `${SCHEMA_ORG}SuspendAction`) {
+          console.log('VIDEO CONTROL: PAUZE');
+        }
       })
     }
     fetch();
     return (() => {
       if (controlActionStream) {
-        getControlActionStream.close();
+        controlActionStream.close();
       }
     });
   }, [session, roomUrl, sessionRequestInProgress, watchingEvent])
