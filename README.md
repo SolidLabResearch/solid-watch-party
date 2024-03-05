@@ -12,7 +12,7 @@ Welcome to Solid Watchparty, a platform designed for shared media viewing experi
 ### Frontend
 1. **Clone the Repository**
    ```
-   git clone https://gitlab.ilabt.imec.be/maavdnbr/watch-party.git
+   git clone git@github.com:SolidLabResearch/solid-watch-party.git
    ```
 2. **Install Dependencies**
    ```
