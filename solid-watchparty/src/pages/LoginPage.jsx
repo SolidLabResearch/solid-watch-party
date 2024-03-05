@@ -7,7 +7,7 @@ import SWPageWrapper from '../components/SWPageWrapper'
 import SWLoginButton from '../components/SWLoginButton'
 
 /* config imports */
-import { BASEPATH } from '../config.js'
+import config from '../../config';
 
 const authOptions = {
   clientName:  "solid-watchparty",
@@ -15,9 +15,9 @@ const authOptions = {
 
 export default function LoginPage()
 {
-  const [oidcIssuer, setOidcIssuer] = useState("http://localhost:3000/");
+  const [oidcIssuer, setOidcIssuer] = useState("");
   const currentLocation = useLocation();
-  const redirectLocation = (currentLocation.state?.from || `${BASEPATH}/menu`);
+  const redirectLocation = (currentLocation.state?.from || `${config.baseDir}/menu`);
   return (
     <SWPageWrapper className="flex justify-center items-center" mustBeAuthenticated={false}>
       <div className="w-1/2">
