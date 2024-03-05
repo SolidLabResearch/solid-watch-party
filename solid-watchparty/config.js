@@ -1,4 +1,4 @@
 export default {
-  baseDir: '/solid-watch-party/',
+  baseDir: '/solid-watch-party',
   outDir: '../dist',
 }

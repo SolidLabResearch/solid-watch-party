@@ -5,7 +5,7 @@ import config from './config.js'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: config.baseDir,
+  base: `${config.baseDir}`,
   build: {
     outDir: config.outDir
   },
