@@ -67,7 +67,7 @@ function WatchPage() {
           </div>
           <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
             <div className="w-2/3 h-fit flex rgb-bg-2 sw-border" ref={iframeRef}>
-              <SWVideoPlayer roomUrl={roomUrl} className="w-full aspect-video"/>
+              <SWVideoPlayer roomUrl={roomUrl}/>
             </div>
             <SWChatComponent roomUrl={roomUrl}/>
           </div>

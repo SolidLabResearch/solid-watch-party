@@ -2,7 +2,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import PropTypes from 'prop-types';
-import dashjs from 'dashjs';
+import ReactPlayer from 'react-player'
+
+/* somponent imports */
+import SWVideoPlayerControls from './SWVideoPlayerControls'
 
 /* service imports */
 import EventsSolidService from '../services/events.solidservice.js';
@@ -14,7 +17,10 @@ import { SCHEMA_ORG } from '../utils/schemaUtils';
 // TODO(Elias): In the future support also LIVE streams
 // TODO(Elias): In the future support also mp4's
 
+
+
 function SWVideoPlayer({className, roomUrl}) {
+  const [isPlaying, setIsPlaying] = useState(true);
   const [watchingEvent, setWatchingEvent] = useState(null);
   const {session, sessionRequestInProgress} = useSession();
   const videoRef = useRef(null);
@@ -49,19 +55,7 @@ function SWVideoPlayer({className, roomUrl}) {
 
 
   useEffect(() => {
-    let player = null;
     let controlActionStream = null;
-
-    if (watchingEvent && videoRef.current) {
-      player = dashjs.MediaPlayer().create();
-      player.initialize(videoRef.current, watchingEvent?.videoURL, true);
-      player.on(dashjs.MediaPlayer.events.PLAYBACK_STARTED, () => {
-        EventsSolidService.saveControlAction(session, watchingEvent?.eventURL, true)
-      });
-      player.on(dashjs.MediaPlayer.events.PLAYBACK_PAUSED, () => {
-        EventsSolidService.saveControlAction(session, watchingEvent?.eventURL, false)
-      });
-    }
 
     const launchControlActionStream = async () => {
       controlActionStream = await EventsSolidService.getControlActionStream(session, watchingEvent?.eventURL);
@@ -72,27 +66,40 @@ function SWVideoPlayer({className, roomUrl}) {
           lastControlDatetime = datetime;
           const actionType = data.get('actionType').value;
           if (actionType === `${SCHEMA_ORG}ResumeAction`) {
-            player.play();
+            setIsPlaying(true)
           } else if (actionType === `${SCHEMA_ORG}SuspendAction`) {
-            player.pause();
+            setIsPlaying(false)
           }
         }
       })
     }
-    if (watchingEvent && player) {
+    if (watchingEvent) {
       launchControlActionStream();
     }
-
     return () => {
-      player?.reset();
       controlActionStream?.close();
     };
   }, [session, sessionRequestInProgress, watchingEvent]);
 
 
+  const onPauseButton = (isPause) => {
+    EventsSolidService.saveControlAction(session, watchingEvent?.eventURL, !isPause)
+  }
+
+  const playerConfig = {
+    youtube: {
+      playerVars: { rel: 0, disablekb: 1 }
+    },
+  }
+
   return (
-    <div className={className + " relative"}>
-      <video ref={videoRef} className="w-full h-full bg-blue" controls={true}></video>
+    <div className="w-full relative aspect-video">
+      <ReactPlayer url={watchingEvent?.videoURL}
+                   width="100%" height="100%" controls={true} playing={isPlaying}
+                   config={playerConfig}
+                   onPlay={() => onPauseButton(false)}
+                   onPause={() => onPauseButton(true)}
+                  />
     </div>
   );
 }
