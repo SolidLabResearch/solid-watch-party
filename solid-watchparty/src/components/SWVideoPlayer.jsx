@@ -7,11 +7,14 @@ import dashjs from 'dashjs';
 /* service imports */
 import EventsSolidService from '../services/events.solidservice.js';
 
+/* util imports */
+import { SCHEMA_ORG } from '../utils/schemaUtils';
+
+
 // TODO(Elias): In the future support also LIVE streams
 // TODO(Elias): In the future support also mp4's
 
 function SWVideoPlayer({className, roomUrl}) {
-  const [player, setPlayer] = useState(null);
   const [watchingEvent, setWatchingEvent] = useState(null);
   const {session, sessionRequestInProgress} = useSession();
   const videoRef = useRef(null);
@@ -20,23 +23,23 @@ function SWVideoPlayer({className, roomUrl}) {
     let watchingEventStream = null;
     const fetch = async () => {
       watchingEventStream = await EventsSolidService.getWatchingEventStream(session, roomUrl);
-      // if (watchingEventStream.error) {
-      //   console.error(watchingEventStream.error);
-      //   watchingEventStream = null;
-      //   return;
-      // }
-      // let currentWatchingEvent = null;
-      // watchingEventStream.on('data', (data) => {
-      //   const receivedWatchingEvent = {
-      //     eventURL: data.get('watchingEvent').value,
-      //     videoURL: data.get('dashLink').value,
-      //     startDate: new Date(data.get('startDate').value)
-      //   };
-      //   if (!currentWatchingEvent || receivedWatchingEvent.startDate >= currentWatchingEvent.startDate) {
-      //     currentWatchingEvent = receivedWatchingEvent;
-      //     setWatchingEvent(currentWatchingEvent);
-      //   }
-      //});
+      if (watchingEventStream.error) {
+        console.error(watchingEventStream.error);
+        watchingEventStream = null;
+        return;
+      }
+       let currEvent = null;
+       watchingEventStream.on('data', (data) => {
+         const recvEvent = {
+           eventURL: data.get('watchingEvent').value,
+           videoURL: data.get('dashLink').value,
+           startDate: new Date(data.get('startDate').value)
+         };
+         if (!currEvent || recvEvent.startDate >= currEvent.startDate) {
+           currEvent = recvEvent;
+           setWatchingEvent(currEvent);
+         }
+      });
     }
     fetch();
     return (() => {
@@ -45,51 +48,46 @@ function SWVideoPlayer({className, roomUrl}) {
   }, [session, sessionRequestInProgress, roomUrl]);
 
 
-  // useEffect(() => {
-  //   if (!watchingEvent) {
-  //     return;
-  //   }
-  //   let controlActionStream = null;
-  //   const fetch = async () => {
-  //     controlActionStream = await EventsSolidService.getControlActionStream(session, watchingEvent?.eventURL);
-  //     controlActionStream.on('data', (data) => {
-  //       const datetime = new Date(data.get('datetime').value);
-  //       let lastControlDatetime = null;
-  //       if (!lastControlDatetime || datetime >= lastControlDatetime) {
-  //         lastControlDatetime = datetime;
-  //         const actionType = data.get('actionType').value;
-  //         if (actionType === `${SCHEMA_ORG}ResumeAction`) {
-  //           player.play();
-  //         } else if (actionType === `${SCHEMA_ORG}SuspendAction`) {
-  //           player.pause();
-  //         }
-  //       }
-  //     })
-  //   }
-  //   fetch();
-  //   return (() => {
-  //     if (controlActionStream) {
-  //       controlActionStream.close();
-  //     }
-  //   });
-  // }, [player, watchingEvent]);
-
   useEffect(() => {
+    let player = null;
+    let controlActionStream = null;
+
     if (watchingEvent && videoRef.current) {
-      const p = (player) ? player : dashjs.MediaPlayer().create();
-      p.initialize(videoRef.current, watchingEvent?.videoURL, true);
-      p.on(dashjs.MediaPlayer.events.PLAYBACK_STARTED, () => {
+      player = dashjs.MediaPlayer().create();
+      player.initialize(videoRef.current, watchingEvent?.videoURL, true);
+      player.on(dashjs.MediaPlayer.events.PLAYBACK_STARTED, () => {
         EventsSolidService.saveControlAction(session, watchingEvent?.eventURL, true)
       });
-      p.on(dashjs.MediaPlayer.events.PLAYBACK_PAUSED, () => {
+      player.on(dashjs.MediaPlayer.events.PLAYBACK_PAUSED, () => {
         EventsSolidService.saveControlAction(session, watchingEvent?.eventURL, false)
       });
-      setPlayer(player);
     }
+
+    const launchControlActionStream = async () => {
+      controlActionStream = await EventsSolidService.getControlActionStream(session, watchingEvent?.eventURL);
+      controlActionStream.on('data', (data) => {
+        const datetime = new Date(data.get('datetime').value);
+        let lastControlDatetime = null;
+        if (!lastControlDatetime || datetime >= lastControlDatetime) {
+          lastControlDatetime = datetime;
+          const actionType = data.get('actionType').value;
+          if (actionType === `${SCHEMA_ORG}ResumeAction`) {
+            player.play();
+          } else if (actionType === `${SCHEMA_ORG}SuspendAction`) {
+            player.pause();
+          }
+        }
+      })
+    }
+    if (watchingEvent && player) {
+      launchControlActionStream();
+    }
+
     return () => {
       player?.reset();
+      controlActionStream?.close();
     };
-  }, [watchingEvent, player]);
+  }, [session, sessionRequestInProgress, watchingEvent]);
 
 
   return (

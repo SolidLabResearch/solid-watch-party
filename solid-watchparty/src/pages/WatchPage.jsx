@@ -21,11 +21,11 @@ import { SCHEMA_ORG } from '../utils/schemaUtils';
 
 
 function WatchPage() {
+  const iframeRef = useRef(null);
   const [parentHeight, setParentHeight] = useState('auto');
   const [modalIsShown, setModalIsShown] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
   const [joinedRoom, setJoinedRoom] = useState(false);
-  const iframeRef = useRef(null);
   const {session, sessionRequestInProgress} = useSession();
 
   /* TODO(Elias): Add error handling, what if there is no parameter */
@@ -42,10 +42,7 @@ function WatchPage() {
       setJoinedRoom(true);
     }
     if (inSession && !sessionRequestInProgress) {
-      console.log('joining room');
       joinRoom();
-    } else {
-      console.log('not joining room');
     }
   }, [session, roomUrl, sessionRequestInProgress])
 

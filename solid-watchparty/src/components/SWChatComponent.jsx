@@ -64,8 +64,6 @@ function SWChatComponent({roomUrl, joined}) {
     fetch();
 
     return (() => {
-      // console.log('closing down use effect')
-      // console.log('closing stream: ', messageSeriesStreams)
       if (messageSeriesStreams) {
         messageSeriesStreams.close();
       }
