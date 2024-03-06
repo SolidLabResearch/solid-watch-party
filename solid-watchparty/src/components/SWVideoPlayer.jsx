@@ -1,15 +1,15 @@
 /* library imports */
 import { useState, useEffect, useRef } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
+import { FullScreen, useFullScreenHandle } from 'react-full-screen';
 import PropTypes from 'prop-types';
 import ReactPlayer from 'react-player'
 
-/* somponent imports */
-import SWVideoPlayerControls from './SWVideoPlayerControls'
+/* imports imports */
+import SWVideoPlayerControls from '../components/SWVideoPlayerControls';
 
 /* service imports */
 import EventsSolidService from '../services/events.solidservice.js';
-
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 
@@ -24,6 +24,7 @@ function SWVideoPlayer({className, roomUrl}) {
   const [watchingEvent, setWatchingEvent] = useState(null);
   const {session, sessionRequestInProgress} = useSession();
   const videoRef = useRef(null);
+  const fullscreenHandle = useFullScreenHandle();
 
   useEffect(() => {
     let watchingEventStream = null;
@@ -65,10 +66,15 @@ function SWVideoPlayer({className, roomUrl}) {
         if (!lastControlDatetime || datetime >= lastControlDatetime) {
           lastControlDatetime = datetime;
           const actionType = data.get('actionType').value;
+          const resumeAt = parseFloat(data.get('location').value);
           if (actionType === `${SCHEMA_ORG}ResumeAction`) {
+            console.log('play')
             setIsPlaying(true)
+            videoRef.current.seekTo(resumeAt)
           } else if (actionType === `${SCHEMA_ORG}SuspendAction`) {
+            console.log('pause')
             setIsPlaying(false)
+            videoRef.current.seekTo(resumeAt)
           }
         }
       })
@@ -82,10 +88,6 @@ function SWVideoPlayer({className, roomUrl}) {
   }, [session, sessionRequestInProgress, watchingEvent]);
 
 
-  const onPauseButton = (isPause) => {
-    EventsSolidService.saveControlAction(session, watchingEvent?.eventURL, !isPause)
-  }
-
   const playerConfig = {
     youtube: {
       playerVars: { rel: 0, disablekb: 1 }
@@ -93,13 +95,21 @@ function SWVideoPlayer({className, roomUrl}) {
   }
 
   return (
-    <div className="w-full relative aspect-video">
-      <ReactPlayer url={watchingEvent?.videoURL}
-                   width="100%" height="100%" controls={true} playing={isPlaying}
-                   config={playerConfig}
-                   onPlay={() => onPauseButton(false)}
-                   onPause={() => onPauseButton(true)}
-                  />
+    <div className="h-full w-full relative aspect-video">
+      <FullScreen handle={fullscreenHandle} className="h-full w-full">
+        <div className="absolute bottom-0 right-0 w-full h-full z-5 flex flex-col justify-end">
+          <SWVideoPlayerControls videoRef={videoRef}
+                                 watchingEvent={watchingEvent}
+                                 isPlaying={isPlaying}
+                                 fullscreenHandle={fullscreenHandle}
+                                />
+        </div>
+        <ReactPlayer url={watchingEvent?.videoURL}
+                     width="100%" height="100%" controls={false} playing={isPlaying}
+                     config={playerConfig}
+                     ref={videoRef}
+                    />
+      </FullScreen>
     </div>
   );
 }

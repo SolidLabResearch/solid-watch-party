@@ -77,9 +77,7 @@ class EventsSolidService {
   }
 
 
-  async saveControlAction(session, eventUrl, isPlay) {
-    //console.log('SAVE CONTROL ACTION:', isPlay, 'to', eventUrl)
-
+  async saveControlAction(session, eventUrl, isPlay, atLocationNumber) {
     if (!inSession(session)) {
       console.error("invalid session")
       return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
@@ -96,6 +94,7 @@ class EventsSolidService {
       .addUrl(SCHEMA_ORG + 'agent', session.info.webId)
       .addUrl(SCHEMA_ORG + 'object', eventUrl)
       .addDatetime(SCHEMA_ORG + 'startTime', now)
+      .addStringNoLocale(SCHEMA_ORG + 'location', atLocationNumber.toString())
       .build();
 
     try {
@@ -132,13 +131,14 @@ class EventsSolidService {
     /* NOTE(Elias): Asssumes controlActions and event are in the same file */
     const sparqlQuery = `
       PREFIX schema: <${SCHEMA_ORG}>
-      SELECT ?controlAction ?actionType ?agent ?datetime
+      SELECT ?controlAction ?actionType ?agent ?datetime ?location
       WHERE {
         ?controlAction a schema:ControlAction .
         ?controlAction a ?actionType .
         ?controlAction schema:agent ?agent .
         ?controlAction schema:object <${eventUrl}> .
         ?controlAction schema:startTime ?datetime .
+        ?controlAction schema:location ?location .
       }
       `;
     const queryEngine = new QueryEngine();
