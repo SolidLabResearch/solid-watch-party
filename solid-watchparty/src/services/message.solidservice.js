@@ -87,6 +87,9 @@ WHERE {
 }`;
     const queryEngine = new QueryEngine();
     const resultStream = await queryEngine.queryBindings(query, { sources: [roomUrl] });
+    resultStream.on("error", (e) => {
+      console.error(e);
+    });
     return resultStream;
   }
 
@@ -108,6 +111,9 @@ WHERE {
 `;
     const queryEngine = new QueryEngine();
     const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [messageBoxUrl] });
+    resultStream.on("error", (e) => {
+      console.error(e);
+    });
     return resultStream;
   }
 

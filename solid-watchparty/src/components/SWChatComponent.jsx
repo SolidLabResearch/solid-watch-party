@@ -22,10 +22,6 @@ function SWChatComponent({roomUrl, joined}) {
   const {session, sessionRequestInProgress} = useSession();
 
   useEffect(() => {
-    if (!joined) {
-      return
-    }
-
     let messageSeriesStreams = null;
     let messageStreams = [];
     const fetch = async () => {
@@ -68,8 +64,6 @@ function SWChatComponent({roomUrl, joined}) {
     fetch();
 
     return (() => {
-      // console.log('closing down use effect')
-      // console.log('closing stream: ', messageSeriesStreams)
       if (messageSeriesStreams) {
         messageSeriesStreams.close();
       }
@@ -134,7 +128,6 @@ function SWChatComponent({roomUrl, joined}) {
 
 SWChatComponent.propTypes = {
   roomUrl:  PropTypes.string,
-  joined:   PropTypes.bool,
 }
 
 export default SWChatComponent;

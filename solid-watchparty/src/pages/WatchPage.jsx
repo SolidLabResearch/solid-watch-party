@@ -2,28 +2,30 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { useSearchParams } from 'react-router-dom';
+import dashjs from 'dashjs';
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
 import SWChatComponent from '../components/SWChatComponent';
 import SWModal from '../components/SWModal';
 import SWVideoPlayer from '../components/SWVideoPlayer';
+import SWLoadingIcon from '../components/SWLoadingIcon';
 
 /* service imports */
 import RoomSolidService from '../services/room.solidservice.js';
 import EventsSolidService from '../services/events.solidservice.js';
 
 /* util imports */
+import { inSession } from '../utils/solidUtils';
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 
 
 function WatchPage() {
+  const iframeRef = useRef(null);
   const [parentHeight, setParentHeight] = useState('auto');
   const [modalIsShown, setModalIsShown] = useState(false);
-  const [inputVideoURL, setInputVideoURL] = useState(null);
-  const [watchingEvent, setWatchingEvent] = useState(null);
+  const [videoUrl, setVideoUrl] = useState(null);
   const [joinedRoom, setJoinedRoom] = useState(false);
-  const iframeRef = useRef(null);
   const {session, sessionRequestInProgress} = useSession();
 
   /* TODO(Elias): Add error handling, what if there is no parameter */
@@ -31,122 +33,74 @@ function WatchPage() {
   const roomUrl = decodeURIComponent(searchParams.get('room'));
 
   useEffect(() => {
-    let watchingEventStream = null;
-
-    const fetch = async () => {
+    const joinRoom = async () => {
       const joiningRoomResult = await RoomSolidService.joinRoom(session, roomUrl)
       if (joiningRoomResult.error) {
         console.error(joiningRoomResult.error);
         return;
       }
       setJoinedRoom(true);
-
-      watchingEventStream = await EventsSolidService.getWatchingEventStream(session, roomUrl);
-      if (watchingEventStream.error) {
-        console.error(watchingEventStream.error);
-        watchingEventStream = null;
-        return;
-      }
-      let currentWatchingEvent = null;
-      watchingEventStream.on('data', (data) => {
-        const receivedWatchingEvent = {
-          eventURL:       data.get('watchingEvent').value,
-          videoURL:       data.get('dashLink').value,
-          startDate:      new Date(data.get('startDate').value)
-        };
-        if (!currentWatchingEvent || receivedWatchingEvent.startDate >= currentWatchingEvent.startDate) {
-          currentWatchingEvent = receivedWatchingEvent;
-          setWatchingEvent(currentWatchingEvent);
-        }
-      });
     }
-    fetch();
-    return (() => {
-      if (watchingEventStream) {
-        watchingEventStream.close();
-      }
-    });
+    if (inSession && !sessionRequestInProgress) {
+      joinRoom();
+    }
   }, [session, roomUrl, sessionRequestInProgress])
 
 
   useEffect(() => {
-    if (!watchingEvent) {
-      return;
-    }
-    let controlActionStream = null;
-    const fetch = async () => {
-      controlActionStream = await EventsSolidService.getControlActionStream(session, watchingEvent?.eventURL);
-      controlActionStream.on('data', (data) => {
-        const actionType = data.get('actionType').value;
-        if (actionType === `${SCHEMA_ORG}ResumeAction`) {
-          console.log('VIDEO CONTROL: PLAY');
-        } else if (actionType === `${SCHEMA_ORG}SuspendAction`) {
-          console.log('VIDEO CONTROL: PAUZE');
-        }
-      })
-    }
-    fetch();
-    return (() => {
-      if (controlActionStream) {
-        controlActionStream.close();
+    const updateChatHeight = () => {
+      if (iframeRef.current) {
+        setParentHeight(`${iframeRef.current.clientHeight}px`);
       }
-    });
-  }, [session, roomUrl, sessionRequestInProgress, watchingEvent])
-
-
-
-  const updateChatHeight = () => {
-    if (iframeRef.current) {
-      setParentHeight(`${iframeRef.current.clientHeight}px`);
     }
-  }
-  useEffect(() => {
     updateChatHeight();
     window.addEventListener("resize", updateChatHeight, false);
-  }, [session, sessionRequestInProgress]);
+  }, [joinedRoom]);
+
 
   return (
     <SWPageWrapper className="h-full" mustBeAuthenticated={true}>
-      <div className="px-8 py-4 rgb-2">
-        <p>{roomUrl}</p>
-      </div>
-      <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
-        <div className="w-2/3 h-fit flex rgb-bg-2 sw-border" ref={iframeRef}>
-          <SWVideoPlayer className="w-full aspect-video"
-                         videoURL={watchingEvent?.videoURL}
-                         startDate={watchingEvent?.startDate}
-                         playButtonPressed={(isPlay) => {
-                           EventsSolidService.saveControlAction(session, watchingEvent?.eventURL, isPlay)
-                         }}
-          />
-        </div>
-        <SWChatComponent roomUrl={roomUrl} joined={joinedRoom}/>
-      </div>
-      <div className="px-8 py-4 rgb-2">
-        <button className={`sw-btn flex-grow h-6 flex justify-center`} onClick={() => setModalIsShown(true)}>
-          Start new movie/clip
-        </button>
-      </div>
-
-      {modalIsShown &&
-        <SWModal className="rgb-bg-2 p-12 sw-border z-10 w-1/2" setIsShown={setModalIsShown}>
-          <p className="sw-fs-2 sw-fw-1 my-4">Start new movie/clip</p>
-          <p className="sw-fs-4 sw-fw-1 my-2">Stream location</p>
-          <div className="my-2">
-            <input type="url" name="locator" className="sw-input w-full" placeholder="Stream Locator"
-                   onChange={(e) => setInputVideoURL(e.target.value)} />
+      { (joinedRoom) ? (
+        <>
+          <div className="px-8 py-4 rgb-2">
+            <p>{roomUrl}</p>
           </div>
-          <button className={`sw-btn flex-grow h-6 mt-6 flex justify-center`}
-                  onClick={() => {
-                    EventsSolidService.newWatchingEvent(session, roomUrl, inputVideoURL)
-                    setInputVideoURL(null)
-                    setModalIsShown(false);
-                  }}>
-            Start
-          </button>
-        </SWModal>
-      }
-
+          <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
+            <div className="w-2/3 h-fit flex rgb-bg-2 sw-border" ref={iframeRef}>
+              <SWVideoPlayer roomUrl={roomUrl} className="w-full aspect-video"/>
+            </div>
+            <SWChatComponent roomUrl={roomUrl}/>
+          </div>
+          <div className="px-8 py-4 rgb-2">
+            <button className={`sw-btn flex-grow h-6 flex justify-center`} onClick={() => setModalIsShown(true)}>
+              Start new movie/clip
+            </button>
+          </div>
+          {modalIsShown &&
+            <SWModal className="rgb-bg-2 p-12 sw-border z-10 w-1/2" setIsShown={setModalIsShown}>
+              <p className="sw-fs-2 sw-fw-1 my-4">Start new movie/clip</p>
+              <p className="sw-fs-4 sw-fw-1 my-2">Stream location</p>
+              <div className="my-2">
+                <input type="url" name="locator" className="sw-input w-full" placeholder="Stream Locator"
+                       onChange={(e) => setVideoUrl(e.target.value)} />
+              </div>
+              <button className={`sw-btn flex-grow h-6 mt-6 flex justify-center`}
+                      onClick={() => {
+                        EventsSolidService.newWatchingEvent(session, roomUrl, videoUrl)
+                        setVideoUrl(null)
+                        setModalIsShown(false);
+                      }}>
+                Start
+              </button>
+            </SWModal>
+          }
+        </>
+      ) : (
+        <div className="flex w-full h-full items-center justify-center gap-3">
+          <SWLoadingIcon className="w-8 h-8"/>
+          <p className="sw-fw-1">Joining Room...</p>
+        </div>
+      )}
     </SWPageWrapper>
   );
 }
