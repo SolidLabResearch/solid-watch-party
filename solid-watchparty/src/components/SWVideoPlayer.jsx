@@ -19,10 +19,7 @@ function SWVideoPlayer({className, roomUrl}) {
   useEffect(() => {
     let watchingEventStream = null;
     const fetch = async () => {
-      const delay = ms => new Promise(res => setTimeout(res, ms));
-      await delay(1000)
       watchingEventStream = await EventsSolidService.getWatchingEventStream(session, roomUrl);
-      console.log(watchingEventStream)
       // if (watchingEventStream.error) {
       //   console.error(watchingEventStream.error);
       //   watchingEventStream = null;
@@ -79,12 +76,12 @@ function SWVideoPlayer({className, roomUrl}) {
 
   useEffect(() => {
     if (watchingEvent && videoRef.current) {
-      player = (player) ? player : dashjs.MediaPlayer().create();
-      player.initialize(videoRef.current, watchingEvent?.videoURL, true);
-      player.on(dashjs.MediaPlayer.events.PLAYBACK_STARTED, () => {
+      const p = (player) ? player : dashjs.MediaPlayer().create();
+      p.initialize(videoRef.current, watchingEvent?.videoURL, true);
+      p.on(dashjs.MediaPlayer.events.PLAYBACK_STARTED, () => {
         EventsSolidService.saveControlAction(session, watchingEvent?.eventURL, true)
       });
-      player.on(dashjs.MediaPlayer.events.PLAYBACK_PAUSED, () => {
+      p.on(dashjs.MediaPlayer.events.PLAYBACK_PAUSED, () => {
         EventsSolidService.saveControlAction(session, watchingEvent?.eventURL, false)
       });
       setPlayer(player);
@@ -92,7 +89,7 @@ function SWVideoPlayer({className, roomUrl}) {
     return () => {
       player?.reset();
     };
-  }, [watchingEvent]);
+  }, [watchingEvent, player]);
 
 
   return (

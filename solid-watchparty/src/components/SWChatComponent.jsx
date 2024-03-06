@@ -22,10 +22,6 @@ function SWChatComponent({roomUrl, joined}) {
   const {session, sessionRequestInProgress} = useSession();
 
   useEffect(() => {
-    if (!joined) {
-      return
-    }
-
     let messageSeriesStreams = null;
     let messageStreams = [];
     const fetch = async () => {
@@ -134,7 +130,6 @@ function SWChatComponent({roomUrl, joined}) {
 
 SWChatComponent.propTypes = {
   roomUrl:  PropTypes.string,
-  joined:   PropTypes.bool,
 }
 
 export default SWChatComponent;
