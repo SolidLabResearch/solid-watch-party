@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { FullScreen, useFullScreenHandle } from 'react-full-screen';
+import { getUrl } from "@inrupt/solid-client";
 import PropTypes from 'prop-types';
 import ReactPlayer from 'react-player'
 
@@ -10,6 +11,7 @@ import SWVideoPlayerControls from '../components/SWVideoPlayerControls';
 
 /* service imports */
 import EventsSolidService from '../services/events.solidservice.js';
+import VideoSolidService from '../services/videos.solidservice.js';
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 
@@ -20,79 +22,89 @@ import { SCHEMA_ORG } from '../utils/schemaUtils';
 
 
 function SWVideoPlayer({className, roomUrl}) {
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [watchingEvent, setWatchingEvent] = useState(null);
-  const {session, sessionRequestInProgress} = useSession();
-  const videoRef = useRef(null);
-  const fullscreenHandle = useFullScreenHandle();
+    const [isPlaying, setIsPlaying] = useState(true);
+    const [watchingEvent, setWatchingEvent] = useState(null);
+    const {session, sessionRequestInProgress} = useSession();
+    const videoRef = useRef(null);
+    const fullscreenHandle = useFullScreenHandle();
 
-  useEffect(() => {
-    let watchingEventStream = null;
-    const fetch = async () => {
-      watchingEventStream = await EventsSolidService.getWatchingEventStream(session, roomUrl);
-      if (watchingEventStream.error) {
-        console.error(watchingEventStream.error);
-        watchingEventStream = null;
-        return;
-      }
-       let currEvent = null;
-       watchingEventStream.on('data', (data) => {
-         const recvEvent = {
-           eventURL: data.get('watchingEvent').value,
-           videoURL: data.get('dashLink').value,
-           startDate: new Date(data.get('startDate').value)
-         };
-         if (!currEvent || recvEvent.startDate >= currEvent.startDate) {
-           currEvent = recvEvent;
-           setWatchingEvent(currEvent);
-         }
-      });
-    }
-    fetch();
-    return (() => {
-      watchingEventStream?.close();
-    });
-  }, [session, sessionRequestInProgress, roomUrl]);
-
-
-  useEffect(() => {
-    let controlActionStream = null;
-
-    const launchControlActionStream = async () => {
-      controlActionStream = await EventsSolidService.getControlActionStream(session, watchingEvent?.eventURL);
-      controlActionStream.on('data', (data) => {
-        const datetime = new Date(data.get('datetime').value);
-        let lastControlDatetime = null;
-        if (!lastControlDatetime || datetime >= lastControlDatetime) {
-          lastControlDatetime = datetime;
-          const actionType = data.get('actionType').value;
-          const resumeAt = parseFloat(data.get('location').value);
-          if (actionType === `${SCHEMA_ORG}ResumeAction`) {
-            console.log('play')
-            setIsPlaying(true)
-            videoRef.current.seekTo(resumeAt)
-          } else if (actionType === `${SCHEMA_ORG}SuspendAction`) {
-            console.log('pause')
-            setIsPlaying(false)
-            videoRef.current.seekTo(resumeAt)
-          }
+    useEffect(() => {
+        let watchingEventStream = null;
+        const fetch = async () => {
+            watchingEventStream = await EventsSolidService.getWatchingEventStream(session, roomUrl);
+            console.log('ACQUIRED WATCHING EVENT STREAM');
+            if (watchingEventStream.error) {
+                console.error(watchingEventStream.error);
+                watchingEventStream = null;
+                return;
+            }
+            let currEvent = null;
+            watchingEventStream.on('data', (data) => {
+                console.log('RECEIVED NEW WATCHING EVENT');
+                const fetch = async () => {
+                    const videoObject = await VideoSolidService.getVideoObject(session, data.get('videoObject').value);
+                    if (videoObject.error) {
+                        return;
+                    }
+                    const recvEvent = {
+                        eventURL: data.get('watchingEvent').value,
+                        videoURL: getUrl(videoObject, SCHEMA_ORG + 'contentUrl'),
+                        startDate: new Date(data.get('startDate').value)
+                    };
+                    if (!currEvent || recvEvent.startDate > currEvent.startDate) {
+                        currEvent = recvEvent;
+                        console.log('SWITCHING WATCHING EVENT');
+                        setWatchingEvent(currEvent);
+                    }
+                }
+                fetch();
+            });
         }
-      })
-    }
-    if (watchingEvent) {
-      launchControlActionStream();
-    }
-    return () => {
-      controlActionStream?.close();
-    };
-  }, [session, sessionRequestInProgress, watchingEvent]);
+        fetch();
+        return (() => {
+            watchingEventStream?.close();
+        });
+    }, [session, sessionRequestInProgress, roomUrl]);
 
 
-  const playerConfig = {
-    youtube: {
-      playerVars: { rel: 0, disablekb: 1 }
-    },
-  }
+    useEffect(() => {
+        let controlActionStream = null;
+
+        const launchControlActionStream = async () => {
+            controlActionStream = await EventsSolidService.getControlActionStream(
+                session, watchingEvent?.eventURL);
+            controlActionStream.on('data', (data) => {
+                const datetime = new Date(data.get('datetime').value);
+                let lastControlDatetime = null;
+                if (!lastControlDatetime || datetime >= lastControlDatetime) {
+                    lastControlDatetime = datetime;
+                    const actionType = data.get('actionType').value;
+                    const resumeAt = parseFloat(data.get('location').value);
+                    if (actionType === `${SCHEMA_ORG}ResumeAction`) {
+                        setIsPlaying(true)
+                        videoRef.current.seekTo(resumeAt)
+                    } else if (actionType === `${SCHEMA_ORG}SuspendAction`) {
+
+                        setIsPlaying(false)
+                        videoRef.current.seekTo(resumeAt)
+                    }
+                }
+            })
+        }
+        if (watchingEvent) {
+            launchControlActionStream();
+        }
+        return () => {
+            controlActionStream?.close();
+        };
+    }, [session, sessionRequestInProgress, watchingEvent]);
+
+
+    const playerConfig = {
+        youtube: {
+            playerVars: { rel: 0, disablekb: 1 }
+        },
+    }
 
   return (
     <div className="h-full w-full relative aspect-video">
@@ -115,8 +127,8 @@ function SWVideoPlayer({className, roomUrl}) {
 }
 
 SWVideoPlayer.propTypes = {
-    roomUrl:      PropTypes.string,
-    className:    PropTypes.string,
+  roomUrl:      PropTypes.string,
+  className:    PropTypes.string,
 };
 
 export default SWVideoPlayer;

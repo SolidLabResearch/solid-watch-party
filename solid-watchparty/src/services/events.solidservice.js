@@ -62,12 +62,11 @@ class EventsSolidService {
 
     const sparqlQuery = `
       PREFIX schema: <${SCHEMA_ORG}>
-      SELECT ?watchingEvent ?startDate ?videoObject ?dashLink
+      SELECT ?watchingEvent ?startDate ?videoObject
       WHERE {
         ?watchingEvent a schema:Event .
         ?watchingEvent schema:startDate ?startDate .
-        ?watchingEvent schema:workFeatured ?VideoObject .
-        ?videoObject schema:contentUrl ?dashLink .
+        ?watchingEvent schema:workFeatured ?videoObject .
       }
       `;
 
