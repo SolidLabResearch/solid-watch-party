@@ -20,7 +20,6 @@ import { SCHEMA_ORG } from '../utils/schemaUtils';
 // TODO(Elias): In the future support also mp4's
 
 
-
 function SWVideoPlayer({className, roomUrl}) {
     const [isPlaying, setIsPlaying] = useState(true);
     const [watchingEvent, setWatchingEvent] = useState(null);
@@ -46,19 +45,33 @@ function SWVideoPlayer({className, roomUrl}) {
                     if (videoObject.error) {
                         return;
                     }
-                    const recvEvent = {
-                        eventURL: data.get('watchingEvent').value,
-                        videoURL: getUrl(videoObject, SCHEMA_ORG + 'contentUrl'),
-                        startDate: new Date(data.get('startDate').value)
+                    const date = new Date(data.get('startDate').value);
+                    let recvEvent = {
+                        eventUrl: data.get('watchingEvent').value,
+                        videoUrl: getUrl(videoObject, SCHEMA_ORG + 'contentUrl'),
+                        startDate: date,
                     };
                     if (!currEvent || recvEvent.startDate > currEvent.startDate) {
-                        currEvent = recvEvent;
                         console.log('SWITCHING WATCHING EVENT');
+
+                        const pauseTimeContext = await EventsSolidService.getPauseTimeContext(session, recvEvent);
+                        if (!pauseTimeContext.error) {
+                            const now = new Date();
+                            currEvent = {
+                                ...recvEvent,
+                                joinedAt: ((now - recvEvent.startDate) - pauseTimeContext.aggregatedPauseTime) / 1000.0,
+                                lastPauseAt: pauseTimeContext.lastPauseAt,
+                                isPlaying: pauseTimeContext.isPlaying,
+                            };
+                        } else {
+                            currEvent = undefined;
+                        }
                         setWatchingEvent(currEvent);
                     }
                 }
                 fetch();
             });
+
         }
         fetch();
         return (() => {
@@ -72,8 +85,12 @@ function SWVideoPlayer({className, roomUrl}) {
 
         const launchControlActionStream = async () => {
             controlActionStream = await EventsSolidService.getControlActionStream(
-                session, watchingEvent?.eventURL);
+                session, watchingEvent?.eventUrl);
             controlActionStream.on('data', (data) => {
+                if (data.diff != true) {
+                    return;
+                }
+
                 const datetime = new Date(data.get('datetime').value);
                 let lastControlDatetime = null;
                 if (!lastControlDatetime || datetime >= lastControlDatetime) {
@@ -84,20 +101,33 @@ function SWVideoPlayer({className, roomUrl}) {
                         setIsPlaying(true)
                         videoRef.current.seekTo(resumeAt)
                     } else if (actionType === `${SCHEMA_ORG}SuspendAction`) {
-
                         setIsPlaying(false)
                         videoRef.current.seekTo(resumeAt)
                     }
+
                 }
             })
         }
         if (watchingEvent) {
             launchControlActionStream();
+            console.log(watchingEvent)
+            if (watchingEvent.isPlaying) {
+                setIsPlaying(true);
+                videoRef.current.seekTo(watchingEvent.joinedAt);
+            } else {
+                setIsPlaying(false);
+                console.log('LAST PAUSED AT')
+            }
         }
         return () => {
             controlActionStream?.close();
         };
     }, [session, sessionRequestInProgress, watchingEvent]);
+
+
+    useEffect(() => {
+        videoRef.current.seekTo(watchingEvent.lastPauseAt);
+    }, [isPlaying]);
 
 
     const playerConfig = {
@@ -116,7 +146,7 @@ function SWVideoPlayer({className, roomUrl}) {
                                  fullscreenHandle={fullscreenHandle}
                                 />
         </div>
-        <ReactPlayer url={watchingEvent?.videoURL}
+        <ReactPlayer url={watchingEvent?.videoUrl}
                      width="100%" height="100%" controls={false} playing={isPlaying}
                      config={playerConfig}
                      ref={videoRef}
