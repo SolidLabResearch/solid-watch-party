@@ -16,9 +16,46 @@ import VideoSolidService from '../services/videos.solidservice.js';
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 
 
-// TODO(Elias): In the future support also LIVE streams
-// TODO(Elias): In the future support also mp4's
+async function handleNewWatchingEvent(session, data, watchingEvent) {
+    console.log('RECEIVED NEW WATCHING EVENT');
+    const videoObject = await VideoSolidService.getVideoObject(session, data.get('videoObject').value);
+    if (videoObject.error) {
+        return null;
+    }
+    const newWatchingEvent  = {
+        eventUrl:   data.get('watchingEvent').value,
+        videoUrl:   getUrl(videoObject, SCHEMA_ORG + 'contentUrl'),
+        startDate:  new Date(data.get('startDate').value),
+    };
+    if (watchingEvent && newWatchingEvent.startDate < watchingEvent.startDate) {
+        return null;
+    }
+    const pauseTimeContext = await EventsSolidService.getPauseTimeContext(session, newWatchingEvent);
+    if (pauseTimeContext.error) {
+        return null;
+    }
+    return {
+        ...newWatchingEvent,
+        joinedAt:       ((new Date() - newWatchingEvent.startDate) - pauseTimeContext.aggregatedPauseTime) / 1000.0,
+        isPlaying:      pauseTimeContext.isPlaying,
+        lastPauseAt:    pauseTimeContext.lastPauseAt,
+    };
+}
 
+async function handleControlAction(session, data, watchingEvent, lastControlDate) {
+    if (data.diff != true || data.get('datetime').value <= watchingEvent.joinedAt) {
+        return null;
+    }
+    const date = new Date(data.get('datetime').value);
+    if (lastControlDate && lastControlDate >= date) {
+        return null;
+    }
+    return {
+        loc:        parseFloat(data.get('location').value),
+        isPlaying:  (data.get('actionType').value === `${SCHEMA_ORG}ResumeAction`),
+        date:       date,
+    }
+}
 
 function SWVideoPlayer({className, roomUrl}) {
     const [isPlaying, setIsPlaying] = useState(true);
@@ -29,51 +66,24 @@ function SWVideoPlayer({className, roomUrl}) {
 
     useEffect(() => {
         let watchingEventStream = null;
-        const fetch = async () => {
+        const act = async () => {
             watchingEventStream = await EventsSolidService.getWatchingEventStream(session, roomUrl);
-            console.log('ACQUIRED WATCHING EVENT STREAM');
             if (watchingEventStream.error) {
-                console.error(watchingEventStream.error);
                 watchingEventStream = null;
                 return;
             }
-            let currEvent = null;
+            console.log('NOW LISTENING FOR NEW WATCHING EVENTS');
             watchingEventStream.on('data', (data) => {
-                console.log('RECEIVED NEW WATCHING EVENT');
-                const fetch = async () => {
-                    const videoObject = await VideoSolidService.getVideoObject(session, data.get('videoObject').value);
-                    if (videoObject.error) {
+                handleNewWatchingEvent(session, data, watchingEvent).then((newWatchingEvent) => {
+                    if (!newWatchingEvent) {
                         return;
                     }
-                    const date = new Date(data.get('startDate').value);
-                    let recvEvent = {
-                        eventUrl: data.get('watchingEvent').value,
-                        videoUrl: getUrl(videoObject, SCHEMA_ORG + 'contentUrl'),
-                        startDate: date,
-                    };
-                    if (!currEvent || recvEvent.startDate > currEvent.startDate) {
-                        console.log('SWITCHING WATCHING EVENT');
-
-                        const pauseTimeContext = await EventsSolidService.getPauseTimeContext(session, recvEvent);
-                        if (!pauseTimeContext.error) {
-                            const now = new Date();
-                            currEvent = {
-                                ...recvEvent,
-                                joinedAt: ((now - recvEvent.startDate) - pauseTimeContext.aggregatedPauseTime) / 1000.0,
-                                lastPauseAt: pauseTimeContext.lastPauseAt,
-                                isPlaying: pauseTimeContext.isPlaying,
-                            };
-                        } else {
-                            currEvent = undefined;
-                        }
-                        setWatchingEvent(currEvent);
-                    }
-                }
-                fetch();
+                    console.log(newWatchingEvent);
+                    setWatchingEvent(newWatchingEvent);
+                });
             });
-
         }
-        fetch();
+        act();
         return (() => {
             watchingEventStream?.close();
         });
@@ -82,78 +92,45 @@ function SWVideoPlayer({className, roomUrl}) {
 
     useEffect(() => {
         let controlActionStream = null;
-
-        const launchControlActionStream = async () => {
-            controlActionStream = await EventsSolidService.getControlActionStream(
-                session, watchingEvent?.eventUrl);
-            controlActionStream.on('data', (data) => {
-                if (data.diff != true) {
-                    return;
-                }
-
-                const datetime = new Date(data.get('datetime').value);
-                let lastControlDatetime = null;
-                if (!lastControlDatetime || datetime >= lastControlDatetime) {
-                    lastControlDatetime = datetime;
-                    const actionType = data.get('actionType').value;
-                    const resumeAt = parseFloat(data.get('location').value);
-                    if (actionType === `${SCHEMA_ORG}ResumeAction`) {
-                        setIsPlaying(true)
-                        videoRef.current.seekTo(resumeAt)
-                    } else if (actionType === `${SCHEMA_ORG}SuspendAction`) {
-                        setIsPlaying(false)
-                        videoRef.current.seekTo(resumeAt)
-                    }
-
-                }
-            })
-        }
-        if (watchingEvent) {
-            launchControlActionStream();
-            console.log(watchingEvent)
-            if (watchingEvent.isPlaying) {
-                setIsPlaying(true);
-                videoRef.current.seekTo(watchingEvent.joinedAt);
-            } else {
-                setIsPlaying(false);
-                console.log('LAST PAUSED AT')
+        let lastControlDate = null;
+        const act = async () => {
+            if (!watchingEvent) {
+                return;
             }
+            controlActionStream = await EventsSolidService.getControlActionStream(session, watchingEvent?.eventUrl);
+            controlActionStream.on('data', (data) => {
+                handleControlAction(session, data, watchingEvent, lastControlDate).then((controlAction) => {
+                    if (!controlAction) {
+                        return;
+                    }
+                    console.log('CONTROL ACTION', controlAction);
+                    setIsPlaying(controlAction.isPlaying);
+                    videoRef.current.seekTo(controlAction.loc, 'seconds');
+                    lastControlDate = controlAction.date;
+                });
+            })
+            setIsPlaying(watchingEvent.isPlaying);
+            videoRef.current.seekTo(watchingEvent.joinedAt, 'seconds');
         }
+        act();
         return () => {
             controlActionStream?.close();
         };
     }, [session, sessionRequestInProgress, watchingEvent]);
 
-
-    useEffect(() => {
-        videoRef.current.seekTo(watchingEvent.lastPauseAt);
-    }, [isPlaying]);
-
-
-    const playerConfig = {
-        youtube: {
-            playerVars: { rel: 0, disablekb: 1 }
-        },
-    }
-
-  return (
-    <div className="h-full w-full relative aspect-video">
-      <FullScreen handle={fullscreenHandle} className="h-full w-full">
-        <div className="absolute bottom-0 right-0 w-full h-full z-5 flex flex-col justify-end">
-          <SWVideoPlayerControls videoRef={videoRef}
-                                 watchingEvent={watchingEvent}
-                                 isPlaying={isPlaying}
-                                 fullscreenHandle={fullscreenHandle}
-                                />
-        </div>
-        <ReactPlayer url={watchingEvent?.videoUrl}
-                     width="100%" height="100%" controls={false} playing={isPlaying}
-                     config={playerConfig}
-                     ref={videoRef}
-                    />
-      </FullScreen>
+    const playerConfig = { youtube: { playerVars: { rel: 0, disablekb: 1 } }, }
+    return (
+        <div className="h-full w-full relative aspect-video">
+            <FullScreen handle={fullscreenHandle} className="h-full w-full">
+                <div className="absolute bottom-0 right-0 w-full h-full z-5 flex flex-col justify-end">
+                    <SWVideoPlayerControls videoRef={videoRef} watchingEvent={watchingEvent}
+                                           isPlaying={isPlaying} fullscreenHandle={fullscreenHandle} />
+                </div>
+                <ReactPlayer url={watchingEvent?.videoUrl} width="100%" height="100%" controls={false}
+                             playing={isPlaying} config={playerConfig} ref={videoRef} />
+        </FullScreen>
     </div>
-  );
+    );
 }
 
 SWVideoPlayer.propTypes = {

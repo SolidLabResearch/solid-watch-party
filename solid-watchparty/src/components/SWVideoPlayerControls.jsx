@@ -29,14 +29,14 @@ function SWVideoPlayerControls({watchingEvent, videoRef, isPlaying, fullscreenHa
 
           <button className="sw-btn-player my-2" onClick={onPause}>
             {isPlaying
-              ? <FaPause className="rgb-3"/>
-              : <FaPlay className="rgb-3"/>
+              ? <FaPause className="rgb-2"/>
+              : <FaPlay className="rgb-2"/>
             }
           </button>
           <button className="sw-btn-player my-2" onClick={onFullscreen}>
             {fullscreenHandle.active
-              ? <FiMinimize2 className="rgb-3"/>
-              : <FaExpandAlt className="rgb-3"/>
+              ? <FiMinimize2 className="rgb-2"/>
+              : <FaExpandAlt className="rgb-2"/>
             }
           </button>
 
