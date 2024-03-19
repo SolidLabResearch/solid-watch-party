@@ -43,22 +43,33 @@ async function handleNewWatchingEvent(session, data, watchingEvent) {
 }
 
 async function handleControlAction(session, data, watchingEvent, lastControlDate) {
-    if (data.diff != true || data.get('datetime').value <= watchingEvent.joinedAt) {
+    const date = new Date(data.get('datetime').value);
+    if (data.diff != true || date <= watchingEvent.joinedAt) {
         return null;
     }
-    const date = new Date(data.get('datetime').value);
     if (lastControlDate && lastControlDate >= date) {
         return null;
     }
+
+    let isPlaying = null;
+    if (data.get('actionType').value === `${SCHEMA_ORG}ResumeAction`) {
+        isPlaying = true;
+    } else if (data.get('actionType').value === `${SCHEMA_ORG}SuspendAction`) {
+        isPlaying = false;
+    } else {
+        /* NOTE(Elias): This might happen since 'Incremunica' sends events for all instances of type */
+        return null;
+    }
+
     return {
         loc:        parseFloat(data.get('location').value),
-        isPlaying:  (data.get('actionType').value === `${SCHEMA_ORG}ResumeAction`),
+        isPlaying:  isPlaying,
         date:       date,
     }
 }
 
 function SWVideoPlayer({className, roomUrl}) {
-    const [isPlaying, setIsPlaying] = useState(true);
+    const [isPlaying, setIsPlaying] = useState({is: false, from: 0});
     const [watchingEvent, setWatchingEvent] = useState(null);
     const {session, sessionRequestInProgress} = useSession();
     const videoRef = useRef(null);
@@ -89,7 +100,6 @@ function SWVideoPlayer({className, roomUrl}) {
         });
     }, [session, sessionRequestInProgress, roomUrl]);
 
-
     useEffect(() => {
         let controlActionStream = null;
         let lastControlDate = null;
@@ -104,13 +114,12 @@ function SWVideoPlayer({className, roomUrl}) {
                         return;
                     }
                     console.log('CONTROL ACTION', controlAction);
-                    setIsPlaying(controlAction.isPlaying);
-                    videoRef.current.seekTo(controlAction.loc, 'seconds');
+                    setIsPlaying({is: controlAction.isPlaying, from: controlAction.loc});
                     lastControlDate = controlAction.date;
                 });
             })
-            setIsPlaying(watchingEvent.isPlaying);
-            videoRef.current.seekTo(watchingEvent.joinedAt, 'seconds');
+            console.log("NEW WATCHING EVENT: ", watchingEvent.isPlaying.is, watchingEvent.joinedAt);
+            setIsPlaying({is: watchingEvent.isPlaying, from: watchingEvent.joinedAt});
         }
         act();
         return () => {
@@ -118,18 +127,22 @@ function SWVideoPlayer({className, roomUrl}) {
         };
     }, [session, sessionRequestInProgress, watchingEvent]);
 
+    useEffect(() => {
+        videoRef.current.seekTo(isPlaying.from);
+    }, [isPlaying]);
+
     const playerConfig = { youtube: { playerVars: { rel: 0, disablekb: 1 } }, }
     return (
         <div className="h-full w-full relative aspect-video">
             <FullScreen handle={fullscreenHandle} className="h-full w-full">
                 <div className="absolute bottom-0 right-0 w-full h-full z-5 flex flex-col justify-end">
                     <SWVideoPlayerControls videoRef={videoRef} watchingEvent={watchingEvent}
-                                           isPlaying={isPlaying} fullscreenHandle={fullscreenHandle} />
+                                           isPlaying={isPlaying.is} fullscreenHandle={fullscreenHandle} />
                 </div>
                 <ReactPlayer url={watchingEvent?.videoUrl} width="100%" height="100%" controls={false}
-                             playing={isPlaying} config={playerConfig} ref={videoRef} />
-        </FullScreen>
-    </div>
+                             playing={isPlaying.is} config={playerConfig} ref={videoRef} />
+            </FullScreen>
+        </div>
     );
 }
 

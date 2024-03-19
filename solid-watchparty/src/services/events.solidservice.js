@@ -82,7 +82,6 @@ class EventsSolidService {
 
 
     async saveControlAction(session, eventUrl, isPlay, atLocationNumber) {
-        console.log('Pausing at:', atLocationNumber)
         if (!inSession(session)) {
             console.error("invalid session")
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
@@ -190,7 +189,6 @@ class EventsSolidService {
                 }
             }
 
-            console.log(things)
             return { aggregatedPauseTime: aggregatedTime, lastPauseAt: lastPauseLocation, isPlaying: isPlaying };
         } catch (error) {
             console.log(error)
