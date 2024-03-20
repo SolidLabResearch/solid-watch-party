@@ -71,14 +71,18 @@ class EventsSolidService {
                 return { error: "room dataset not found", errorMsg: "The specified room dataset was not found" }
             }
 
-
             let eventBuilder = buildThing(createThing())
                 .addUrl(RDF.type, SCHEMA_ORG + 'Event')
-                .addDatetime(SCHEMA_ORG + 'startDate', new Date())
-                .addUrl(SCHEMA_ORG + 'workFeatured', asUrl(videoObject, roomUrl));
+                .addDatetime(SCHEMA_ORG + 'startDate', new Date());
 
-            const contentUrl = getUrlAll(videoObject, SCHEMA_ORG + 'contentUrl');
-            if (contentUrl.length === 0) {
+            let addSourceObject = true;
+            if (metaUrl) {
+                eventBuilder = eventBuilder.addUrl(SCHEMA_ORG + 'workFeatured', asUrl(videoObject, roomUrl));
+                const contentUrl = getUrlAll(videoObject, SCHEMA_ORG + 'contentUrl');
+                addSourceObject = (contentUrl.length === 0);
+            }
+
+            if (addSourceObject) {
                 const newVideoObject = buildThing(createThing())
                     .addUrl(RDF.type, SCHEMA_ORG + 'VideoObject')
                     .addUrl(SCHEMA_ORG + 'contentUrl', srcUrl)

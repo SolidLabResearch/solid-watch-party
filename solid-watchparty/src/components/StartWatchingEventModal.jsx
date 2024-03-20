@@ -20,12 +20,8 @@ import { inSession } from '../utils/solidUtils';
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 
 function Tab1({className, roomUrl, setModalIsShown}) {
-    const [videoSourceUrl, setVideoSourceUrl] = useState(
-        'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd'
-    );
-    const [videoMetaUrl, setVideoMetaUrl] = useState(
-        'http://localhost:3000/P2/watchparties/myRooms/hello-world2024-03-13t133842652z#87e6d37e-1820-4660-8c1f-8518134192e8'
-    );
+    const [videoSourceUrl, setVideoSourceUrl] = useState("");
+    const [videoMetaUrl, setVideoMetaUrl] = useState("");
     const {session, sessionRequestInProgress} = useSession();
     return (
         <div className={className + " flex flex-col justify-between"}>
@@ -60,9 +56,7 @@ function Tab1({className, roomUrl, setModalIsShown}) {
 
 function
 Tab2({className, roomUrl, setModalIsShown}) {
-    const [videoObjectUrl, setVideoObjectUrl] = useState(
-        'http://localhost:3000/P2/watchparties/myRooms/asdf2024-03-12t140446746z#eabd702f-9690-4ade-8290-cf56d304a176'
-    );
+    const [videoObjectUrl, setVideoObjectUrl] = useState("");
     const {session, sessionRequestInProgress} = useSession();
     return (
         <div className={className + " flex flex-col justify-between"}>

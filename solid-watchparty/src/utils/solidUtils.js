@@ -1,6 +1,5 @@
 import { getSolidDataset, } from '@inrupt/solid-client';
 import { QueryEngine } from '@incremunica/query-sparql-incremental';
-import isUrl from 'is-url';
 
 export async function
 doesResourceExist(url)
