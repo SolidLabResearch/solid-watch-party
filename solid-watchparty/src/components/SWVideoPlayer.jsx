@@ -16,8 +16,8 @@ import VideoSolidService from '../services/videos.solidservice.js';
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 
 
-async function handleNewWatchingEvent(session, data, watchingEvent) {
-    console.log('RECEIVED NEW WATCHING EVENT');
+async function handleNewWatchingEvent(session, data) {
+    //console.log('RECEIVED NEW WATCHING EVENT');
     const videoObject = await VideoSolidService.getVideoObject(session, data.get('videoObject').value);
     if (videoObject.error) {
         return null;
@@ -27,9 +27,6 @@ async function handleNewWatchingEvent(session, data, watchingEvent) {
         videoUrl:   getUrl(videoObject, SCHEMA_ORG + 'contentUrl'),
         startDate:  new Date(data.get('startDate').value),
     };
-    if (watchingEvent && newWatchingEvent.startDate < watchingEvent.startDate) {
-        return null;
-    }
     const pauseTimeContext = await EventsSolidService.getPauseTimeContext(session, newWatchingEvent);
     if (pauseTimeContext.error) {
         return null;
@@ -42,15 +39,11 @@ async function handleNewWatchingEvent(session, data, watchingEvent) {
     };
 }
 
-async function handleControlAction(session, data, watchingEvent, lastControlDate) {
+async function handleControlAction(session, data, watchingEvent) {
     const date = new Date(data.get('datetime').value);
     if (data.diff != true || date <= watchingEvent.joinedAt) {
         return null;
     }
-    if (lastControlDate && lastControlDate >= date) {
-        return null;
-    }
-
     let isPlaying = null;
     if (data.get('actionType').value === `${SCHEMA_ORG}ResumeAction`) {
         isPlaying = true;
@@ -69,6 +62,7 @@ async function handleControlAction(session, data, watchingEvent, lastControlDate
 }
 
 function SWVideoPlayer({className, roomUrl}) {
+    const [playerReady, setPlayerReady] = useState(false);
     const [isPlaying, setIsPlaying] = useState({is: false, from: 0});
     const [watchingEvent, setWatchingEvent] = useState(null);
     const {session, sessionRequestInProgress} = useSession();
@@ -77,20 +71,24 @@ function SWVideoPlayer({className, roomUrl}) {
 
     useEffect(() => {
         let watchingEventStream = null;
+        let lastWatchingEvent = null;
         const act = async () => {
             watchingEventStream = await EventsSolidService.getWatchingEventStream(session, roomUrl);
             if (watchingEventStream.error) {
                 watchingEventStream = null;
                 return;
             }
-            console.log('NOW LISTENING FOR NEW WATCHING EVENTS');
+            //console.log('NOW LISTENING FOR NEW WATCHING EVENTS');
             watchingEventStream.on('data', (data) => {
-                handleNewWatchingEvent(session, data, watchingEvent).then((newWatchingEvent) => {
+                handleNewWatchingEvent(session, data).then((newWatchingEvent) => {
                     if (!newWatchingEvent) {
                         return;
                     }
-                    console.log(newWatchingEvent);
-                    setWatchingEvent(newWatchingEvent);
+                    if (lastWatchingEvent && newWatchingEvent.startDate <= lastWatchingEvent.startDate) {
+                        return;
+                    }
+                    lastWatchingEvent = newWatchingEvent;
+                    setWatchingEvent(lastWatchingEvent);
                 });
             });
         }
@@ -100,25 +98,28 @@ function SWVideoPlayer({className, roomUrl}) {
         });
     }, [session, sessionRequestInProgress, roomUrl]);
 
+
     useEffect(() => {
         let controlActionStream = null;
-        let lastControlDate = null;
+        let lastControlAction = null;
         const act = async () => {
             if (!watchingEvent) {
                 return;
             }
             controlActionStream = await EventsSolidService.getControlActionStream(session, watchingEvent?.eventUrl);
             controlActionStream.on('data', (data) => {
-                handleControlAction(session, data, watchingEvent, lastControlDate).then((controlAction) => {
+                handleControlAction(session, data, watchingEvent).then((controlAction) => {
                     if (!controlAction) {
                         return;
                     }
-                    console.log('CONTROL ACTION', controlAction);
-                    setIsPlaying({is: controlAction.isPlaying, from: controlAction.loc});
-                    lastControlDate = controlAction.date;
+                    if (lastControlAction && controlAction.date <= lastControlAction.date) {
+                        return;
+                    }
+                    lastControlAction = controlAction;
+                    setIsPlaying({is: lastControlAction.isPlaying, from: lastControlAction.loc});
                 });
             })
-            console.log("NEW WATCHING EVENT: ", watchingEvent.isPlaying.is, watchingEvent.joinedAt);
+            //console.log("NEW WATCHING EVENT: ", watchingEvent.isPlaying, watchingEvent.joinedAt);
             setIsPlaying({is: watchingEvent.isPlaying, from: watchingEvent.joinedAt});
         }
         act();
@@ -127,9 +128,15 @@ function SWVideoPlayer({className, roomUrl}) {
         };
     }, [session, sessionRequestInProgress, watchingEvent]);
 
+
     useEffect(() => {
-        videoRef.current.seekTo(isPlaying.from);
-    }, [isPlaying]);
+        if (playerReady === false || !isPlaying) {
+            return;
+        }
+        console.log(isPlaying);
+        videoRef.current.seekTo(Math.round(isPlaying.from), "seconds");
+    }, [isPlaying, playerReady]);
+
 
     const playerConfig = { youtube: { playerVars: { rel: 0, disablekb: 1 } }, }
     return (
@@ -140,7 +147,8 @@ function SWVideoPlayer({className, roomUrl}) {
                                            isPlaying={isPlaying.is} fullscreenHandle={fullscreenHandle} />
                 </div>
                 <ReactPlayer url={watchingEvent?.videoUrl} width="100%" height="100%" controls={false}
-                             playing={isPlaying.is} config={playerConfig} ref={videoRef} />
+                             playing={isPlaying.is} config={playerConfig} ref={videoRef}
+                             onReady={() => setPlayerReady(true)}/>
             </FullScreen>
         </div>
     );
