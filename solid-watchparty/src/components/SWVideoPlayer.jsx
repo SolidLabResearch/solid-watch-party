@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { FullScreen, useFullScreenHandle } from 'react-full-screen';
-import { getUrl } from "@inrupt/solid-client";
+import { getUrl, getUrlAll } from "@inrupt/solid-client";
 import PropTypes from 'prop-types';
 import ReactPlayer from 'react-player'
 
@@ -17,9 +17,12 @@ import { SCHEMA_ORG } from '../utils/schemaUtils';
 
 
 async function handleNewWatchingEvent(session, data) {
-    //console.log('RECEIVED NEW WATCHING EVENT');
     const videoObject = await VideoSolidService.getVideoObject(session, data.get('videoObject').value);
     if (videoObject.error) {
+        return null;
+    }
+    const contentUrl = getUrlAll(videoObject, SCHEMA_ORG + 'contentUrl');
+    if (!contentUrl || contentUrl.length === 0) {
         return null;
     }
     const newWatchingEvent  = {
@@ -78,7 +81,7 @@ function SWVideoPlayer({className, roomUrl}) {
                 watchingEventStream = null;
                 return;
             }
-            //console.log('NOW LISTENING FOR NEW WATCHING EVENTS');
+            console.log('NOW LISTENING FOR NEW WATCHING EVENTS');
             watchingEventStream.on('data', (data) => {
                 handleNewWatchingEvent(session, data).then((newWatchingEvent) => {
                     if (!newWatchingEvent) {
@@ -87,6 +90,7 @@ function SWVideoPlayer({className, roomUrl}) {
                     if (lastWatchingEvent && newWatchingEvent.startDate <= lastWatchingEvent.startDate) {
                         return;
                     }
+                    console.log("NEW WATCHING EVENT", newWatchingEvent);
                     lastWatchingEvent = newWatchingEvent;
                     setWatchingEvent(lastWatchingEvent);
                 });
@@ -119,7 +123,6 @@ function SWVideoPlayer({className, roomUrl}) {
                     setIsPlaying({is: lastControlAction.isPlaying, from: lastControlAction.loc});
                 });
             })
-            //console.log("NEW WATCHING EVENT: ", watchingEvent.isPlaying, watchingEvent.joinedAt);
             setIsPlaying({is: watchingEvent.isPlaying, from: watchingEvent.joinedAt});
         }
         act();
@@ -133,7 +136,6 @@ function SWVideoPlayer({className, roomUrl}) {
         if (playerReady === false || !isPlaying) {
             return;
         }
-        console.log(isPlaying);
         videoRef.current.seekTo(Math.round(isPlaying.from), "seconds");
     }, [isPlaying, playerReady]);
 

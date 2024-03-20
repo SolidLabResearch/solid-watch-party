@@ -118,6 +118,7 @@ a:hover
   border-radius: 3px;
   padding: 4px 6px;
   margin: 0;
+  box-sizing: border-box;
 }
 
 .sw-hr

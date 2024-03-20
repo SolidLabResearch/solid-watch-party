@@ -17,43 +17,83 @@ import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine as IncQueryEngine } from '@incremunica/query-sparql-incremental';
 import { QueryEngine } from '@comunica/query-sparql-solid';
 
+/* service imports */
+import VideoSolidService from '../services/videos.solidservice.js';
+
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 import { inSession } from '../utils/solidUtils';
 
+
 class EventsSolidService {
 
-
-    async newWatchingEvent(session, roomUrl, dashLink) {
+    async newWatchingEventFromVideoObject(session, roomUrl, videoUrl) {
         if (!inSession(session)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!roomUrl) {
             return { error: "no room url", errorMsg: "No room url was provided" }
-        } else if (!dashLink) {
+        } else if (!videoUrl) {
             return { error: "no video url", errorMsg: "No video url was provided" }
         }
 
-        let newVideoObject = buildThing(createThing())
-            .addUrl(RDF.type, SCHEMA_ORG + 'VideoObject')
-            .addUrl(SCHEMA_ORG + 'contentUrl', dashLink)
-            .build();
-
-        const roomFileUrl = roomUrl.split('#')[0];
         try {
-            let roomDataset = await getSolidDataset(roomFileUrl);
-            roomDataset = setThing(roomDataset, newVideoObject);
-
-            const videoObjectUrl = asUrl(newVideoObject, roomFileUrl);
+            let roomDataset = await getSolidDataset(roomUrl);
             const now = new Date();
             let newWatchingEvent = buildThing(createThing())
                 .addUrl(RDF.type, SCHEMA_ORG + 'Event')
                 .addDatetime(SCHEMA_ORG + 'startDate', now)
-                .addUrl(SCHEMA_ORG + 'workFeatured', videoObjectUrl)
+                .addUrl(SCHEMA_ORG + 'workFeatured', videoUrl)
                 .build();
             roomDataset = setThing(roomDataset, newWatchingEvent);
-            await saveSolidDatasetAt(roomFileUrl, roomDataset);
+            await saveSolidDatasetAt(roomUrl, roomDataset);
         } catch (error) {
             console.log(error)
+        }
+    }
+
+    async newWatchingEventFromSrc(session, roomUrl, srcUrl, metaUrl) {
+        if (!inSession(session)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+        } else if (!roomUrl) {
+            return { error: "no room url", errorMsg: "No room url was provided" }
+        } else if (!srcUrl) {
+            return { error: "no video url", errorMsg: "No video url was provided" }
+        }
+
+        try {
+            let videoObject = await VideoSolidService.getVideoObject(session, metaUrl);
+            if (!videoObject) {
+                return { error: "video object not found", errorMsg: "The specified video object was not found" }
+            }
+
+            let roomDataset = await getSolidDataset(roomUrl);
+            if (!roomDataset) {
+                return { error: "room dataset not found", errorMsg: "The specified room dataset was not found" }
+            }
+
+
+            let eventBuilder = buildThing(createThing())
+                .addUrl(RDF.type, SCHEMA_ORG + 'Event')
+                .addDatetime(SCHEMA_ORG + 'startDate', new Date())
+                .addUrl(SCHEMA_ORG + 'workFeatured', asUrl(videoObject, roomUrl));
+
+            const contentUrl = getUrlAll(videoObject, SCHEMA_ORG + 'contentUrl');
+            if (contentUrl.length === 0) {
+                const newVideoObject = buildThing(createThing())
+                    .addUrl(RDF.type, SCHEMA_ORG + 'VideoObject')
+                    .addUrl(SCHEMA_ORG + 'contentUrl', srcUrl)
+                    .build();
+                roomDataset = setThing(roomDataset, newVideoObject);
+                eventBuilder = eventBuilder.addUrl(SCHEMA_ORG + 'workFeatured', asUrl(newVideoObject, roomUrl));
+            };
+
+            const newWatchingEvent = eventBuilder.build();
+            roomDataset = setThing(roomDataset, newWatchingEvent);
+
+            await saveSolidDatasetAt(roomUrl, roomDataset);
+        } catch (error) {
+            console.log(error)
+            return {error: error};
         }
     }
 
@@ -199,9 +239,3 @@ class EventsSolidService {
 }
 
 export default new EventsSolidService();
-
-
-
-
-
-
