@@ -8,6 +8,12 @@
 
 Welcome to Solid Watchparty, a platform designed for shared media viewing experiences with a focus on decentralized data management using SOLID Pods. This project leverages the latest web technologies to offer a responsive and user-centric interface.
 
+
+
+https://github.com/SolidLabResearch/solid-watch-party/assets/37975937/e78ec297-3538-44c7-ad32-14ea310a35e7
+
+
+
 ## :zap: Quick Start
 
 
