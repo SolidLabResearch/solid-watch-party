@@ -14,7 +14,7 @@ import { RDF } from "@inrupt/vocab-common-rdf";
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 import { getPodUrl, urlify } from '../utils/urlUtils';
-import { doesResourceExist, inSession } from '../utils/solidUtils';
+import { inSession } from '../utils/solidUtils';
 
 /* config imports */
 import { ROOMS_ROOT, MESSAGES_ROOT } from '../config.js'
@@ -41,7 +41,7 @@ class RoomSolidService
         const roomUrl = `${getPodUrl(sessionContext.session.info.webId)}/${ROOMS_ROOT}/${urlify(name + now.toISOString())}`;
 
         try {
-            await saveSolidDatasetAt(roomUrl, dataset);
+            await saveSolidDatasetAt(roomUrl, dataset, {fetch: sessionContext.fetch});
             return { roomUrl: asUrl(newRoom, roomUrl) };
         } catch (error) {
             console.error('Error creating new room: ', error);
@@ -58,10 +58,6 @@ class RoomSolidService
         }
 
         const messagesFileUrl = `${getPodUrl(sessionContext.session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
-        let doesExist = await doesResourceExist(messagesFileUrl);
-        if (doesExist.exists === true) {
-            return {result: roomUrl};
-        }
 
         try {
             const newOutbox = buildThing(createThing())
@@ -70,15 +66,15 @@ class RoomSolidService
                 .addUrl(SCHEMA_ORG + 'creator', sessionContext.session.info.webId)
                 .build();
             const outboxUrl = asUrl(newOutbox, messagesFileUrl);
-            await saveSolidDatasetAt(outboxUrl, setThing(createSolidDataset(), newOutbox));
+            await saveSolidDatasetAt(outboxUrl, setThing(createSolidDataset(), newOutbox), {fetch: sessionContext.fetch});
 
             const roomFileUrl = roomUrl.split('#')[0]
-            const roomDataset = await getSolidDataset(roomFileUrl);
+            const roomDataset = await getSolidDataset(roomFileUrl, {fetch: sessionContext.fetch});
             const updatedRoom = buildThing(getThingAll(roomDataset)[0])
                 .addUrl(SCHEMA_ORG + 'attendee', sessionContext.session.info.webId)
                 .addUrl(SCHEMA_ORG + 'subjectOf', outboxUrl)
                 .build();
-            await saveSolidDatasetAt(roomFileUrl, setThing(roomDataset, updatedRoom));
+            await saveSolidDatasetAt(roomFileUrl, setThing(roomDataset, updatedRoom), {fetch: sessionContext.fetch});
 
             return { roomUrl: asUrl(updatedRoom, roomFileUrl) };
         } catch (error) {

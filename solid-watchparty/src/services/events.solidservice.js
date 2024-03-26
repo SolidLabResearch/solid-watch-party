@@ -37,7 +37,7 @@ class EventsSolidService {
         }
 
         try {
-            let roomDataset = await getSolidDataset(roomUrl);
+            let roomDataset = await getSolidDataset(roomUrl, { fetch: sessionContext.fetch });
             const now = new Date();
             let newWatchingEvent = buildThing(createThing())
                 .addUrl(RDF.type, SCHEMA_ORG + 'Event')
@@ -45,7 +45,7 @@ class EventsSolidService {
                 .addUrl(SCHEMA_ORG + 'workFeatured', videoUrl)
                 .build();
             roomDataset = setThing(roomDataset, newWatchingEvent);
-            await saveSolidDatasetAt(roomUrl, roomDataset);
+            await saveSolidDatasetAt(roomUrl, roomDataset, { fetch: sessionContext.fetch });
         } catch (error) {
             console.log(error)
         }
@@ -62,11 +62,12 @@ class EventsSolidService {
 
         try {
             let videoObject = await VideoSolidService.getVideoObject(sessionContext, metaUrl);
+            console.log(videoObject)
             if (!videoObject) {
                 return { error: "video object not found", errorMsg: "The specified video object was not found" }
             }
 
-            let roomDataset = await getSolidDataset(roomUrl);
+            let roomDataset = await getSolidDataset(roomUrl, { fetch: sessionContext.fetch });
             if (!roomDataset) {
                 return { error: "room dataset not found", errorMsg: "The specified room dataset was not found" }
             }
@@ -94,7 +95,7 @@ class EventsSolidService {
             const newWatchingEvent = eventBuilder.build();
             roomDataset = setThing(roomDataset, newWatchingEvent);
 
-            await saveSolidDatasetAt(roomUrl, roomDataset);
+            await saveSolidDatasetAt(roomUrl, roomDataset, { fetch: sessionContext.fetch });
         } catch (error) {
             console.log(error)
             return {error: error};
@@ -109,18 +110,20 @@ class EventsSolidService {
             return { error: "no room url", errorMsg: "No room url was provided" }
         }
 
-        const sparqlQuery = `
-      PREFIX schema: <${SCHEMA_ORG}>
-      SELECT ?watchingEvent ?startDate ?videoObject
-      WHERE {
-        ?watchingEvent a schema:Event .
-        ?watchingEvent schema:startDate ?startDate .
-        ?watchingEvent schema:workFeatured ?videoObject .
-      }
-      `;
-
         const queryEngine = new IncQueryEngine();
-        const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [roomUrl] });
+        const resultStream = await queryEngine.queryBindings(`
+            PREFIX schema: <${SCHEMA_ORG}>
+            SELECT ?watchingEvent ?startDate ?videoObject
+            WHERE {
+                ?watchingEvent a schema:Event .
+                ?watchingEvent schema:startDate ?startDate .
+                ?watchingEvent schema:workFeatured ?videoObject .
+            }`,
+            {
+                sources: [roomUrl],
+                fetch: sessionContext.fetch,
+            });
+
         return resultStream;
     }
 
@@ -144,7 +147,7 @@ class EventsSolidService {
             .build();
 
         try {
-            let roomDataset = await getSolidDataset(eventUrl);
+            let roomDataset = await getSolidDataset(eventUrl, { fetch: sessionContext.fetch });
 
             roomDataset = setThing(roomDataset, newControlAction);
 
@@ -159,7 +162,7 @@ class EventsSolidService {
                 .build();
             roomDataset = setThing(roomDataset, eventThing);
 
-            const savedDataset = await saveSolidDatasetAt(eventUrl, roomDataset);
+            const savedDataset = await saveSolidDatasetAt(eventUrl, roomDataset, { fetch: sessionContext.fetch });
             return savedDataset;
         } catch (error) {
             console.error(error)
@@ -174,21 +177,22 @@ class EventsSolidService {
             return { error: "no event url", errorMsg: "No event url was provided" }
         }
 
-        /* NOTE(Elias): Asssumes controlActions and event are in the same file */
-        const sparqlQuery = `
-          PREFIX schema: <${SCHEMA_ORG}>
-          SELECT ?controlAction ?actionType ?agent ?datetime ?location
-          WHERE {
-            ?controlAction a schema:ControlAction .
-            ?controlAction a ?actionType .
-            ?controlAction schema:agent ?agent .
-            ?controlAction schema:object <${eventUrl}> .
-            ?controlAction schema:startTime ?datetime .
-            ?controlAction schema:location ?location .
-          }
-          `;
         const queryEngine = new IncQueryEngine();
-        const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [eventUrl] });
+        const resultStream = await queryEngine.queryBindings(`
+            PREFIX schema: <${SCHEMA_ORG}>
+            SELECT ?controlAction ?actionType ?agent ?datetime ?location
+            WHERE {
+                ?controlAction a schema:ControlAction .
+                ?controlAction a ?actionType .
+                ?controlAction schema:agent ?agent .
+                ?controlAction schema:object <${eventUrl}> .
+                ?controlAction schema:startTime ?datetime .
+                ?controlAction schema:location ?location .
+            }`, {
+                sources: [eventUrl],
+                fetch: sessionContext.fetch,
+            });
+
         return resultStream;
     }
 
@@ -200,7 +204,7 @@ class EventsSolidService {
         }
 
         try {
-            const dataset = await getSolidDataset(watchingEvent?.eventUrl);
+            const dataset = await getSolidDataset(watchingEvent?.eventUrl, { fetch: sessionContext.fetch });
             let things = getThingAll(dataset)
                 .filter((thing) => {
                     const types = getUrlAll(thing, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type");

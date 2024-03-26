@@ -13,7 +13,6 @@ import SWLoadingIcon from '../components/SWLoadingIcon';
 import RoomSolidService from '../services/room.solidservice';
 
 /* util imports */
-import { doesResourceExist } from '../utils/solidUtils';
 import {
   validateAll,
   validateRequired,
@@ -42,11 +41,8 @@ MenuPage()
       {run: validateIsUrl, message: "Provide a valid URL!"},
     ])
     if (isValid) {
-      const result = await doesResourceExist(roomUrl);
       if (result.error) {
         setRoomUrl({value: roomUrl.value, alertMsg: result.errorMsg});
-      } else if (!result.exists) {
-        setRoomUrl({value: roomUrl.value, alertMsg: "Room does not exist"});
       } else {
         navigateTo(`${config.baseDir}/watch?room=${encodeURIComponent(roomUrl.value)}`);
       }
