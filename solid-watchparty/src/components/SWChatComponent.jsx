@@ -19,13 +19,13 @@ function SWChatComponent({roomUrl, joined}) {
   const [state, setState] = useState({isLoading: true, hasAccess: false});
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
-  const {session, sessionRequestInProgress} = useSession();
+  const sessionContext = useSession();
 
   useEffect(() => {
     let messageSeriesStreams = null;
     let messageStreams = [];
     const fetch = async () => {
-      messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(session, roomUrl);
+      messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(sessionContext, roomUrl);
       if (messageSeriesStreams.error) {
         console.error(messageSeriesStreams.error)
         messageSeriesStreams = null;
@@ -37,12 +37,12 @@ function SWChatComponent({roomUrl, joined}) {
         console.log('NEW MESSAGESTREAM ACQUIRED')
         const messageSeriesUrl = data.get('messageSeries').value;
 
-        let name = await MessageSolidService.getMessageSeriesCreatorName(session, messageSeriesUrl);
+        let name = await MessageSolidService.getMessageSeriesCreatorName(sessionContext, messageSeriesUrl);
         if (name.error) {
           name = "anonymous";
         }
 
-        let messageStream = await MessageSolidService.getMessageStream(session, data.get('messageSeries').value);
+        let messageStream = await MessageSolidService.getMessageStream(sessionContext, data.get('messageSeries').value);
         messageStreams.push(messageStream);
         if (messageStream.error) {
           messageStream = null;
@@ -74,7 +74,7 @@ function SWChatComponent({roomUrl, joined}) {
       }
       setMessages([]);
     });
-  }, [session, sessionRequestInProgress, roomUrl, joined])
+  }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl, joined])
 
 
   const submitMessage = (e) => {
@@ -82,7 +82,7 @@ function SWChatComponent({roomUrl, joined}) {
     if (input.length === 0) {
       return;
     }
-    MessageSolidService.createMessage(session, input, roomUrl);
+    MessageSolidService.createMessage(sessionContext, input, roomUrl);
     setInput('');
   }
 

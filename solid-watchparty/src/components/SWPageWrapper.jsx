@@ -19,32 +19,33 @@ import config from '../../config';
 /* NOTE(Elias): className has influence on how the component between the Navbar and footer is styled. */
 function SWPageWrapper({children, className, mustBeAuthenticated})
 {
-  const { session, sessionRequestInProgress } = useSession();
-  const navigateTo = useNavigate();
-  const currentLocation = useLocation();
+    const sessionContext = useSession();
+    const navigateTo = useNavigate();
+    const currentLocation = useLocation();
 
-  useEffect(() => {
-    if (mustBeAuthenticated && !sessionRequestInProgress && !inSession(session)) {
-      navigateTo(`${config.baseDir}/`, {state: {from: currentLocation.pathname + currentLocation.search}});
-    }
-  }, [session, sessionRequestInProgress, currentLocation, navigateTo, mustBeAuthenticated])
+    useEffect(() => {
+        if (mustBeAuthenticated && !sessionContext.sessionRequestInProgress && !inSession(sessionContext)) {
+            console.log('navigate back')
+            navigateTo(`${config.baseDir}/`, {state: {from: currentLocation.pathname + currentLocation.search}});
+        }
+    }, [sessionContext.session, sessionContext.sessionRequestInProgress, currentLocation, navigateTo, mustBeAuthenticated])
 
-  return (
-    <div className="h-full flex flex-col justify-between">
-      <SWNavbar/>
-      <div className={"h-full w-full " + className}>
-        { sessionRequestInProgress ? (
-            <div className="flex flex-col items-center">
-              <SWLoadingIcon className="w-6 h-6 mb-3"/>
-              <p className="sw-fw-1">Autenticating...</p>
+    return (
+        <div className="h-full flex flex-col justify-between">
+            <SWNavbar/>
+            <div className={"h-full w-full " + className}>
+                { sessionContext.sessionRequestInProgress ? (
+                    <div className="flex flex-col items-center">
+                        <SWLoadingIcon className="w-6 h-6 mb-3"/>
+                        <p className="sw-fw-1">Autenticating...</p>
+                    </div>
+                ) : (
+                    children
+                )}
             </div>
-        ) : (
-            children
-        )}
-      </div>
-      <SWFooter/>
-    </div>
-  );
+            <SWFooter/>
+        </div>
+    );
 }
 
 SWPageWrapper.propTypes = {

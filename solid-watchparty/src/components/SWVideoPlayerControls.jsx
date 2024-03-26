@@ -9,11 +9,11 @@ import EventsSolidService from '../services/events.solidservice.js';
 
 
 function SWVideoPlayerControls({watchingEvent, videoRef, isPlaying, fullscreenHandle}) {
-    const {session, sessionRequestInProgress} = useSession();
+    const sessionContext = useSession();
 
     const onPause = () => {
         console.log("ON PAUSE CLICKED");
-        EventsSolidService.saveControlAction(session, watchingEvent?.eventUrl,
+        EventsSolidService.saveControlAction(sessionContext, watchingEvent?.eventUrl,
                                              !isPlaying, videoRef.current.getCurrentTime())
     }
 

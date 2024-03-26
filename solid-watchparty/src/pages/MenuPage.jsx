@@ -32,7 +32,7 @@ MenuPage()
   const [isCreateLoading, setIsCreateLoading] = useState(false);
   const [isJoinLoading, setIsJoinLoading] = useState(false);
 
-  const { session } = useSession();
+  const sessionContext = useSession();
   const navigateTo = useNavigate();
 
   const joinRoomClicked = async () => {
@@ -61,7 +61,7 @@ MenuPage()
       {run: (v) => validateLength(v, 1, 42), message: "Your name can only be 42 characters long!"},
     ])
     if (isValid) {
-      const result = await RoomSolidService.createNewRoom(session, roomName.value)
+      const result = await RoomSolidService.createNewRoom(sessionContext, roomName.value)
       if (result.error) {
         setRoomName({value: roomName.value, alertMsg: result.errorMsg});
       } else {

@@ -27,8 +27,8 @@ import { inSession } from '../utils/solidUtils';
 
 class EventsSolidService {
 
-    async newWatchingEventFromVideoObject(session, roomUrl, videoUrl) {
-        if (!inSession(session)) {
+    async newWatchingEventFromVideoObject(sessionContext, roomUrl, videoUrl) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!roomUrl) {
             return { error: "no room url", errorMsg: "No room url was provided" }
@@ -51,8 +51,8 @@ class EventsSolidService {
         }
     }
 
-    async newWatchingEventFromSrc(session, roomUrl, srcUrl, metaUrl) {
-        if (!inSession(session)) {
+    async newWatchingEventFromSrc(sessionContext, roomUrl, srcUrl, metaUrl) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!roomUrl) {
             return { error: "no room url", errorMsg: "No room url was provided" }
@@ -61,7 +61,7 @@ class EventsSolidService {
         }
 
         try {
-            let videoObject = await VideoSolidService.getVideoObject(session, metaUrl);
+            let videoObject = await VideoSolidService.getVideoObject(sessionContext, metaUrl);
             if (!videoObject) {
                 return { error: "video object not found", errorMsg: "The specified video object was not found" }
             }
@@ -102,8 +102,8 @@ class EventsSolidService {
     }
 
 
-    async getWatchingEventStream(session, roomUrl) {
-        if (!inSession(session)) {
+    async getWatchingEventStream(sessionContext, roomUrl) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!roomUrl) {
             return { error: "no room url", errorMsg: "No room url was provided" }
@@ -125,12 +125,10 @@ class EventsSolidService {
     }
 
 
-    async saveControlAction(session, eventUrl, isPlay, atLocationNumber) {
-        if (!inSession(session)) {
-            console.error("invalid session")
+    async saveControlAction(sessionContext, eventUrl, isPlay, atLocationNumber) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!eventUrl) {
-            console.error("no event url")
             return { error: "no event url", errorMsg: "No watching event was provided" }
         }
 
@@ -139,7 +137,7 @@ class EventsSolidService {
         const newControlAction = buildThing(createThing())
             .addUrl(RDF.type, SCHEMA_ORG + actionType)
             .addUrl(RDF.type, SCHEMA_ORG + 'ControlAction')
-            .addUrl(SCHEMA_ORG + 'agent', session.info.webId)
+            .addUrl(SCHEMA_ORG + 'agent', sessionContext.session.info.webId)
             .addUrl(SCHEMA_ORG + 'object', eventUrl)
             .addDatetime(SCHEMA_ORG + 'startTime', now)
             .addStringNoLocale(SCHEMA_ORG + 'location', atLocationNumber.toString())
@@ -169,8 +167,8 @@ class EventsSolidService {
     }
 
 
-    async getControlActionStream(session, eventUrl) {
-        if (!inSession(session)) {
+    async getControlActionStream(sessionContext, eventUrl) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!eventUrl) {
             return { error: "no event url", errorMsg: "No event url was provided" }
@@ -194,8 +192,8 @@ class EventsSolidService {
         return resultStream;
     }
 
-    async getPauseTimeContext(session, watchingEvent) {
-        if (!inSession(session)) {
+    async getPauseTimeContext(sessionContext, watchingEvent) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!watchingEvent) {
             return { error: "no event url", errorMsg: "No event provided" }

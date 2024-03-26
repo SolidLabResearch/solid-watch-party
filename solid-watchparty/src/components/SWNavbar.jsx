@@ -8,19 +8,19 @@ import Logo from '../assets/watchparty.png'
 
 function SWNavbar()
 {
-  const { session } = useSession();
+  const sessionContext = useSession();
 
-  if (session.info.isLoggedIn) {
+  if (sessionContext.session.info.isLoggedIn) {
     /* TODO(Elias): Change <Text ... > to custom services after they have been written */
     return (
       <div className="w-full flex justify-between p-8 grow-0">
         <div className="basis-1/4">
-          {session.info.isLoggedIn ? (
+          {sessionContext.session.info.isLoggedIn ? (
               <div>
                 <label className="">User: </label>
                 <CombinedDataProvider
-                  datasetUrl={session.info.webId}
-                  thingUrl={session.info.webId}
+                  datasetUrl={sessionContext.session.info.webId}
+                  thingUrl={sessionContext.session.info.webId}
                 >
                   <Text className="sw-fw-1" properties={[
                       "http://www.w3.org/2006/vcard/ns#fn",

@@ -16,7 +16,8 @@ doesResourceExist(url)
 }
 
 export function
-inSession(session)
+inSession(sessionContext)
 {
+    const session = sessionContext.session;
 	return session && session.info && session.info.isLoggedIn;
 }

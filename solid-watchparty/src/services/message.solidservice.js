@@ -27,13 +27,13 @@ import { MESSAGES_ROOT } from '../config.js'
 class
 MessageSolidService
 {
-  async createMessage(session, messageLiteral, roomUrl)
+  async createMessage(sessionContext, messageLiteral, roomUrl)
   {
-    if (!inSession(session)) {
+    if (!inSession(sessionContext)) {
       return { error: "invalid session", errorMsg: "Your session is invalid, log in again" };
     }
 
-    const messageUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
+    const messageUrl = `${getPodUrl(sessionContext.session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
     const now = new Date();
 
     try {
@@ -54,7 +54,7 @@ MessageSolidService
 
       let message = buildThing(createThing())
         .addUrl(RDF.type, SCHEMA_ORG + 'Message')
-        .addUrl(SCHEMA_ORG + 'sender', session.info.webId)
+        .addUrl(SCHEMA_ORG + 'sender', sessionContext.session.info.webId)
         .addUrl(SCHEMA_ORG + 'isPartOf', asUrl(outbox, messageUrl))
         .addDatetime(SCHEMA_ORG + 'dateSent', now)
         .addStringNoLocale(SCHEMA_ORG + 'text', messageLiteral)
@@ -74,8 +74,8 @@ MessageSolidService
     }
   }
 
-  async getMessageSeriesStream(session, roomUrl) {
-    if (!inSession(session)) {
+  async getMessageSeriesStream(sessionContext, roomUrl) {
+    if (!inSession(sessionContext)) {
       return { error: "invalid session", errorMsg: "Your session is invalid, log in again" };
     }
     const query =`
@@ -93,8 +93,8 @@ WHERE {
     return resultStream;
   }
 
-  async getMessageStream(session, messageBoxUrl) {
-    if (!inSession(session)) {
+  async getMessageStream(sessionContext, messageBoxUrl) {
+    if (!inSession(sessionContext)) {
       return { error: "invalid session", errorMsg: "The session has ended, log in again" };
     }
     const sparqlQuery = `
@@ -117,7 +117,7 @@ WHERE {
     return resultStream;
   }
 
-  async getMessageSeriesCreatorName(session, messageSeriesUrl) {
+  async getMessageSeriesCreatorName(sessionContext, messageSeriesUrl) {
     try {
       let messagesDataset = await getSolidDataset(messageSeriesUrl);
       const outboxThings = getThingAll(messagesDataset).filter(t =>

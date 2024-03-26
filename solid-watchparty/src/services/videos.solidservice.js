@@ -16,8 +16,8 @@ import { inSession } from '../utils/solidUtils';
 
 class VideoSolidService {
 
-    async getVideoObject(session, videoObjectUrl) {
-        if (!inSession(session)) {
+    async getVideoObject(sessionContext, videoObjectUrl) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         }
 

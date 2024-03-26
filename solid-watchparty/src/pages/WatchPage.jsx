@@ -26,7 +26,7 @@ function WatchPage() {
     const [modalIsShown, setModalIsShown] = useState(false);
     const [parentHeight, setParentHeight] = useState('auto');
     const [joinedRoom, setJoinedRoom] = useState(false);
-    const {session, sessionRequestInProgress} = useSession();
+    const sessionContext = useSession();
 
     /* TODO(Elias): Add error handling, what if there is no parameter */
     const [searchParams] = useSearchParams();
@@ -34,17 +34,17 @@ function WatchPage() {
 
     useEffect(() => {
         const joinRoom = async () => {
-            const joiningRoomResult = await RoomSolidService.joinRoom(session, roomUrl)
+            const joiningRoomResult = await RoomSolidService.joinRoom(sessionContext, roomUrl)
             if (joiningRoomResult.error) {
                 console.error(joiningRoomResult.error);
                 return;
             }
             setJoinedRoom(true);
         }
-        if (inSession && !sessionRequestInProgress) {
+        if (inSession(sessionContext) && !sessionContext.sessionRequestInProgress) {
             joinRoom();
         }
-    }, [session, roomUrl, sessionRequestInProgress])
+    }, [sessionContext.sessionRequestInProgress, sessionContext.session, roomUrl]);
 
 
     useEffect(() => {
