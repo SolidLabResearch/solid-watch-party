@@ -44,7 +44,8 @@ This project is in active development. This in an overview of the progress:
     - [x] Creating new rooms and joining rooms
     - [x] Sending, retrieving and displaying messages
     - [x] Watching a video stream
-    - [ ] Video stream syncing and controls
+    - [x] Video stream syncing and controls
+    - [ ] Privacy
     - [ ] Polishing
 2. **Statistics dashboard:**
     - *details to be determined*
