@@ -8,6 +8,7 @@ import {
     createThing,
     buildThing,
     asUrl,
+    universalAccess,
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine } from '@comunica/query-sparql-link-traversal';
@@ -18,7 +19,7 @@ import { getPodUrl, urlify } from '../utils/urlUtils';
 import { inSession } from '../utils/solidUtils';
 
 /* config imports */
-import { ROOMS_ROOT, MESSAGES_ROOT } from '../config.js'
+import { ROOMS_ROOT, MESSAGES_ROOT, REGISTERS_ROOT } from '../config.js'
 
 
 class RoomSolidService
@@ -31,19 +32,41 @@ class RoomSolidService
         }
 
         const now = new Date();
+        const roomUrl = `${getPodUrl(sessionContext.session.info.webId)}/${ROOMS_ROOT}/${urlify(name + now.toISOString())}`;
+        let dataset = createSolidDataset();
+
+        const newRegisterInbox = buildThing(createThing())
+            .addUrl(RDF.type, SCHEMA_ORG + 'ItemList')
+            .build();
+        dataset = setThing(dataset, newRegisterInbox);
+        const registerInboxUrl = asUrl(newRegisterInbox, roomUrl);
+
         const newRoom = buildThing(buildThing())
             .addUrl(RDF.type, SCHEMA_ORG + 'EventSeries')
             .addStringNoLocale(SCHEMA_ORG + 'description', "Solid Watchparty")
             .addStringNoLocale(SCHEMA_ORG + 'name', name)
             .addUrl(SCHEMA_ORG + 'organizer', sessionContext.session.info.webId)
             .addDatetime(SCHEMA_ORG + 'startDate', now)
+            .addUrl(SCHEMA_ORG + 'about', registerInboxUrl)
             .build();
-        const dataset = setThing(createSolidDataset(), newRoom);
-        const roomUrl = `${getPodUrl(sessionContext.session.info.webId)}/${ROOMS_ROOT}/${urlify(name + now.toISOString())}`;
+        dataset = setThing(dataset, newRoom);
 
         try {
             await saveSolidDatasetAt(roomUrl, dataset, {fetch: sessionContext.fetch});
-            return { roomUrl: asUrl(newRoom, roomUrl) };
+
+            const authResult = await universalAccess.setPublicAccess(
+                registerInboxUrl,
+                {append: true},
+                {fetch: sessionContext.fetch}
+            );
+            if (!authResult) {
+                return { error: "auth error", errorMsg: "Failed to set access control for the room"};
+            }
+
+            return {
+                roomUrl: asUrl(newRoom, roomUrl),
+                registerUrl: registerInboxUrl
+            };
         } catch (error) {
             console.error('Error creating new room: ', error);
             return { error: error, errorMsg: 'error creating new room'};
@@ -111,6 +134,28 @@ class RoomSolidService
         });
 
         return result;
+    }
+
+    async register(sessionContext, registerUrl) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+        } else if (!registerUrl) {
+            return { error: "no register url", errorMsg: "No url was provided" }
+        }
+
+        const newRegister = buildThing(createThing())
+            .addUrl(RDF.type, SCHEMA_ORG + 'RegisterAction')
+            .addUrl(SCHEMA_ORG + 'agent', sessionContext.session.info.webId)
+            .addUrl(SCHEMA_ORG + 'actionStatus', SCHEMA_ORG + 'ActiveActionStatus')
+            .build();
+
+        try {
+            let dataset = await getSolidDataset(registerUrl, {fetch: sessionContext.fetch});
+            dataset = setThing(dataset, newRegister);
+            await saveSolidDatasetAt(registerUrl, dataset, {fetch: sessionContext.fetch});
+        } catch (error) {
+            return { error: error, errorMsg: 'Failed to register for the room'};
+        }
     }
 
 }

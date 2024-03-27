@@ -35,9 +35,18 @@ function WatchPage() {
     /* TODO(Elias): Add error handling, what if there is no parameter */
     const [searchParams] = useSearchParams();
     const roomUrl = decodeURIComponent(searchParams.get('room'));
+    const registerUrl = decodeURIComponent(searchParams.get('registerBox'));
 
     useEffect(() => {
         const joinRoom = async () => {
+            // create register event
+            console.log(registerUrl)
+            const result = await RoomSolidService.register(sessionContext, roomUrl)
+            setJoinedRoom(true);
+            return
+            // wait for acceptance, setup check every second or so
+
+            // if accepted, join the room
             const joiningRoomResult = await RoomSolidService.joinRoom(sessionContext, roomUrl)
             if (joiningRoomResult.error) {
                 console.error(joiningRoomResult.error);
@@ -94,9 +103,9 @@ function WatchPage() {
             </div>
             <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
                 <div className="w-2/3 h-fit flex rgb-bg-2 sw-border" ref={iframeRef}>
-                    <SWVideoPlayer roomUrl={roomUrl}/>
+                    {/* <SWVideoPlayer roomUrl={roomUrl}/> */}
                 </div>
-                <SWChatComponent roomUrl={roomUrl}/>
+                {/* <SWChatComponent roomUrl={roomUrl}/> */}
             </div>
             { menuModalIsShown && <PeopleMenuModal setModalIsShown={setMenuModalIsShown} roomUrl={roomUrl}/> }
             { modalIsShown && <StartWatchingEventModal setModalIsShown={setModalIsShown} roomUrl={roomUrl}/> }

@@ -57,6 +57,12 @@ div
     box-sizing: border-box;
 }
 
+
+a
+{
+  @apply cursor-pointer;
+}
+
 a:hover
 {
   color: var(--col-fg2) !important;
