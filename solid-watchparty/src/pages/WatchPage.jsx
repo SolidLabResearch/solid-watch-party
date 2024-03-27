@@ -4,6 +4,7 @@ import { useSession, } from "@inrupt/solid-ui-react";
 import { useSearchParams } from 'react-router-dom';
 import { FaUserFriends } from "react-icons/fa";
 import dashjs from 'dashjs';
+import { FaUserCircle } from "react-icons/fa";
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
@@ -12,6 +13,7 @@ import SWModal from '../components/SWModal';
 import SWVideoPlayer from '../components/SWVideoPlayer';
 import SWLoadingIcon from '../components/SWLoadingIcon';
 import StartWatchingEventModal from '../components/StartWatchingEventModal';
+import PeopleMenuModal from '../components/PeopleMenuModal';
 
 /* service imports */
 import RoomSolidService from '../services/room.solidservice.js';
@@ -63,7 +65,7 @@ function WatchPage() {
     if (!joinedRoom) {
         return (
             <div className="flex w-full h-full items-center justify-center gap-3">
-                <div clas>
+                <div>
                     <div className="flex my-6 gap-3 justify-center items-center">
                         <SWLoadingIcon className="w-8 h-8"/>
                     </div>
@@ -74,21 +76,6 @@ function WatchPage() {
         );
     }
 
-    const MenuModal = () => {
-        return (
-            <SWModal className="rgb-bg-1 p-12 z-10 w-1/2 sw-border" setIsShown={setMenuModalIsShown}>
-                <div>
-                    <p className="sw-fs-2 sw-fw-1">People</p>
-                    <div className="sw-border w-fit p-3">
-                        <div className="flex gap-3">
-                            <div className="rgb-bg-3 rounded max h-6 w-6"></div>
-                            <p className="fw-1">asdf</p>
-                        </div>
-                    </div>
-                </div>
-            </SWModal>
-        );
-    }
 
     return (
         <SWPageWrapper className="h-full" mustBeAuthenticated={true}>
@@ -111,7 +98,7 @@ function WatchPage() {
                 </div>
                 <SWChatComponent roomUrl={roomUrl}/>
             </div>
-            { menuModalIsShown && <MenuModal/>}
+            { menuModalIsShown && <PeopleMenuModal setModalIsShown={setMenuModalIsShown} roomUrl={roomUrl}/> }
             { modalIsShown && <StartWatchingEventModal setModalIsShown={setModalIsShown} roomUrl={roomUrl}/> }
         </SWPageWrapper>
     );

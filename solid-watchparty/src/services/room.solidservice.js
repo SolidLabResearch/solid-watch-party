@@ -10,6 +10,7 @@ import {
     asUrl,
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
+import { QueryEngine } from '@comunica/query-sparql-link-traversal';
 
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
@@ -80,6 +81,36 @@ class RoomSolidService
         } catch (error) {
             return { error: error, errorMsg: 'Failed to join the room, make sure you have the correct url'};
         }
+    }
+
+    async getPeople(sessionContext, roomUrl) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+        } else if (!roomUrl) {
+            return { error: "No room url", errorMsg: "No url was provided" }
+        }
+
+        const queryEngine = new QueryEngine();
+        const resultStream = await queryEngine.queryBindings(`
+            PREFIX schema: <${SCHEMA_ORG}>
+            PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+            SELECT ?webId ?name
+            WHERE {
+                <${roomUrl}> schema:attendee ?webId .
+                ?webId foaf:name ?name .
+            }`, {
+                sources: [roomUrl],
+                fetch: sessionContext.fetch,
+            });
+        const resultBindings = await resultStream.toArray()
+        const result = resultBindings.map((binding) => {
+            return ({
+                name: binding.get('name').value,
+                webID: binding.get('webId').value,
+            });
+        });
+
+        return result;
     }
 
 }
