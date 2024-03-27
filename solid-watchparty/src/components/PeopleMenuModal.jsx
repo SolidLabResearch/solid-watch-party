@@ -75,14 +75,16 @@ function InRoomPeople({roomUrl}) {
     );
 }
 
-function RequestingPeople({roomUrl}) {
+function RequestingPeople({registerUrl}) {
     const sessionContext = useSession();
     const [isLoading, setIsLoading] = useState(true);
     const [people, setPeople] = useState([]);
 
     useEffect(() => {
         const getPeople = async () => {
-            let peopleResult = await RoomSolidService.getPeople(sessionContext, roomUrl);
+            console.log(registerUrl)
+            let peopleResult = await RoomSolidService.getActiveRegisterPeople(sessionContext, registerUrl);
+            console.log(peopleResult)
             if (peopleResult.error) {
                 console.error(peopleResult.error);
                 return;
@@ -106,7 +108,7 @@ function RequestingPeople({roomUrl}) {
     );
 }
 
-function PeopleMenuModal({setModalIsShown, roomUrl}) {
+function PeopleMenuModal({setModalIsShown, roomUrl, registerUrl}) {
     /* NOTE(Elias): Uses strings for pages, valid options are:
      * 1. in-room
      * 2. requesting */
@@ -118,7 +120,7 @@ function PeopleMenuModal({setModalIsShown, roomUrl}) {
             body = <InRoomPeople roomUrl={roomUrl}/>;
             break;
         case "requesting":
-            body = <RequestingPeople roomUrl={roomUrl}/>;
+            body = <RequestingPeople registerUrl={registerUrl}/>;
             break;
     }
 

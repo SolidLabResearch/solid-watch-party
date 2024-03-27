@@ -25,6 +25,17 @@ import { ROOMS_ROOT, MESSAGES_ROOT, REGISTERS_ROOT } from '../config.js'
 class RoomSolidService
 {
 
+    /* NOTE(Elias):
+     *
+     * PLAN FOR ROOM IMPLEMENTATION!!!!!
+     *
+     * - Seperate file with append permissions for the register actions.
+     * - The register actions will link to the EventSeries but not the other way around.
+     * - This will be fixed later... with some goofy extra shit.
+     *
+     * */
+
+
     async createNewRoom(sessionContext, name)
     {
         if (!inSession(sessionContext)) {
@@ -143,19 +154,56 @@ class RoomSolidService
             return { error: "no register url", errorMsg: "No url was provided" }
         }
 
-        const newRegister = buildThing(createThing())
-            .addUrl(RDF.type, SCHEMA_ORG + 'RegisterAction')
-            .addUrl(SCHEMA_ORG + 'agent', sessionContext.session.info.webId)
-            .addUrl(SCHEMA_ORG + 'actionStatus', SCHEMA_ORG + 'ActiveActionStatus')
-            .build();
-
         try {
             let dataset = await getSolidDataset(registerUrl, {fetch: sessionContext.fetch});
+
+            const newRegister = buildThing(createThing())
+                .addUrl(RDF.type, SCHEMA_ORG + 'RegisterAction')
+                .addUrl(SCHEMA_ORG + 'agent', sessionContext.session.info.webId)
+                .addUrl(SCHEMA_ORG + 'actionStatus', SCHEMA_ORG + 'ActiveActionStatus')
+                .build();
             dataset = setThing(dataset, newRegister);
+
+            // update the register item list
+            const registerItemList = getThingAll(dataset).filter((data) => {
+                return data.url === registerUrl;
+            })[0]
+
+            console.log(registerItemList)
+
             await saveSolidDatasetAt(registerUrl, dataset, {fetch: sessionContext.fetch});
         } catch (error) {
             return { error: error, errorMsg: 'Failed to register for the room'};
         }
+    }
+
+    async getActiveRegisterPeople(sessionContext, registerUrl) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+        } else if (!registerUrl) {
+            return { error: "No register url", errorMsg: "No register url was provided" }
+        }
+
+        const queryEngine = new QueryEngine();
+        const resultStream = await queryEngine.queryBindings(`
+            PREFIX schema: <${SCHEMA_ORG}>
+            PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+            SELECT ?webId
+            WHERE {
+                <${registerUrl}> schema:agent ?webId .
+            }`, {
+                sources: [registerUrl],
+                fetch: sessionContext.fetch,
+            });
+        const resultBindings = await resultStream.toArray()
+        const result = resultBindings.map((binding) => {
+            return ({
+                name: binding.get('name').value,
+                webID: binding.get('webId').value,
+            });
+        });
+
+        return result;
     }
 
 }

@@ -107,8 +107,12 @@ function WatchPage() {
                 </div>
                 {/* <SWChatComponent roomUrl={roomUrl}/> */}
             </div>
-            { menuModalIsShown && <PeopleMenuModal setModalIsShown={setMenuModalIsShown} roomUrl={roomUrl}/> }
-            { modalIsShown && <StartWatchingEventModal setModalIsShown={setModalIsShown} roomUrl={roomUrl}/> }
+            { menuModalIsShown && (
+                <PeopleMenuModal setModalIsShown={setMenuModalIsShown} roomUrl={roomUrl} registerUrl={registerUrl} />
+            )}
+            { modalIsShown && (
+                <StartWatchingEventModal setModalIsShown={setModalIsShown} roomUrl={roomUrl}/>
+            )}
         </SWPageWrapper>
     );
 }
