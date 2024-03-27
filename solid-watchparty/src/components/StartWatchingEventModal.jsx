@@ -22,7 +22,7 @@ import { SCHEMA_ORG } from '../utils/schemaUtils';
 function Tab1({className, roomUrl, setModalIsShown}) {
     const [videoSourceUrl, setVideoSourceUrl] = useState("");
     const [videoMetaUrl, setVideoMetaUrl] = useState("");
-    const {session, sessionRequestInProgress} = useSession();
+    const sessionContext = useSession();
     return (
         <div className={className + " flex flex-col justify-between"}>
             <div>
@@ -43,7 +43,7 @@ function Tab1({className, roomUrl, setModalIsShown}) {
             </div>
             <button className={`sw-btn flex-grow h-6 mt-6 flex justify-center`}
                 onClick={() => {
-                    EventsSolidService.newWatchingEventFromSrc(session, roomUrl, videoSourceUrl, videoMetaUrl)
+                    EventsSolidService.newWatchingEventFromSrc(sessionContext, roomUrl, videoSourceUrl, videoMetaUrl)
                     setVideoSourceUrl(null);
                     setVideoMetaUrl(null);
                     setModalIsShown(false);
@@ -57,7 +57,7 @@ function Tab1({className, roomUrl, setModalIsShown}) {
 function
 Tab2({className, roomUrl, setModalIsShown}) {
     const [videoObjectUrl, setVideoObjectUrl] = useState("");
-    const {session, sessionRequestInProgress} = useSession();
+    const sessionContext = useSession();
     return (
         <div className={className + " flex flex-col justify-between"}>
             <div>
@@ -71,7 +71,7 @@ Tab2({className, roomUrl, setModalIsShown}) {
             </div>
             <button className={`sw-btn h-6 mt-6 flex justify-center`}
                 onClick={() => {
-                    EventsSolidService.newWatchingEventFromVideoObject(session, roomUrl, videoObjectUrl)
+                    EventsSolidService.newWatchingEventFromVideoObject(sessionContext, roomUrl, videoObjectUrl)
                     setVideoObjectUrl(null);
                     setModalIsShown(false);
                 }}>

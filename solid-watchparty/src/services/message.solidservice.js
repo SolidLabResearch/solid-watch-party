@@ -27,17 +27,17 @@ import { MESSAGES_ROOT } from '../config.js'
 class
 MessageSolidService
 {
-  async createMessage(session, messageLiteral, roomUrl)
+  async createMessage(sessionContext, messageLiteral, roomUrl)
   {
-    if (!inSession(session)) {
+    if (!inSession(sessionContext)) {
       return { error: "invalid session", errorMsg: "Your session is invalid, log in again" };
     }
 
-    const messageUrl = `${getPodUrl(session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
+    const messageUrl = `${getPodUrl(sessionContext.session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`;
     const now = new Date();
 
     try {
-      let messagesDataset = await getSolidDataset(messageUrl);
+      let messagesDataset = await getSolidDataset(messageUrl, { fetch: sessionContext.fetch });
       const messageThings = getThingAll(messagesDataset);
 
       let outbox = null;
@@ -54,7 +54,7 @@ MessageSolidService
 
       let message = buildThing(createThing())
         .addUrl(RDF.type, SCHEMA_ORG + 'Message')
-        .addUrl(SCHEMA_ORG + 'sender', session.info.webId)
+        .addUrl(SCHEMA_ORG + 'sender', sessionContext.session.info.webId)
         .addUrl(SCHEMA_ORG + 'isPartOf', asUrl(outbox, messageUrl))
         .addDatetime(SCHEMA_ORG + 'dateSent', now)
         .addStringNoLocale(SCHEMA_ORG + 'text', messageLiteral)
@@ -66,7 +66,7 @@ MessageSolidService
         .build();
       messagesDataset = setThing(messagesDataset, outbox);
 
-      const savedDataset = await saveSolidDatasetAt(messageUrl, messagesDataset)
+      const savedDataset = await saveSolidDatasetAt(messageUrl, messagesDataset, { fetch: sessionContext.fetch })
       return savedDataset
     } catch (error) {
       console.error('Error: creating message failed', error)
@@ -74,52 +74,59 @@ MessageSolidService
     }
   }
 
-  async getMessageSeriesStream(session, roomUrl) {
-    if (!inSession(session)) {
+  async getMessageSeriesStream(sessionContext, roomUrl) {
+    if (!inSession(sessionContext)) {
       return { error: "invalid session", errorMsg: "Your session is invalid, log in again" };
     }
-    const query =`
-PREFIX schema: <${SCHEMA_ORG}>
-SELECT ?messageSeries
-WHERE {
-  ?eventSeries a schema:EventSeries .
-  ?eventSeries schema:subjectOf ?messageSeries .
-}`;
+
     const queryEngine = new QueryEngine();
-    const resultStream = await queryEngine.queryBindings(query, { sources: [roomUrl] });
+    const resultStream = await queryEngine.queryBindings(`
+        PREFIX schema: <${SCHEMA_ORG}>
+        SELECT ?messageSeries
+        WHERE {
+          ?eventSeries a schema:EventSeries .
+          ?eventSeries schema:subjectOf ?messageSeries .
+        }`, {
+            sources: [roomUrl],
+            fetch: sessionContext.fetch
+        });
+
     resultStream.on("error", (e) => {
       console.error(e);
     });
     return resultStream;
   }
 
-  async getMessageStream(session, messageBoxUrl) {
-    if (!inSession(session)) {
+  async getMessageStream(sessionContext, messageBoxUrl) {
+    if (!inSession(sessionContext)) {
       return { error: "invalid session", errorMsg: "The session has ended, log in again" };
     }
-    const sparqlQuery = `
-PREFIX schema: <${SCHEMA_ORG}>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT ?message ?dateSent ?text ?sender
-WHERE {
-  ?message a schema:Message .
-  ?outbox schema:hasPart ?message .
-  ?message schema:dateSent ?dateSent .
-  ?message schema:text ?text .
-  ?message schema:sender ?sender .
-}
-`;
-    const queryEngine = new QueryEngine();
-    const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [messageBoxUrl] });
-    resultStream.on("error", (e) => {
-      console.error(e);
-    });
-    return resultStream;
+      const queryEngine = new QueryEngine();
+
+      const resultStream = await queryEngine.queryBindings(`
+        PREFIX schema: <${SCHEMA_ORG}>
+        PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+        SELECT ?message ?dateSent ?text ?sender
+        WHERE {
+          ?message a schema:Message .
+          ?outbox schema:hasPart ?message .
+          ?message schema:dateSent ?dateSent .
+          ?message schema:text ?text .
+          ?message schema:sender ?sender .
+        }`, {
+            sources: [messageBoxUrl],
+            fetch: sessionContext.fetch
+        });
+
+      resultStream.on("error", (e) => {
+          console.error(e);
+      });
+      return resultStream;
   }
 
-  async getMessageSeriesCreatorName(session, messageSeriesUrl) {
+  async getMessageSeriesCreatorName(sessionContext, messageSeriesUrl) {
     try {
-      let messagesDataset = await getSolidDataset(messageSeriesUrl);
+      let messagesDataset = await getSolidDataset(messageSeriesUrl, { fetch: sessionContext.fetch });
       const outboxThings = getThingAll(messagesDataset).filter(t =>
         getUrlAll(t, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
           .includes(SCHEMA_ORG + 'CreativeWorkSeries')
@@ -129,7 +136,7 @@ WHERE {
       }
       const outbox = outboxThings[0];
       const creatorUrl = getUrl(outbox, "http://schema.org/creator");
-      let profileDataset = await getSolidDataset(creatorUrl);
+      let profileDataset = await getSolidDataset(creatorUrl, { fetch: sessionContext.fetch });
       let profileThing = getThing(profileDataset, creatorUrl);
       const name = getStringNoLocale(profileThing, "http://xmlns.com/foaf/0.1/name");
       if (!name) {
