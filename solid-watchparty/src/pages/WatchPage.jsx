@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import { FaUserFriends } from "react-icons/fa";
 import dashjs from 'dashjs';
 import { FaUserCircle } from "react-icons/fa";
+import { useInterval } from 'usehooks-ts'
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
@@ -17,6 +18,7 @@ import PeopleMenuModal from '../components/PeopleMenuModal';
 
 /* service imports */
 import RoomSolidService from '../services/room.solidservice.js';
+import MessageSolidService from '../services/message.solidservice.js';
 import EventsSolidService from '../services/events.solidservice.js';
 
 /* util imports */
@@ -34,28 +36,40 @@ function WatchPage() {
 
     /* TODO(Elias): Add error handling, what if there is no parameter */
     const [searchParams] = useSearchParams();
-    const roomUrl = decodeURIComponent(searchParams.get('room'));
-    const registerUrl = decodeURIComponent(searchParams.get('registerBox'));
+    const roomUrl = decodeURIComponent(searchParams.get('roomUrl'));
 
-    useEffect(() => {
-        const joinRoom = async () => {
-            // create register event
-            console.log(registerUrl)
-            const result = await RoomSolidService.register(sessionContext, roomUrl)
-            setJoinedRoom(true);
-            return
-            // wait for acceptance, setup check every second or so
-
-            // if accepted, join the room
-            const joiningRoomResult = await RoomSolidService.joinRoom(sessionContext, roomUrl)
-            if (joiningRoomResult.error) {
-                console.error(joiningRoomResult.error);
-                return;
-            }
+    useInterval(async () => {
+        const result = await RoomSolidService.amIRegistered(sessionContext, roomUrl);
+        if (result && !result.error) {
             setJoinedRoom(true);
         }
-        if (inSession(sessionContext) && !sessionContext.sessionRequestInProgress) {
-            joinRoom();
+    }, (joinedRoom ? null : 2 * 1000));
+
+    useEffect(() => {
+        const register = async () => {
+            // TODO: Check if the user is already registered
+            const result = await RoomSolidService.amIRegistered(sessionContext, roomUrl);
+            if (result && !result.error) {
+                console.log('AAUUUGHHHHH')
+                setJoinedRoom(true);
+                return;
+            }
+            console.log('creating messagebox...')
+            const messageboxUrl = await MessageSolidService.createMyMessageBox(sessionContext, roomUrl);
+            if (!messageboxUrl || messageboxUrl.error) {
+                console.log('problem 1');
+                return;
+            }
+            console.log('creating register...')
+            const registerResult = await RoomSolidService.register(sessionContext, messageboxUrl, roomUrl);
+            if (!registerResult || registerResult.error) {
+                console.log('problem 2');
+                return;
+            }
+            console.log('registered!')
+        }
+        if (inSession(sessionContext) && !sessionContext.sessionRequestInProgress && !joinedRoom) {
+            register();
         }
     }, [sessionContext.sessionRequestInProgress, sessionContext.session, roomUrl]);
 
@@ -79,8 +93,9 @@ function WatchPage() {
                         <SWLoadingIcon className="w-8 h-8"/>
                     </div>
                     <p className="sw-fw-1">Joining Room...</p>
-                    <p> A join request was sent to the party owner.</p>
+                    {/* <p> A join request was sent to the party owner.</p> */}
                 </div>
+                <p className="absolute m-2 bottom-0 right-0 rgb-2">{roomUrl}</p>
             </div>
         );
     }
@@ -108,11 +123,11 @@ function WatchPage() {
                 {/* <SWChatComponent roomUrl={roomUrl}/> */}
             </div>
             { menuModalIsShown && (
-                <PeopleMenuModal setModalIsShown={setMenuModalIsShown} roomUrl={roomUrl} registerUrl={registerUrl} />
+                <PeopleMenuModal setModalIsShown={setMenuModalIsShown} roomUrl={roomUrl}/>
             )}
-            { modalIsShown && (
-                <StartWatchingEventModal setModalIsShown={setModalIsShown} roomUrl={roomUrl}/>
-            )}
+            {/* { modalIsShown && ( */}
+            {/*     <StartWatchingEventModal setModalIsShown={setModalIsShown} roomDirectoryUrl={roomDirectoryUrl}/> */}
+            {/* )} */}
         </SWPageWrapper>
     );
 }

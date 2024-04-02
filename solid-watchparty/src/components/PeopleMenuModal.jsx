@@ -70,21 +70,19 @@ function InRoomPeople({roomUrl}) {
     }
     return (
         <div className="overflow-auto grid grid-cols-2 auto-rows-min gap-4 h-[90%]">
-            {people.map((person) => <PersonCard person={person} hasJoined={true}/>)}
+            {people.map((person, index) => <PersonCard person={person} hasJoined={true} key={index}/>)}
         </div>
     );
 }
 
-function RequestingPeople({registerUrl}) {
+function RequestingPeople({roomUrl}) {
     const sessionContext = useSession();
     const [isLoading, setIsLoading] = useState(true);
     const [people, setPeople] = useState([]);
 
     useEffect(() => {
         const getPeople = async () => {
-            console.log(registerUrl)
-            let peopleResult = await RoomSolidService.getActiveRegisterPeople(sessionContext, registerUrl);
-            console.log(peopleResult)
+            let peopleResult = await RoomSolidService.getActiveRegisterPeople(sessionContext, roomUrl);
             if (peopleResult.error) {
                 console.error(peopleResult.error);
                 return;
@@ -108,7 +106,7 @@ function RequestingPeople({registerUrl}) {
     );
 }
 
-function PeopleMenuModal({setModalIsShown, roomUrl, registerUrl}) {
+function PeopleMenuModal({setModalIsShown, roomUrl}) {
     /* NOTE(Elias): Uses strings for pages, valid options are:
      * 1. in-room
      * 2. requesting */
@@ -120,7 +118,7 @@ function PeopleMenuModal({setModalIsShown, roomUrl, registerUrl}) {
             body = <InRoomPeople roomUrl={roomUrl}/>;
             break;
         case "requesting":
-            body = <RequestingPeople registerUrl={registerUrl}/>;
+            body = <RequestingPeople roomUrl={roomUrl}/>;
             break;
     }
 

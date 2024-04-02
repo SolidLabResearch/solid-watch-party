@@ -11,6 +11,7 @@ import SWLoadingIcon from '../components/SWLoadingIcon';
 
 /* service imports */
 import RoomSolidService from '../services/room.solidservice';
+import MessageSolidService from '../services/message.solidservice';
 
 /* util imports */
 import {
@@ -41,11 +42,7 @@ MenuPage()
             {run: validateIsUrl, message: "Provide a valid URL!"},
         ])
         if (isValid) {
-            if (result.error) {
-                setRoomUrl({value: roomUrl.value, alertMsg: result.errorMsg});
-            } else {
-                navigateTo(`${config.baseDir}/watch?room=${encodeURIComponent(roomUrl.value)}`);
-            }
+            navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(roomUrl.value)}`);
         }
         setIsJoinLoading(false);
     };
@@ -60,12 +57,19 @@ MenuPage()
             const result = await RoomSolidService.createNewRoom(sessionContext, roomName.value)
             if (result.error) {
                 setRoomName({value: roomName.value, alertMsg: result.errorMsg});
-            } else {
-                let url = `${config.baseDir}/watch?`
-                url += `room=${encodeURIComponent(result.roomUrl)}`
-                url += `&registerBox=${encodeURIComponent(result.registerUrl)}`
-                navigateTo(url);
+                return;
             }
+            const messageboxUrl = await MessageSolidService.createMyMessageBox(sessionContext, result.roomUrl);
+            if (messageboxUrl.error) {
+                setRoomName({value: roomName.value, alertMsg: "Something went wrong, try again"});
+                return;
+            }
+            const addResult = await RoomSolidService.addPerson(sessionContext, result.roomUrl, messageboxUrl,
+                                                               sessionContext.session.info.webId);
+
+            let url = `${config.baseDir}/watch?`
+            url += `roomUrl=${encodeURIComponent(result.roomUrl)}`
+            navigateTo(url);
         }
         setIsCreateLoading(false);
     };
