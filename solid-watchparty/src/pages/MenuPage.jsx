@@ -59,17 +59,15 @@ MenuPage()
                 setRoomName({value: roomName.value, alertMsg: result.errorMsg});
                 return;
             }
-            const messageboxUrl = await MessageSolidService.createMyMessageBox(sessionContext, result.roomUrl);
-            if (messageboxUrl.error) {
+            const messageboxResult = await MessageSolidService.createMyMessageBox(sessionContext, result.roomUrl);
+            if (messageboxResult.error) {
                 setRoomName({value: roomName.value, alertMsg: "Something went wrong, try again"});
                 return;
             }
-            const addResult = await RoomSolidService.addPerson(sessionContext, result.roomUrl, messageboxUrl,
+            const addResult = await RoomSolidService.addPerson(sessionContext, result.roomUrl,
+                                                               messageboxResult.messageboxUrl,
                                                                sessionContext.session.info.webId);
-
-            let url = `${config.baseDir}/watch?`
-            url += `roomUrl=${encodeURIComponent(result.roomUrl)}`
-            navigateTo(url);
+            navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(result.roomUrl)}`);
         }
         setIsCreateLoading(false);
     };

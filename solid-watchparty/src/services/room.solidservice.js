@@ -26,17 +26,6 @@ import { ROOMS_ROOT, MESSAGES_ROOT, REGISTERS_ROOT } from '../config.js'
 class RoomSolidService
 {
 
-    /* NOTE(Elias):
-     *
-     * PLAN FOR ROOM IMPLEMENTATION!!!!!
-     *
-     * - Seperate file with append permissions for the register actions.
-     * - The register actions will link to the EventSeries but not the other way around.
-     * - This will be fixed later... with some goofy extra shit.
-     *
-     * */
-
-
     async createNewRoom(sessionContext, name)
     {
         // check context
@@ -92,28 +81,25 @@ class RoomSolidService
         } else if (!roomUrl) {
             return { error: "no room directory url", errorMsg: "No url was provided" }
         }
-
         try {
-            console.log(RDF.type)
-            const engine = new QueryEngine();
-            const result = await engine.query(`
+            const id = `${urlify(sessionContext.session.info.webId)}`
+            const file = `${getDirectoryOfUrl(roomUrl)}/register`
+            const query = `
                 PREFIX schema: <${SCHEMA_ORG}>
                 INSERT DATA {
-                    ?p <${RDF.type}> schema:RegisterAction .
-                    ?p schema:agent ${sessionContext.session.info.webId} .
-                    ?p schema:actionStatus schema:ActiveActionStatus .
-                    /P schema:additionalType ${messageboxUrl} .
-                }`);
-
-        // const roomDirectoryUrl = getDirectoryOfUrl(roomUrl);
-        // try {
-        //     const newRegister = buildThing(createThing())
-        //         .addUrl(RDF.type, SCHEMA_ORG + 'RegisterAction')
-        //         .addUrl(SCHEMA_ORG + 'agent', sessionContext.session.info.webId)
-        //         .addUrl(SCHEMA_ORG + 'actionStatus', SCHEMA_ORG + 'ActiveActionStatus')
-        //         .addUrl(SCHEMA_ORG + 'additionalType', messageboxUrl)
-        //         .build();
-
+                    <${file}#${id}> a schema:RegisterAction .
+                    <${file}#${id}> schema:agent <${sessionContext.session.info.webId}> .
+                    <${file}#${id}> schema:actionStatus schema:ActiveActionStatus .
+                    <${file}#${id}> schema:additionalType <${messageboxUrl}> .
+                }`;
+            const result = await sessionContext.fetch(file, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/sparql-update',
+                },
+                body: query,
+            });
+            return result;
         } catch (error) {
             console.error(error);
             return { error: error, errorMsg: 'Failed to register for the room'};
@@ -126,7 +112,6 @@ class RoomSolidService
         } else if (!roomUrl) {
             return { error: "no room url", errorMsg: "No url was provided" }
         }
-
         try {
             await getSolidDataset(roomUrl, {fetch: sessionContext.fetch});
             return true;
@@ -164,6 +149,7 @@ class RoomSolidService
             await saveSolidDatasetAt(roomUrl, setThing(roomDataset, updatedRoom), {fetch: sessionContext.fetch});
 
             // add person to auth group
+            // TODO!!!!
         } catch (error) {
             return { error: error, errorMsg: 'Failed to add person to the room'};
         }
@@ -212,19 +198,20 @@ class RoomSolidService
         const resultStream = await queryEngine.queryBindings(`
             PREFIX schema: <${SCHEMA_ORG}>
             PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-            SELECT ?messageBox ?webId ?name
+            SELECT ?webId ?name
             WHERE {
-                ?registerAction schema:additionalType ?messageBox .
                 ?registerAction schema:agent ?webId .
                 ?webId foaf:name ?name .
             }`, {
                 sources: [registerUrl],
                 fetch: sessionContext.fetch,
             });
+                // SELECT ?messageBox ?webId ?name
+                //?registerAction schema:additionalType ?messageBox .
         const resultBindings = await resultStream.toArray()
         const result = resultBindings.map((binding) => {
             return ({
-                messageBox: binding.get('messageBox').value,
+                //messageBox: binding.get('messageBox').value,
                 name: binding.get('name').value,
                 webID: binding.get('webId').value,
             });

@@ -101,7 +101,7 @@ function RequestingPeople({roomUrl}) {
     }
     return (
         <div className="overflow-auto grid grid-cols-2 auto-rows-min gap-4 h-[90%]">
-            {people.map((person) => <PersonCard person={person} hasJoined={true}/>)}
+            {people.map((person, index) => <PersonCard person={person} hasJoined={true} key={index}/>)}
         </div>
     );
 }

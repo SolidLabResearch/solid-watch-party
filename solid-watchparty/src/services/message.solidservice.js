@@ -28,31 +28,31 @@ import { MESSAGES_ROOT } from '../config.js'
 class
 MessageSolidService
 {
-    async createMyMessageBox(sessionContext, roomUrl)
-    {
+    async createMyMessageBox(sessionContext, roomUrl) {
         if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!roomUrl) {
             return { error: "invalid room url", errorMsg: "The room url is invalid." }
         }
-
-        let messagesFileUrl = `${getPodUrl(sessionContext.session.info.webId)}`
-        messagesFileUrl += `/${MESSAGES_ROOT}`
-        messagesFileUrl += `/MSG${urlify(roomUrl)}`;
-
         try {
-            const newOutbox = buildThing(createThing())
-                .addUrl(RDF.type, SCHEMA_ORG + 'CreativeWorkSeries')
-                .addUrl(SCHEMA_ORG + 'about', `${roomUrl}`)
-                .addUrl(SCHEMA_ORG + 'creator', sessionContext.session.info.webId)
-                .build();
-            const outboxUrl = asUrl(newOutbox, messagesFileUrl);
-
-            let dataset = createSolidDataset();
-            dataset = setThing(dataset, newOutbox);
-
-            await saveSolidDatasetAt(outboxUrl, dataset, {fetch: sessionContext.fetch});
-            return outboxUrl;
+            const file = `${getPodUrl(sessionContext.session.info.webId)}/${MESSAGES_ROOT}/MSG${urlify(roomUrl)}`
+            const id = `outbox`;
+            const query = `
+                PREFIX schema: <${SCHEMA_ORG}>
+                INSERT DATA {
+                    <${file}#${id}> a schema:CreativeWorkSeries .
+                    <${file}#${id}> schema:about <${roomUrl}> .
+                    <${file}#${id}> schema:creator <${sessionContext.session.info.webId}> .
+                }`;
+            const result = await sessionContext.fetch(file, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/sparql-update',
+                },
+                body: query,
+            });
+            console.log(result)
+            return { result: result, messageboxUrl: `${file}#${id}` };
         } catch (error) {
             console.error(error)
             return { error: error, errorMsg: 'failed to create messageBox'};
@@ -136,19 +136,19 @@ MessageSolidService
         const queryEngine = new QueryEngine();
 
         const resultStream = await queryEngine.queryBindings(`
-        PREFIX schema: <${SCHEMA_ORG}>
-        PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-        SELECT ?message ?dateSent ?text ?sender
-        WHERE {
-          ?message a schema:Message .
-          ?outbox schema:hasPart ?message .
-          ?message schema:dateSent ?dateSent .
-          ?message schema:text ?text .
-          ?message schema:sender ?sender .
-        }`, {
-            sources: [messageBoxUrl],
-            fetch: sessionContext.fetch
-        });
+            PREFIX schema: <${SCHEMA_ORG}>
+            PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+            SELECT ?message ?dateSent ?text ?sender
+            WHERE {
+              ?message a schema:Message .
+              ?outbox schema:hasPart ?message .
+              ?message schema:dateSent ?dateSent .
+              ?message schema:text ?text .
+              ?message schema:sender ?sender .
+            }`, {
+                sources: [messageBoxUrl],
+                fetch: sessionContext.fetch
+            });
 
         resultStream.on("error", (e) => {
             console.error(e);

@@ -50,18 +50,19 @@ function WatchPage() {
             // TODO: Check if the user is already registered
             const result = await RoomSolidService.amIRegistered(sessionContext, roomUrl);
             if (result && !result.error) {
-                console.log('AAUUUGHHHHH')
                 setJoinedRoom(true);
                 return;
             }
             console.log('creating messagebox...')
-            const messageboxUrl = await MessageSolidService.createMyMessageBox(sessionContext, roomUrl);
+            const messageboxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomUrl);
             if (!messageboxUrl || messageboxUrl.error) {
                 console.log('problem 1');
                 return;
             }
             console.log('creating register...')
-            const registerResult = await RoomSolidService.register(sessionContext, messageboxUrl, roomUrl);
+            const registerResult = await RoomSolidService.register(sessionContext,
+                                                                   messageboxResult.messageboxUrl,
+                                                                   roomUrl);
             if (!registerResult || registerResult.error) {
                 console.log('problem 2');
                 return;
