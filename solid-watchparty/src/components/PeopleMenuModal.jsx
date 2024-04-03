@@ -4,7 +4,7 @@ import { useSession, } from "@inrupt/solid-ui-react";
 import { useSearchParams } from 'react-router-dom';
 import { FaUserFriends } from "react-icons/fa";
 import dashjs from 'dashjs';
-import { FaUserCircle } from "react-icons/fa";
+import { FaUserCircle, FaCheck } from "react-icons/fa";
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
@@ -33,12 +33,31 @@ function LoadingCard({}) {
     );
 }
 
-function PersonCard({person, hasJoined}) {
+function PersonCard({person}) {
     return (
         <div className="rgb-bg-1 sw-border flex justify-between p-4 h-fit">
             <div className="flex gap-3">
                 <FaUserCircle className="rgb-1 sw-fw-1 w-6 h-6"/>
                 <p className="">{person.name}</p>
+            </div>
+        </div>
+    );
+}
+
+function RequestingPersonCard({person, roomUrl, onAccept}) {
+    return (
+        <div className="rgb-bg-1 sw-border flex justify-between p-4 h-fit">
+            <div className="flex gap-3 justify-between w-full items-center">
+                <div className="flex gap-3">
+                    <FaUserCircle className="rgb-1 sw-fw-1 w-6 h-6"/>
+                    <p className="rgb-on">{person.name}</p>
+                </div>
+                <button className="p-2 rounded items-center
+                                   rgb-bg-active-1 hover:rgb-bg-1 active:rgb-bg-active-2
+                                   rgb-active-1 active:rgb-1"
+                        onClick={() => onAccept(person)}>
+                    <FaCheck/>
+                </button>
             </div>
         </div>
     );
@@ -70,7 +89,7 @@ function InRoomPeople({roomUrl}) {
     }
     return (
         <div className="overflow-auto grid grid-cols-2 auto-rows-min gap-4 h-[90%]">
-            {people.map((person, index) => <PersonCard person={person} hasJoined={true} key={index}/>)}
+            {people.map((person, index) => <PersonCard person={person} key={index}/>)}
         </div>
     );
 }
@@ -96,12 +115,16 @@ function RequestingPeople({roomUrl}) {
         }
     }, []);
 
+    const onAccept = async (person) => {
+        const result = await RoomSolidService.addPerson(sessionContext, roomUrl, person.messageboxUrl, person.webId);
+    }
+
     if (isLoading) {
         return (<LoadingCard/>);
     }
     return (
         <div className="overflow-auto grid grid-cols-2 auto-rows-min gap-4 h-[90%]">
-            {people.map((person, index) => <PersonCard person={person} hasJoined={true} key={index}/>)}
+            {people.map((person, index) => <RequestingPersonCard person={person} key={index} onAccept={onAccept}/>)}
         </div>
     );
 }

@@ -18,6 +18,7 @@ import { QueryEngine as QueryEngineLT } from '@comunica/query-sparql-link-traver
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 import { getPodUrl, urlify, getDirectoryOfUrl } from '../utils/urlUtils';
 import { inSession } from '../utils/solidUtils';
+import { sprql_patch } from '../utils/queryUtils';
 
 /* config imports */
 import { ROOMS_ROOT, MESSAGES_ROOT, REGISTERS_ROOT } from '../config.js'
@@ -89,16 +90,11 @@ class RoomSolidService
                 INSERT DATA {
                     <${file}#${id}> a schema:RegisterAction .
                     <${file}#${id}> schema:agent <${sessionContext.session.info.webId}> .
+                    <${file}#${id}> schema:object <${roomUrl}> .
                     <${file}#${id}> schema:actionStatus schema:ActiveActionStatus .
                     <${file}#${id}> schema:additionalType <${messageboxUrl}> .
                 }`;
-            const result = await sessionContext.fetch(file, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/sparql-update',
-                },
-                body: query,
-            });
+            const result = await sprql_patch(sessionContext, file, query);
             return result;
         } catch (error) {
             console.error(error);
@@ -124,33 +120,49 @@ class RoomSolidService
         }
     }
 
-    async addPerson(sessionContext, roomUrl, outboxUrl, webID) {
+    async addPerson(sessionContext, roomUrl, messageboxUrl, webId) {
         if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!roomUrl) {
             return { error: "no room url", errorMsg: "No url was provided" }
-        } else if (!outboxUrl) {
+        } else if (!messageboxUrl) {
             return { error: "no outbox url", errorMsg: "No outbox url was provided" }
-        } else if (!webID) {
+        } else if (!webId) {
             return { error: "no webID", errorMsg: "No webID was provided" }
         }
-
-        // retrieve the dataset
         try {
-            const roomDataset = await getSolidDataset(roomUrl, {fetch: sessionContext.fetch});
-
-            // update the dataset
-            const updatedRoom = buildThing(getThingAll(roomDataset)[0])
-                .addUrl(SCHEMA_ORG + 'attendee', sessionContext.session.info.webId)
-                .addUrl(SCHEMA_ORG + 'subjectOf', outboxUrl)
-                .build();
-
-            // save the dataset
-            await saveSolidDatasetAt(roomUrl, setThing(roomDataset, updatedRoom), {fetch: sessionContext.fetch});
+            // 1. update the room
+            const roomResource = roomUrl;
+            const roomQuery = `
+                PREFIX schema: <${SCHEMA_ORG}>
+                INSERT DATA {
+                    <${roomResource}> schema:attendee <${webId}> .
+                    <${roomResource}> schema:subjectOf <${messageboxUrl}> .
+                }`;
+            const roomResult = await sprql_patch(sessionContext, roomResource, roomQuery);
+            if (!roomResult.ok) {
+                throw new Error("failed to add person to the room");
+            }
+            // 2. update registration status
+            const registerResource = `${getDirectoryOfUrl(roomUrl)}/register`;
+            const registerId = `${urlify(webId)}`
+            const registerQuery = `
+                PREFIX schema: <${SCHEMA_ORG}>
+                DELETE {
+                    <${registerResource}#${registerId}> schema:actionStatus schema:ActiveActionStatus .
+                }
+                INSERT DATA {
+                    <${registerResource}#${registerId}> schema:actionStatus schema:CompletedActionStatus .
+                }`;
+            const registerResult = await sprql_patch(sessionContext, registerResource, registerQuery);
+            if (!registerResult.ok) {
+                throw new Error("failed to update registration status");
+            }
 
             // add person to auth group
             // TODO!!!!
         } catch (error) {
+            console.error(error);
             return { error: error, errorMsg: 'Failed to add person to the room'};
         }
     }
@@ -192,31 +204,30 @@ class RoomSolidService
             return { error: "No register url", errorMsg: "No register url was provided" }
         }
 
-        const registerUrl = `${getDirectoryOfUrl(roomUrl)}/register`;
-
+        const file = `${getDirectoryOfUrl(roomUrl)}/register`;
         const queryEngine = new QueryEngineLT();
         const resultStream = await queryEngine.queryBindings(`
             PREFIX schema: <${SCHEMA_ORG}>
             PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-            SELECT ?webId ?name
+            SELECT ?webId ?messageboxUrl ?name
             WHERE {
+                ?registerAction schema:additionalType ?messageboxUrl .
                 ?registerAction schema:agent ?webId .
                 ?webId foaf:name ?name .
             }`, {
-                sources: [registerUrl],
+                sources: [file],
                 fetch: sessionContext.fetch,
+                lenient: true,
             });
-                // SELECT ?messageBox ?webId ?name
-                //?registerAction schema:additionalType ?messageBox .
         const resultBindings = await resultStream.toArray()
         const result = resultBindings.map((binding) => {
             return ({
-                //messageBox: binding.get('messageBox').value,
                 name: binding.get('name').value,
-                webID: binding.get('webId').value,
+                webId: binding.get('webId').value,
+                messageboxUrl: binding.get('messageboxUrl').value,
             });
         });
-
+        console.log(result);
         return result;
     }
 

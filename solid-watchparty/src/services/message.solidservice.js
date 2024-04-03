@@ -51,7 +51,9 @@ MessageSolidService
                 },
                 body: query,
             });
-            console.log(result)
+
+            // update the access control too allow the party owner to read
+
             return { result: result, messageboxUrl: `${file}#${id}` };
         } catch (error) {
             console.error(error)

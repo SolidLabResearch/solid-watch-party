@@ -54,20 +54,30 @@ MenuPage()
             {run: (v) => validateLength(v, 1, 42), message: "Your name can only be 42 characters long!"},
         ])
         if (isValid) {
-            const result = await RoomSolidService.createNewRoom(sessionContext, roomName.value)
-            if (result.error) {
-                setRoomName({value: roomName.value, alertMsg: result.errorMsg});
+            // TODO: At the moment an error in this process will cause dangling dataset
+            const roomResult = await RoomSolidService.createNewRoom(sessionContext, roomName.value)
+            if (!roomResult || roomResult.error) {
+                setRoomName({value: roomName.value, alertMsg: roomResult.errorMsg});
+                setIsCreateLoading(false);
                 return;
             }
-            const messageboxResult = await MessageSolidService.createMyMessageBox(sessionContext, result.roomUrl);
-            if (messageboxResult.error) {
+            const messageboxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomResult.roomUrl);
+            if (!messageboxResult || messageboxResult.error) {
                 setRoomName({value: roomName.value, alertMsg: "Something went wrong, try again"});
+                setIsCreateLoading(false);
                 return;
             }
-            const addResult = await RoomSolidService.addPerson(sessionContext, result.roomUrl,
+            const registerResult = await RoomSolidService.register(sessionContext, messageboxResult.messageboxUrl,
+                                                                   roomResult.roomUrl);
+            if (!registerResult || registerResult.error) {
+                setRoomName({value: roomName.value, alertMsg: "Something went wrong, try again"});
+                setIsCreateLoading(false);
+                return;
+            }
+            const addResult = await RoomSolidService.addPerson(sessionContext, roomResult.roomUrl,
                                                                messageboxResult.messageboxUrl,
                                                                sessionContext.session.info.webId);
-            navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(result.roomUrl)}`);
+            navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(roomResult.roomUrl)}`);
         }
         setIsCreateLoading(false);
     };

@@ -47,27 +47,20 @@ function WatchPage() {
 
     useEffect(() => {
         const register = async () => {
-            // TODO: Check if the user is already registered
-            const result = await RoomSolidService.amIRegistered(sessionContext, roomUrl);
-            if (result && !result.error) {
+            const registeredCheck = await RoomSolidService.amIRegistered(sessionContext, roomUrl);
+            if (registeredCheck && !registeredCheck.error) {
                 setJoinedRoom(true);
                 return;
             }
-            console.log('creating messagebox...')
             const messageboxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomUrl);
-            if (!messageboxUrl || messageboxUrl.error) {
-                console.log('problem 1');
+            if (!messageboxResult || messageboxResult.error) {
                 return;
             }
-            console.log('creating register...')
-            const registerResult = await RoomSolidService.register(sessionContext,
-                                                                   messageboxResult.messageboxUrl,
+            const registerResult = await RoomSolidService.register(sessionContext, messageboxResult.messageboxUrl,
                                                                    roomUrl);
             if (!registerResult || registerResult.error) {
-                console.log('problem 2');
                 return;
             }
-            console.log('registered!')
         }
         if (inSession(sessionContext) && !sessionContext.sessionRequestInProgress && !joinedRoom) {
             register();
@@ -86,8 +79,9 @@ function WatchPage() {
     }, [joinedRoom]);
 
 
+    let body = <></>;
     if (!joinedRoom) {
-        return (
+        body = (
             <div className="flex w-full h-full items-center justify-center gap-3">
                 <div>
                     <div className="flex my-6 gap-3 justify-center items-center">
@@ -99,11 +93,8 @@ function WatchPage() {
                 <p className="absolute m-2 bottom-0 right-0 rgb-2">{roomUrl}</p>
             </div>
         );
-    }
-
-
-    return (
-        <SWPageWrapper className="h-full" mustBeAuthenticated={true}>
+    } else {
+        body = (<>
             <div className="flex justify-between px-8 py-4 rgb-2 gap-12 items-center">
                 <p>{roomUrl}</p>
                 <div className="flex gap-3">
@@ -129,6 +120,13 @@ function WatchPage() {
             {/* { modalIsShown && ( */}
             {/*     <StartWatchingEventModal setModalIsShown={setModalIsShown} roomDirectoryUrl={roomDirectoryUrl}/> */}
             {/* )} */}
+        </>
+        )
+    }
+
+    return (
+        <SWPageWrapper className="h-full" mustBeAuthenticated={true}>
+            {body}
         </SWPageWrapper>
     );
 }
