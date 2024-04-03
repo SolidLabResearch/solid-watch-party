@@ -1,5 +1,4 @@
 
-
 export async function sprql_patch(sessionContext, endpoint, query) {
     const result = await sessionContext.fetch(endpoint, {
         method: 'PATCH',
@@ -10,5 +9,4 @@ export async function sprql_patch(sessionContext, endpoint, query) {
     });
     return result;
 }
-
 

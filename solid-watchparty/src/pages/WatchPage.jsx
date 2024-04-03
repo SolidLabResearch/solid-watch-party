@@ -110,16 +110,16 @@ function WatchPage() {
             </div>
             <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
                 <div className="w-2/3 h-fit flex rgb-bg-2 sw-border" ref={iframeRef}>
-                    {/* <SWVideoPlayer roomUrl={roomUrl}/> */}
+                    <SWVideoPlayer roomUrl={roomUrl}/>
                 </div>
-                {/* <SWChatComponent roomUrl={roomUrl}/> */}
+                <SWChatComponent roomUrl={roomUrl}/>
             </div>
             { menuModalIsShown && (
                 <PeopleMenuModal setModalIsShown={setMenuModalIsShown} roomUrl={roomUrl}/>
             )}
-            {/* { modalIsShown && ( */}
-            {/*     <StartWatchingEventModal setModalIsShown={setModalIsShown} roomDirectoryUrl={roomDirectoryUrl}/> */}
-            {/* )} */}
+            { modalIsShown && (
+                <StartWatchingEventModal setModalIsShown={setModalIsShown} roomUrl={roomUrl}/>
+            )}
         </>
         )
     }

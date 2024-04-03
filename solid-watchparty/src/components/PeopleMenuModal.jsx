@@ -4,7 +4,7 @@ import { useSession, } from "@inrupt/solid-ui-react";
 import { useSearchParams } from 'react-router-dom';
 import { FaUserFriends } from "react-icons/fa";
 import dashjs from 'dashjs';
-import { FaUserCircle, FaCheck } from "react-icons/fa";
+import { FaUserCircle, FaCheck, FaEnvelope } from "react-icons/fa";
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
@@ -14,6 +14,7 @@ import SWVideoPlayer from '../components/SWVideoPlayer';
 import SWLoadingIcon from '../components/SWLoadingIcon';
 import StartWatchingEventModal from '../components/StartWatchingEventModal';
 import { MenuBar, MenuItem } from '../components/SWMenu';
+import SWSwitch from '../components/SWSwitch';
 
 /* service imports */
 import RoomSolidService from '../services/room.solidservice.js';
@@ -34,11 +35,17 @@ function LoadingCard({}) {
 }
 
 function PersonCard({person}) {
+    const [enabled, setEnabled] = useState(false)
+
     return (
-        <div className="rgb-bg-1 sw-border flex justify-between p-4 h-fit">
+        <div className="rgb-bg-1 sw-border flex justify-between p-4 h-fit items-center">
             <div className="flex gap-3">
                 <FaUserCircle className="rgb-1 sw-fw-1 w-6 h-6"/>
                 <p className="">{person.name}</p>
+            </div>
+            <div className="flex gap-3 rgb-bg-3 items-center rounded px-2">
+                <FaEnvelope className="rgb-active-1"/>
+                <SWSwitch enabled={enabled} setEnabled={setEnabled}/>
             </div>
         </div>
     );

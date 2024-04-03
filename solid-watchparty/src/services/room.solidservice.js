@@ -131,7 +131,6 @@ class RoomSolidService
             return { error: "no webID", errorMsg: "No webID was provided" }
         }
         try {
-            // 1. update the room
             const roomResource = roomUrl;
             const roomQuery = `
                 PREFIX schema: <${SCHEMA_ORG}>
@@ -143,24 +142,33 @@ class RoomSolidService
             if (!roomResult.ok) {
                 throw new Error("failed to add person to the room");
             }
-            // 2. update registration status
             const registerResource = `${getDirectoryOfUrl(roomUrl)}/register`;
             const registerId = `${urlify(webId)}`
-            const registerQuery = `
+            const registerDeleteQuery = `
                 PREFIX schema: <${SCHEMA_ORG}>
-                DELETE {
+                DELETE DATA {
                     <${registerResource}#${registerId}> schema:actionStatus schema:ActiveActionStatus .
-                }
+                }`;
+            const registerPatchQuery = `
+                PREFIX schema: <${SCHEMA_ORG}>
                 INSERT DATA {
                     <${registerResource}#${registerId}> schema:actionStatus schema:CompletedActionStatus .
                 }`;
-            const registerResult = await sprql_patch(sessionContext, registerResource, registerQuery);
-            if (!registerResult.ok) {
+            const registerDeleteResult = await sprql_patch(sessionContext, registerResource, registerDeleteQuery);
+            if (!registerDeleteResult || registerDeleteResult.error || !registerDeleteResult.ok) {
+                console.error(registerDeleteResult);
+                throw new Error("failed to delete old registration status");
+            }
+            const registerPatchResult = await sprql_patch(sessionContext, registerResource, registerPatchQuery);
+            if (!registerPatchResult || registerPatchResult.error || !registerPatchResult.ok) {
+                console.error(registerDeleteResult);
                 throw new Error("failed to update registration status");
             }
-
-            // add person to auth group
-            // TODO!!!!
+            const access = await universalAccess.setAgentAccess(roomUrl, webId,
+                                                                {read: true, write: true, append: true},
+                                                                {fetch: sessionContext.fetch});
+            console.log(access);
+            return access;
         } catch (error) {
             console.error(error);
             return { error: error, errorMsg: 'Failed to add person to the room'};
@@ -211,6 +219,9 @@ class RoomSolidService
             PREFIX foaf: <http://xmlns.com/foaf/0.1/>
             SELECT ?webId ?messageboxUrl ?name
             WHERE {
+                ?registerAction a schema:RegisterAction .
+                ?registerAction schema:object <${roomUrl}> .
+                ?registerAction schema:actionStatus schema:ActiveActionStatus .
                 ?registerAction schema:additionalType ?messageboxUrl .
                 ?registerAction schema:agent ?webId .
                 ?webId foaf:name ?name .
@@ -227,7 +238,6 @@ class RoomSolidService
                 messageboxUrl: binding.get('messageboxUrl').value,
             });
         });
-        console.log(result);
         return result;
     }
 

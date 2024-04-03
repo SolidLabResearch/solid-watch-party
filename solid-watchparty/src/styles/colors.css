@@ -13,7 +13,6 @@
     --col-bg3: #fff;
     --col-bg4: #bbb;
     --col-bg5: #050F16;
-    --col-bg-6: #FA7AFF;
 
     --col-fg-active-1: #0A7AFF;
     --col-fg-active-2: #0A7AFF33;
@@ -29,22 +28,6 @@
     --col-alert: #f33;
 
     --col-trans: #0000;
-    /*
-    --col-fg1: #000;
-    --col-fg2: #777;
-    --col-fg3: #fff;
-    --col-fg4: #ddd;
-
-    --col-bg1: #fff;
-    --col-bg2: #f6f6f6;
-    --col-bg3: #000;
-    --col-bg4: #444;
-
-    --col-solid: #1C4D4F;
-    --col-alert: #f33;
-
-    --col-trans: #0000;
-     */
 }
 
 @layer base {

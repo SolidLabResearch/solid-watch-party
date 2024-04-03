@@ -20,7 +20,6 @@ class VideoSolidService {
         if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         }
-
         try {
             const dataset = await getSolidDataset(videoObjectUrl, { fetch: sessionContext.fetch });
             return getThing(dataset, videoObjectUrl);
