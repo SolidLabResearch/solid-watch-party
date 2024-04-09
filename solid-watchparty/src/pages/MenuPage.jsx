@@ -1,8 +1,6 @@
 /* libary imports */
-import {
-    useSession,
-} from '@inrupt/solid-ui-react';
-import { useState } from 'react';
+import { useSession, } from '@inrupt/solid-ui-react';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 /* component imports */
@@ -13,24 +11,22 @@ import SWLoadingIcon from '../components/SWLoadingIcon';
 import RoomSolidService from '../services/room.solidservice';
 import MessageSolidService from '../services/message.solidservice';
 
+/* context imports */
+import { MessageBoxContext } from '../contexts';
+
 /* util imports */
-import {
-    validateAll,
-    validateRequired,
-    validateIsUrl,
-    validateLength
-} from '../utils/validationUtils';
+import { validateAll, validateRequired, validateIsUrl, validateLength } from '../utils/validationUtils';
 
 /* config imports */
 import config from '../../config';
 
-function
-MenuPage()
+function MenuPage()
 {
     const [roomUrl, setRoomUrl] = useState({value: "", alertMsg: null});
     const [roomName, setRoomName] = useState({value: "", alertMsg: null});
     const [isCreateLoading, setIsCreateLoading] = useState(false);
     const [isJoinLoading, setIsJoinLoading] = useState(false);
+    const [messageBox, setMessageBox] = useContext(MessageBoxContext);
 
     const sessionContext = useSession();
     const navigateTo = useNavigate();
@@ -61,13 +57,14 @@ MenuPage()
                 setIsCreateLoading(false);
                 return;
             }
-            const messageboxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomResult.roomUrl);
-            if (!messageboxResult || messageboxResult.error) {
+            const messageBoxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomResult.roomUrl);
+            if (!messageBoxResult || messageBoxResult.error) {
                 setRoomName({value: roomName.value, alertMsg: "Something went wrong, try again"});
                 setIsCreateLoading(false);
                 return;
             }
-            const registerResult = await RoomSolidService.register(sessionContext, messageboxResult.messageboxUrl,
+            setMessageBox(messageBoxResult.messageBoxUrl);
+            const registerResult = await RoomSolidService.register(sessionContext, messageBoxResult.messageBoxUrl,
                                                                    roomResult.roomUrl);
             if (!registerResult || registerResult.error) {
                 setRoomName({value: roomName.value, alertMsg: "Something went wrong, try again"});
@@ -75,7 +72,7 @@ MenuPage()
                 return;
             }
             const addResult = await RoomSolidService.addPerson(sessionContext, roomResult.roomUrl,
-                                                               messageboxResult.messageboxUrl,
+                                                               messageBoxResult.messageBoxUrl,
                                                                sessionContext.session.info.webId);
             navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(roomResult.roomUrl)}`);
         }

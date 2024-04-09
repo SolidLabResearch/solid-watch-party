@@ -12,6 +12,7 @@ import {
     asUrl,
     getUrlAll,
     getUrl,
+    universalAccess,
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine } from '@incremunica/query-sparql-incremental';
@@ -51,10 +52,7 @@ MessageSolidService
                 },
                 body: query,
             });
-
-            // update the access control too allow the party owner to read
-
-            return { result: result, messageboxUrl: `${file}#${id}` };
+            return { result: result, messageBoxUrl: `${file}#${id}` };
         } catch (error) {
             console.error(error)
             return { error: error, errorMsg: 'failed to create messageBox'};
@@ -180,6 +178,24 @@ MessageSolidService
         } catch (error) {
             console.error(error)
             return {error: error}
+        }
+    }
+
+    async checkAccess(sessionContext, messageBoxUrl, webId) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "The session has ended, log in again" };
+        } else if (!messageBoxUrl) {
+            return { error: "invalid message box", errorMsg: "The message box is invalid" };
+        } else if (!webId) {
+            return { error: "invalid webId", errorMsg: "The webId is invalid" };
+        }
+        try {
+            const accessModes = await universalAccess.getAgentAccess(messageBoxUrl, webId,
+                                                                     { fetch: sessionContext.fetch });
+            return accessModes;
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: "Failed to check access" };
         }
     }
 

@@ -53,7 +53,7 @@ function SWChatComponent({roomUrl, joined}) {
             text:    data.get('text').value,
             sender:  name,
             date:    new Date(data.get('dateSent').value),
-            key:     (data.get('sender') + data.get('dateSent').value),
+            key:     (name + data.get('dateSent').value),
           };
           setMessages(messages => [...messages, message].sort(
               (m1, m2) => (m1.date > m2.date) ? 1 : ((m1.date < m2.date) ? -1 :  0)));

@@ -56,7 +56,6 @@ async function handleControlAction(sessionContext, data, watchingEvent) {
         /* NOTE(Elias): This might happen since 'Incremunica' sends events for all instances of type */
         return null;
     }
-
     return {
         loc:        parseFloat(data.get('location').value),
         isPlaying:  isPlaying,
@@ -64,7 +63,7 @@ async function handleControlAction(sessionContext, data, watchingEvent) {
     }
 }
 
-function SWVideoPlayer({className, roomUrl}) {
+function SWVideoPlayer({className, roomUrl, onPlaying}) {
     const [playerReady, setPlayerReady] = useState(false);
     const [isPlaying, setIsPlaying] = useState({is: false, from: 0});
     const [watchingEvent, setWatchingEvent] = useState(null);
@@ -136,6 +135,7 @@ function SWVideoPlayer({className, roomUrl}) {
         if (playerReady === false || !isPlaying) {
             return;
         }
+        onPlaying(isPlaying);
         videoRef.current.seekTo(Math.round(isPlaying.from), "seconds");
     }, [isPlaying, playerReady]);
 

@@ -1,5 +1,5 @@
 /* library imports */
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useContext } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { useSearchParams } from 'react-router-dom';
 import { FaUserFriends } from "react-icons/fa";
@@ -21,18 +21,22 @@ import RoomSolidService from '../services/room.solidservice.js';
 import MessageSolidService from '../services/message.solidservice.js';
 import EventsSolidService from '../services/events.solidservice.js';
 
+/* context imports */
+import { MessageBoxContext } from '../contexts';
+
 /* util imports */
 import { inSession } from '../utils/solidUtils';
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 
-
 function WatchPage() {
     const iframeRef = useRef(null);
+    const [playing, setPlaying] = useState(false);
     const [menuModalIsShown, setMenuModalIsShown] = useState(false);
     const [modalIsShown, setModalIsShown] = useState(false);
     const [parentHeight, setParentHeight] = useState('auto');
     const [joinedRoom, setJoinedRoom] = useState(false);
     const sessionContext = useSession();
+    const [messageBox, setMessageBox] = useContext(MessageBoxContext);
 
     /* TODO(Elias): Add error handling, what if there is no parameter */
     const [searchParams] = useSearchParams();
@@ -52,11 +56,12 @@ function WatchPage() {
                 setJoinedRoom(true);
                 return;
             }
-            const messageboxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomUrl);
-            if (!messageboxResult || messageboxResult.error) {
+            const messageBoxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomUrl);
+            if (!messageBoxResult || messageBoxResult.error) {
                 return;
             }
-            const registerResult = await RoomSolidService.register(sessionContext, messageboxResult.messageboxUrl,
+            setMessageBox(messageBoxResult.messageBoxUrl);
+            const registerResult = await RoomSolidService.register(sessionContext, messageBoxResult.messageBoxUrl,
                                                                    roomUrl);
             if (!registerResult || registerResult.error) {
                 return;
@@ -109,8 +114,8 @@ function WatchPage() {
                 </div>
             </div>
             <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
-                <div className="w-2/3 h-fit flex rgb-bg-2 sw-border" ref={iframeRef}>
-                    <SWVideoPlayer roomUrl={roomUrl}/>
+                <div className={`w-2/3 h-fit flex rgb-bg-2 sw-border`} ref={iframeRef}>
+                    <SWVideoPlayer roomUrl={roomUrl} onPlaying={setPlaying}/>
                 </div>
                 <SWChatComponent roomUrl={roomUrl}/>
             </div>

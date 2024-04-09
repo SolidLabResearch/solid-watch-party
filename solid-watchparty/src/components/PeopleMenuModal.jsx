@@ -1,5 +1,5 @@
 /* library imports */
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useContext } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { useSearchParams } from 'react-router-dom';
 import { FaUserFriends } from "react-icons/fa";
@@ -16,9 +16,13 @@ import StartWatchingEventModal from '../components/StartWatchingEventModal';
 import { MenuBar, MenuItem } from '../components/SWMenu';
 import SWSwitch from '../components/SWSwitch';
 
+/* context imports */
+import { MessageBoxContext } from '../contexts';
+
 /* service imports */
 import RoomSolidService from '../services/room.solidservice.js';
 import EventsSolidService from '../services/events.solidservice.js';
+import MessageSolidService from '../services/message.solidservice.js';
 
 /* util imports */
 import { inSession } from '../utils/solidUtils';
@@ -35,17 +39,36 @@ function LoadingCard({}) {
 }
 
 function PersonCard({person}) {
-    const [enabled, setEnabled] = useState(false)
+    const [enabled, setEnabled] = useState(false);
+    const sessionContext = useSession();
+    const [messageBoxUrl, setMessageBoxUrl] = useContext(MessageBoxContext);
+
+    const isMyCard = (person.webId === sessionContext.session.info.webId);
+
+    useEffect(() => {
+        const fetch = async () => {
+            const accessModes = await MessageSolidService.checkAccess(sessionContext, messageBoxUrl, person.webId);
+            if (accessModes.error) {
+                return;
+            }
+            setEnabled(accessModes.read);
+        }
+        fetch();
+    }, []);
+
+    useEffect(() => {
+        // update policy on seeing my messages
+    }, [enabled]);
 
     return (
-        <div className="rgb-bg-1 sw-border flex justify-between p-4 h-fit items-center">
+        <div className="rgb-bg-1 sw-border flex justify-between p-4 items-center">
             <div className="flex gap-3">
                 <FaUserCircle className="rgb-1 sw-fw-1 w-6 h-6"/>
-                <p className="">{person.name}</p>
+                <p>{person.name}</p>
             </div>
-            <div className="flex gap-3 rgb-bg-3 items-center rounded px-2">
-                <FaEnvelope className="rgb-active-1"/>
-                <SWSwitch enabled={enabled} setEnabled={setEnabled}/>
+            <div className="flex gap-3 items-center">
+                <p className="rgb-1">Allow seeing my messages:</p>
+                <SWSwitch enabled={enabled} setEnabled={setEnabled} disabled={isMyCard}/>
             </div>
         </div>
     );
@@ -123,7 +146,7 @@ function RequestingPeople({roomUrl}) {
     }, []);
 
     const onAccept = async (person) => {
-        const result = await RoomSolidService.addPerson(sessionContext, roomUrl, person.messageboxUrl, person.webId);
+        const result = await RoomSolidService.addPerson(sessionContext, roomUrl, person.messageBoxUrl, person.webId);
     }
 
     if (isLoading) {

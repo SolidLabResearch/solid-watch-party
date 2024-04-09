@@ -76,7 +76,7 @@ class RoomSolidService
         }
     }
 
-    async register(sessionContext, messageboxUrl, roomUrl) {
+    async register(sessionContext, messageBoxUrl, roomUrl) {
         if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!roomUrl) {
@@ -92,7 +92,7 @@ class RoomSolidService
                     <${file}#${id}> schema:agent <${sessionContext.session.info.webId}> .
                     <${file}#${id}> schema:object <${roomUrl}> .
                     <${file}#${id}> schema:actionStatus schema:ActiveActionStatus .
-                    <${file}#${id}> schema:additionalType <${messageboxUrl}> .
+                    <${file}#${id}> schema:additionalType <${messageBoxUrl}> .
                 }`;
             const result = await sprql_patch(sessionContext, file, query);
             return result;
@@ -120,12 +120,12 @@ class RoomSolidService
         }
     }
 
-    async addPerson(sessionContext, roomUrl, messageboxUrl, webId) {
+    async addPerson(sessionContext, roomUrl, messageBoxUrl, webId) {
         if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!roomUrl) {
             return { error: "no room url", errorMsg: "No url was provided" }
-        } else if (!messageboxUrl) {
+        } else if (!messageBoxUrl) {
             return { error: "no outbox url", errorMsg: "No outbox url was provided" }
         } else if (!webId) {
             return { error: "no webID", errorMsg: "No webID was provided" }
@@ -136,7 +136,7 @@ class RoomSolidService
                 PREFIX schema: <${SCHEMA_ORG}>
                 INSERT DATA {
                     <${roomResource}> schema:attendee <${webId}> .
-                    <${roomResource}> schema:subjectOf <${messageboxUrl}> .
+                    <${roomResource}> schema:subjectOf <${messageBoxUrl}> .
                 }`;
             const roomResult = await sprql_patch(sessionContext, roomResource, roomQuery);
             if (!roomResult.ok) {
@@ -198,7 +198,7 @@ class RoomSolidService
         const result = resultBindings.map((binding) => {
             return ({
                 name: binding.get('name').value,
-                webID: binding.get('webId').value,
+                webId: binding.get('webId').value,
             });
         });
 
@@ -217,12 +217,12 @@ class RoomSolidService
         const resultStream = await queryEngine.queryBindings(`
             PREFIX schema: <${SCHEMA_ORG}>
             PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-            SELECT ?webId ?messageboxUrl ?name
+            SELECT ?webId ?messageBoxUrl ?name
             WHERE {
                 ?registerAction a schema:RegisterAction .
                 ?registerAction schema:object <${roomUrl}> .
                 ?registerAction schema:actionStatus schema:ActiveActionStatus .
-                ?registerAction schema:additionalType ?messageboxUrl .
+                ?registerAction schema:additionalType ?messageBoxUrl .
                 ?registerAction schema:agent ?webId .
                 ?webId foaf:name ?name .
             }`, {
@@ -235,7 +235,7 @@ class RoomSolidService
             return ({
                 name: binding.get('name').value,
                 webId: binding.get('webId').value,
-                messageboxUrl: binding.get('messageboxUrl').value,
+                messageBoxUrl: binding.get('messageBoxUrl').value,
             });
         });
         return result;
