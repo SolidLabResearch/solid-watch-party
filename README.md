@@ -49,7 +49,7 @@ This project is in active development. This in an overview of the progress:
     - [x] Sending, retrieving and displaying messages
     - [x] Watching a video stream
     - [x] Video stream syncing and controls
-    - [ ] Privacy
+    - [x] Privacy
     - [ ] Polishing
 2. **Statistics dashboard:**
     - *details to be determined*
