@@ -20,6 +20,7 @@ import { QueryEngine } from '@incremunica/query-sparql-incremental';
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 import { getPodUrl, urlify } from '../utils/urlUtils';
+import { sprql_patch } from '../utils/queryUtils';
 import { inSession } from '../utils/solidUtils';
 
 /* config imports */
@@ -45,13 +46,7 @@ MessageSolidService
                     <${file}#${id}> schema:about <${roomUrl}> .
                     <${file}#${id}> schema:creator <${sessionContext.session.info.webId}> .
                 }`;
-            const result = await sessionContext.fetch(file, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/sparql-update',
-                },
-                body: query,
-            });
+            const result = await sprql_patch(sessionContext, file, query);
             return { result: result, messageBoxUrl: `${file}#${id}` };
         } catch (error) {
             console.error(error)
@@ -149,7 +144,6 @@ MessageSolidService
                 sources: [messageBoxUrl],
                 fetch: sessionContext.fetch
             });
-
         resultStream.on("error", (e) => {
             console.error(e);
         });
