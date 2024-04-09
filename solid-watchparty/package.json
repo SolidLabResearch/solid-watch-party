@@ -11,15 +11,26 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@comunica/query-sparql-link-traversal": "^0.3.0",
+    "@comunica/query-sparql-solid": "^2.4.0",
     "@incremunica/query-sparql-incremental": "^1.2.0",
     "@inrupt/solid-client": "^1.30.2",
     "@inrupt/solid-client-authn-browser": "^1.17.5",
     "@inrupt/solid-ui-react": "^2.9.0",
     "@inrupt/vocab-common-rdf": "^1.0.5",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
     "dashjs": "^4.7.3",
+    "lucide-react": "^0.363.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.18.0"
+    "react-full-screen": "^1.1.1",
+    "react-icons": "^5.0.1",
+    "react-player": "^2.15.1",
+    "react-router-dom": "^6.18.0",
+    "tailwind-merge": "^2.2.2",
+    "tailwindcss-animate": "^1.0.7",
+    "usehooks-ts": "^3.0.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",

@@ -18,3 +18,7 @@ export function urlify(str)
 	return str.toLowerCase().split(' ').join('-').replace(/[^a-zA-Z0-9-_]/g, '');
 }
 
+export function getDirectoryOfUrl(url)
+{
+    return url.split('/').slice(0, -1).join('/');
+}

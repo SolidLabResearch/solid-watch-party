@@ -4,7 +4,15 @@
 
 # Solid Watchparty
 
+[solidlabresearch.github.io/solid-watch-party/](https://solidlabresearch.github.io/solid-watch-party/)
+
 Welcome to Solid Watchparty, a platform designed for shared media viewing experiences with a focus on decentralized data management using SOLID Pods. This project leverages the latest web technologies to offer a responsive and user-centric interface.
+
+
+
+https://github.com/SolidLabResearch/solid-watch-party/assets/37975937/e78ec297-3538-44c7-ad32-14ea310a35e7
+
+
 
 ## :zap: Quick Start
 
@@ -13,6 +21,10 @@ Welcome to Solid Watchparty, a platform designed for shared media viewing experi
 1. **Clone the Repository**
    ```
    git clone git@github.com:SolidLabResearch/solid-watch-party.git
+   ```
+2. **Navigate to directory**
+   ```
+   cd solid-watch-party/solid-watchparty/
    ```
 2. **Install Dependencies**
    ```
@@ -36,7 +48,8 @@ This project is in active development. This in an overview of the progress:
     - [x] Creating new rooms and joining rooms
     - [x] Sending, retrieving and displaying messages
     - [x] Watching a video stream
-    - [ ] Video stream syncing and controls
+    - [x] Video stream syncing and controls
+    - [ ] Privacy
     - [ ] Polishing
 2. **Statistics dashboard:**
     - *details to be determined*
