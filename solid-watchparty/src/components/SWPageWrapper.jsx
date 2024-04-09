@@ -28,7 +28,7 @@ function SWPageWrapper({children, className, mustBeAuthenticated})
             console.log('navigate back')
             navigateTo(`${config.baseDir}/`, {state: {from: currentLocation.pathname + currentLocation.search}});
         }
-    }, [sessionContext, sessionContext.session, sessionContext.sessionRequestInProgress, currentLocation, navigateTo, mustBeAuthenticated])
+    }, [sessionContext.session, sessionContext.sessionRequestInProgress, currentLocation, navigateTo, mustBeAuthenticated])
 
     return (
         <div className="h-full flex flex-col justify-between">

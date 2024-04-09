@@ -73,7 +73,7 @@ function SWChatComponent({roomUrl, joined}) {
             }
             setMessages([]);
         });
-    }, [sessionContext, sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl, joined])
+    }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl, joined])
 
 
     const submitMessage = (e) => {

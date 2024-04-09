@@ -99,7 +99,7 @@ function SWVideoPlayer({roomUrl}) {
         return (() => {
             watchingEventStream?.close();
         });
-    }, [sessionContext, sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl]);
+    }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl]);
 
 
     useEffect(() => {
@@ -128,7 +128,7 @@ function SWVideoPlayer({roomUrl}) {
         return () => {
             controlActionStream?.close();
         };
-    }, [sessionContext, sessionContext.session, sessionContext.sessionRequestInProgress, watchingEvent]);
+    }, [sessionContext.session, sessionContext.sessionRequestInProgress, watchingEvent]);
 
 
     useEffect(() => {

@@ -26,7 +26,7 @@ function MenuPage()
     const [roomName, setRoomName] = useState({value: "", alertMsg: null});
     const [isCreateLoading, setIsCreateLoading] = useState(false);
     const [isJoinLoading, setIsJoinLoading] = useState(false);
-    const [setMessageBox] = useContext(MessageBoxContext);
+    const [,setMessageBox] = useContext(MessageBoxContext);
 
     const sessionContext = useSession();
     const navigateTo = useNavigate();

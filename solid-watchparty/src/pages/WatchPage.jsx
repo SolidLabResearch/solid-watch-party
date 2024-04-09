@@ -30,7 +30,7 @@ function WatchPage() {
     const [parentHeight, setParentHeight] = useState('auto');
     const [joinedRoom, setJoinedRoom] = useState(false);
     const sessionContext = useSession();
-    const [setMessageBox] = useContext(MessageBoxContext);
+    const [,setMessageBox] = useContext(MessageBoxContext);
 
     /* TODO(Elias): Add error handling, what if there is no parameter */
     const [searchParams] = useSearchParams();
@@ -64,7 +64,7 @@ function WatchPage() {
         if (inSession(sessionContext) && !sessionContext.sessionRequestInProgress && !joinedRoom) {
             register();
         }
-    }, [sessionContext.sessionRequestInProgress, sessionContext.session, sessionContext, roomUrl, setMessageBox, joinedRoom]);
+    }, [sessionContext.sessionRequestInProgress, sessionContext.session, roomUrl, setMessageBox, joinedRoom]);
 
 
     useEffect(() => {
