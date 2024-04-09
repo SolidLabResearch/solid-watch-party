@@ -199,6 +199,26 @@ MessageSolidService
         }
     }
 
+    async setAccess(sessionContext, messageBoxUrl, webId, accessModes) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "The session has ended, log in again" };
+        } else if (!messageBoxUrl) {
+            return { error: "invalid message box", errorMsg: "The message box is invalid" };
+        } else if (!webId) {
+            return { error: "invalid webId", errorMsg: "The webId is invalid" };
+        } else if (!accessModes) {
+            return { error: "invalid access modes", errorMsg: "The access modes are invalid" };
+        }
+        try {
+            const result = await universalAccess.setAgentAccess(messageBoxUrl, webId, accessModes,
+                                                                { fetch: sessionContext.fetch });
+            return result;
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: "Failed to grant access" };
+        }
+    }
+
 }
 
 export default new MessageSolidService();

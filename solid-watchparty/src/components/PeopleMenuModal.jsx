@@ -40,25 +40,34 @@ function LoadingCard({}) {
 
 function PersonCard({person}) {
     const [enabled, setEnabled] = useState(false);
-    const sessionContext = useSession();
     const [messageBoxUrl, setMessageBoxUrl] = useContext(MessageBoxContext);
-
+    const [isLoading, setIsLoading] = useState(true);
+    const sessionContext = useSession();
     const isMyCard = (person.webId === sessionContext.session.info.webId);
 
     useEffect(() => {
         const fetch = async () => {
+            setIsLoading(true);
             const accessModes = await MessageSolidService.checkAccess(sessionContext, messageBoxUrl, person.webId);
             if (accessModes.error) {
                 return;
             }
             setEnabled(accessModes.read);
+            setIsLoading(false);
         }
         fetch();
     }, []);
 
-    useEffect(() => {
-        // update policy on seeing my messages
-    }, [enabled]);
+    const onSwitch = async () => {
+        setIsLoading(true);
+        const result = await MessageSolidService.setAccess(sessionContext, messageBoxUrl, person.webId,
+                                                           {read: !enabled});
+        setIsLoading(false);
+        if (result.error) {
+            return;
+        }
+        setEnabled(result.read);
+    }
 
     return (
         <div className="rgb-bg-1 sw-border flex justify-between p-4 items-center">
@@ -68,7 +77,7 @@ function PersonCard({person}) {
             </div>
             <div className="flex gap-3 items-center">
                 <p className="rgb-1">Allow seeing my messages:</p>
-                <SWSwitch enabled={enabled} setEnabled={setEnabled} disabled={isMyCard}/>
+                <SWSwitch enabled={enabled} onSwitch={onSwitch} disabled={isMyCard} isLoading={isLoading}/>
             </div>
         </div>
     );
