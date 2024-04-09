@@ -22,6 +22,10 @@ https://github.com/SolidLabResearch/solid-watch-party/assets/37975937/e78ec297-3
    ```
    git clone git@github.com:SolidLabResearch/solid-watch-party.git
    ```
+2. **Navigate to directory**
+   ```
+   cd solid-watch-party/solid-watchparty/
+   ```
 2. **Install Dependencies**
    ```
    npm install
