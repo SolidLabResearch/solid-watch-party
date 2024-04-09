@@ -26,7 +26,7 @@ function MenuPage()
     const [roomName, setRoomName] = useState({value: "", alertMsg: null});
     const [isCreateLoading, setIsCreateLoading] = useState(false);
     const [isJoinLoading, setIsJoinLoading] = useState(false);
-    const [messageBox, setMessageBox] = useContext(MessageBoxContext);
+    const [setMessageBox] = useContext(MessageBoxContext);
 
     const sessionContext = useSession();
     const navigateTo = useNavigate();
@@ -74,6 +74,11 @@ function MenuPage()
             const addResult = await RoomSolidService.addPerson(sessionContext, roomResult.roomUrl,
                                                                messageBoxResult.messageBoxUrl,
                                                                sessionContext.session.info.webId);
+            if (!addResult || addResult.error) {
+                setRoomName({value: roomName.value, alertMsg: "Something went wrong, try again"});
+                setIsCreateLoading(false);
+                return;
+            }
             navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(roomResult.roomUrl)}`);
         }
         setIsCreateLoading(false);

@@ -1,23 +1,15 @@
 /* library imports */
-import { useEffect, useState, useRef } from 'react';
+import { useState, } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
-import { useSearchParams } from 'react-router-dom';
-import dashjs from 'dashjs';
+import PropTypes from 'prop-types';
 
 /* component imports */
-import SWPageWrapper from '../components/SWPageWrapper'
-import SWChatComponent from '../components/SWChatComponent';
 import SWModal from '../components/SWModal';
-import SWVideoPlayer from '../components/SWVideoPlayer';
-import SWLoadingIcon from '../components/SWLoadingIcon';
 
 /* service imports */
-import RoomSolidService from '../services/room.solidservice.js';
 import EventsSolidService from '../services/events.solidservice.js';
 
 /* util imports */
-import { inSession } from '../utils/solidUtils';
-import { SCHEMA_ORG } from '../utils/schemaUtils';
 
 function Tab1({className, roomUrl, setModalIsShown}) {
     const [videoSourceUrl, setVideoSourceUrl] = useState("");
@@ -53,6 +45,11 @@ function Tab1({className, roomUrl, setModalIsShown}) {
         </div>
     );
 }
+Tab1.propTypes = {
+    className:          PropTypes.string,
+    roomUrl:            PropTypes.string,
+    setModalIsShown:    PropTypes.func,
+}
 
 function
 Tab2({className, roomUrl, setModalIsShown}) {
@@ -80,6 +77,11 @@ Tab2({className, roomUrl, setModalIsShown}) {
         </div>
     );
 }
+Tab2.propTypes = {
+    className:          PropTypes.string,
+    roomUrl:            PropTypes.string,
+    setModalIsShown:    PropTypes.func,
+}
 
 function StartWatchingEventModal({setModalIsShown, roomUrl}) {
     return (
@@ -92,6 +94,9 @@ function StartWatchingEventModal({setModalIsShown, roomUrl}) {
         </SWModal>
     );
 }
-
+StartWatchingEventModal.propTypes = {
+    setModalIsShown:    PropTypes.func,
+    roomUrl:            PropTypes.string,
+}
 
 export default StartWatchingEventModal;

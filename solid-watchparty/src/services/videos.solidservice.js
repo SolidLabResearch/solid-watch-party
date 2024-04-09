@@ -1,17 +1,7 @@
 /* library imports */
-import {
-  getSolidDataset,
-  saveSolidDatasetAt,
-  setThing,
-  getThing,
-  addUrl,
-  createThing,
-  buildThing,
-  asUrl,
-} from '@inrupt/solid-client';
+import { getSolidDataset, getThing, } from '@inrupt/solid-client';
 
 /* util imports */
-import { SCHEMA_ORG } from '../utils/schemaUtils';
 import { inSession } from '../utils/solidUtils';
 
 class VideoSolidService {

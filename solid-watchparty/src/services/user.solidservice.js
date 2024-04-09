@@ -2,7 +2,6 @@
 import { QueryEngine } from '@comunica/query-sparql';
 
 /* util imports */
-import { SCHEMA_ORG } from '../utils/schemaUtils';
 import { inSession } from '../utils/solidUtils';
 
 class UserSolidService {

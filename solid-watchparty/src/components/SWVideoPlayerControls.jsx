@@ -1,8 +1,8 @@
 /* library imports */
-import { useState, useEffect, useRef } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { FaPlay, FaPause, FaExpandAlt } from "react-icons/fa";
 import { FiMinimize2 } from "react-icons/fi";
+import PropTypes from 'prop-types';
 
 /* service imports */
 import EventsSolidService from '../services/events.solidservice.js';
@@ -35,6 +35,12 @@ function SWVideoPlayerControls({watchingEvent, videoRef, isPlaying, fullscreenHa
             </button>
         </div>
   );
+}
+SWVideoPlayerControls.propTypes = {
+    watchingEvent:              PropTypes.object,
+    videoRef:                   PropTypes.object,
+    isPlaying:                  PropTypes.bool,
+    fullscreenHandle:           PropTypes.object,
 }
 
 export default SWVideoPlayerControls;

@@ -63,7 +63,7 @@ async function handleControlAction(sessionContext, data, watchingEvent) {
     }
 }
 
-function SWVideoPlayer({className, roomUrl, onPlaying}) {
+function SWVideoPlayer({roomUrl}) {
     const [playerReady, setPlayerReady] = useState(false);
     const [isPlaying, setIsPlaying] = useState({is: false, from: 0});
     const [watchingEvent, setWatchingEvent] = useState(null);
@@ -99,7 +99,7 @@ function SWVideoPlayer({className, roomUrl, onPlaying}) {
         return (() => {
             watchingEventStream?.close();
         });
-    }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl]);
+    }, [sessionContext, sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl]);
 
 
     useEffect(() => {
@@ -128,14 +128,13 @@ function SWVideoPlayer({className, roomUrl, onPlaying}) {
         return () => {
             controlActionStream?.close();
         };
-    }, [sessionContext.session, sessionContext.sessionRequestInProgress, watchingEvent]);
+    }, [sessionContext, sessionContext.session, sessionContext.sessionRequestInProgress, watchingEvent]);
 
 
     useEffect(() => {
         if (playerReady === false || !isPlaying) {
             return;
         }
-        onPlaying(isPlaying);
         videoRef.current.seekTo(Math.round(isPlaying.from), "seconds");
     }, [isPlaying, playerReady]);
 
@@ -158,7 +157,6 @@ function SWVideoPlayer({className, roomUrl, onPlaying}) {
 
 SWVideoPlayer.propTypes = {
   roomUrl:      PropTypes.string,
-  className:    PropTypes.string,
 };
 
 export default SWVideoPlayer;

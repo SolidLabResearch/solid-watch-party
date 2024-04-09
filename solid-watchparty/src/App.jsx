@@ -14,7 +14,7 @@ import { MessageBoxContext } from './contexts';
 /* config imports */
 import config from '../config';
 
-export const router = createBrowserRouter([
+const router = createBrowserRouter([
     {path: (config.baseDir + "/"), element: <LoginPage/>},
     {path: (config.baseDir + "/menu"), element: <MenuPage/>},
     {path: (config.baseDir + "/watch"), element: <WatchPage/>},

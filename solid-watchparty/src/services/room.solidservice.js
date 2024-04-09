@@ -4,14 +4,11 @@ import {
     getSolidDataset,
     saveSolidDatasetAt,
     setThing,
-    getThingAll,
-    createThing,
     buildThing,
     asUrl,
     universalAccess,
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
-import { QueryEngine } from '@comunica/query-sparql';
 import { QueryEngine as QueryEngineLT } from '@comunica/query-sparql-link-traversal';
 
 /* util imports */
@@ -21,7 +18,7 @@ import { inSession } from '../utils/solidUtils';
 import { sprql_patch } from '../utils/queryUtils';
 
 /* config imports */
-import { ROOMS_ROOT, MESSAGES_ROOT, REGISTERS_ROOT } from '../config.js'
+import { ROOMS_ROOT, } from '../config.js'
 
 
 class RoomSolidService

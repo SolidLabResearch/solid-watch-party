@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
+/* library imports */
+import propTypes from 'prop-types';
 
 function SWSwitch({enabled, onSwitch, className, disabled, isLoading}) {
     const onClick = (isLoading || disabled) ? () => {} : () => onSwitch(!enabled);
@@ -12,5 +13,12 @@ function SWSwitch({enabled, onSwitch, className, disabled, isLoading}) {
         </div>
     );
 }
+SWSwitch.propTypes = {
+    enabled:    propTypes.bool,
+    onSwitch:   propTypes.func,
+    className:  propTypes.string,
+    disabled:   propTypes.bool,
+    isLoading:  propTypes.bool,
+};
 
 export default SWSwitch;

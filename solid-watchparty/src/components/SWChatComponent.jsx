@@ -36,8 +36,6 @@ function SWChatComponent({roomUrl, joined}) {
             console.log('NOW LISTENING FOR MESSAGE STREAMS')
             messageSeriesStreams.on('data', async (data) => {
                 console.log('NEW MESSAGESTREAM ACQUIRED')
-                const messageSeriesUrl = data.get('messageSeries').value;
-
                 let messageStream = await MessageSolidService.getMessageStream(sessionContext,
                                                                                data.get('messageSeries').value);
                 messageStreams.push(messageStream);
@@ -75,7 +73,7 @@ function SWChatComponent({roomUrl, joined}) {
             }
             setMessages([]);
         });
-    }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl, joined])
+    }, [sessionContext, sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl, joined])
 
 
     const submitMessage = (e) => {
@@ -129,6 +127,7 @@ function SWChatComponent({roomUrl, joined}) {
 
 SWChatComponent.propTypes = {
     roomUrl:  PropTypes.string,
+    joined:   PropTypes.bool,
 }
 
 export default SWChatComponent;

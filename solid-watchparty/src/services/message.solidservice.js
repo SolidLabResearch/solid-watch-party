@@ -2,7 +2,6 @@
 import {
     getSolidDataset,
     saveSolidDatasetAt,
-    createSolidDataset,
     setThing,
     getThingAll,
     getStringNoLocale,

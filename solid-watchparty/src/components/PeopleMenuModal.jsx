@@ -1,18 +1,12 @@
 /* library imports */
-import { useEffect, useState, useRef, useContext } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
-import { useSearchParams } from 'react-router-dom';
-import { FaUserFriends } from "react-icons/fa";
-import dashjs from 'dashjs';
-import { FaUserCircle, FaCheck, FaEnvelope } from "react-icons/fa";
+import { FaUserCircle, FaCheck } from "react-icons/fa";
+import propTypes from 'prop-types';
 
 /* component imports */
-import SWPageWrapper from '../components/SWPageWrapper'
-import SWChatComponent from '../components/SWChatComponent';
 import SWModal from '../components/SWModal';
-import SWVideoPlayer from '../components/SWVideoPlayer';
 import SWLoadingIcon from '../components/SWLoadingIcon';
-import StartWatchingEventModal from '../components/StartWatchingEventModal';
 import { MenuBar, MenuItem } from '../components/SWMenu';
 import SWSwitch from '../components/SWSwitch';
 
@@ -21,16 +15,14 @@ import { MessageBoxContext } from '../contexts';
 
 /* service imports */
 import RoomSolidService from '../services/room.solidservice.js';
-import EventsSolidService from '../services/events.solidservice.js';
 import MessageSolidService from '../services/message.solidservice.js';
 
 /* util imports */
 import { inSession } from '../utils/solidUtils';
-import { SCHEMA_ORG } from '../utils/schemaUtils';
 
 /* TODO(Elias): Add validations and error handling everywhere */
 
-function LoadingCard({}) {
+function LoadingCard() {
     return (
         <div className="flex w-full h-full items-center justify-center">
             <SWLoadingIcon className="w-8 h-8"/>
@@ -82,6 +74,9 @@ function PersonCard({person}) {
         </div>
     );
 }
+PersonCard.propTypes = {
+    person: propTypes.object.isRequired,
+}
 
 function RequestingPersonCard({person, roomUrl, removeFromPeople}) {
     const sessionContext = useSession();
@@ -120,6 +115,11 @@ function RequestingPersonCard({person, roomUrl, removeFromPeople}) {
         </div>
     );
 }
+RequestingPersonCard.propTypes = {
+    person:             propTypes.object.isRequired,
+    roomUrl:            propTypes.string.isRequired,
+    removeFromPeople:   propTypes.func.isRequired,
+}
 
 function InRoomPeople({roomUrl}) {
     const sessionContext = useSession();
@@ -150,6 +150,9 @@ function InRoomPeople({roomUrl}) {
             {people.map((person, index) => <PersonCard person={person} key={index}/>)}
         </div>
     );
+}
+InRoomPeople.propTypes = {
+    roomUrl: propTypes.string.isRequired,
 }
 
 function RequestingPeople({roomUrl}) {
@@ -189,6 +192,9 @@ function RequestingPeople({roomUrl}) {
         </div>
     );
 }
+RequestingPeople.propTypes = {
+    roomUrl: propTypes.string.isRequired,
+}
 
 function PeopleMenuModal({setModalIsShown, roomUrl}) {
     /* NOTE(Elias): Uses strings for pages, valid options are:
@@ -218,6 +224,10 @@ function PeopleMenuModal({setModalIsShown, roomUrl}) {
             {body}
         </SWModal>
     );
+}
+PeopleMenuModal.propTypes = {
+    setModalIsShown:    propTypes.func.isRequired,
+    roomUrl:            propTypes.string.isRequired,
 }
 
 export default PeopleMenuModal;

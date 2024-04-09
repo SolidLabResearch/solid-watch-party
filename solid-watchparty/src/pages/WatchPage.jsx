@@ -3,14 +3,11 @@ import { useEffect, useState, useRef, useContext } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { useSearchParams } from 'react-router-dom';
 import { FaUserFriends } from "react-icons/fa";
-import dashjs from 'dashjs';
-import { FaUserCircle } from "react-icons/fa";
 import { useInterval } from 'usehooks-ts'
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
 import SWChatComponent from '../components/SWChatComponent';
-import SWModal from '../components/SWModal';
 import SWVideoPlayer from '../components/SWVideoPlayer';
 import SWLoadingIcon from '../components/SWLoadingIcon';
 import StartWatchingEventModal from '../components/StartWatchingEventModal';
@@ -19,24 +16,21 @@ import PeopleMenuModal from '../components/PeopleMenuModal';
 /* service imports */
 import RoomSolidService from '../services/room.solidservice.js';
 import MessageSolidService from '../services/message.solidservice.js';
-import EventsSolidService from '../services/events.solidservice.js';
 
 /* context imports */
 import { MessageBoxContext } from '../contexts';
 
 /* util imports */
 import { inSession } from '../utils/solidUtils';
-import { SCHEMA_ORG } from '../utils/schemaUtils';
 
 function WatchPage() {
     const iframeRef = useRef(null);
-    const [playing, setPlaying] = useState(false);
     const [menuModalIsShown, setMenuModalIsShown] = useState(false);
     const [modalIsShown, setModalIsShown] = useState(false);
     const [parentHeight, setParentHeight] = useState('auto');
     const [joinedRoom, setJoinedRoom] = useState(false);
     const sessionContext = useSession();
-    const [messageBox, setMessageBox] = useContext(MessageBoxContext);
+    const [setMessageBox] = useContext(MessageBoxContext);
 
     /* TODO(Elias): Add error handling, what if there is no parameter */
     const [searchParams] = useSearchParams();
@@ -70,7 +64,7 @@ function WatchPage() {
         if (inSession(sessionContext) && !sessionContext.sessionRequestInProgress && !joinedRoom) {
             register();
         }
-    }, [sessionContext.sessionRequestInProgress, sessionContext.session, roomUrl]);
+    }, [sessionContext.sessionRequestInProgress, sessionContext.session, sessionContext, roomUrl, setMessageBox, joinedRoom]);
 
 
     useEffect(() => {
@@ -115,7 +109,7 @@ function WatchPage() {
             </div>
             <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
                 <div className={`w-2/3 h-fit flex rgb-bg-2 sw-border`} ref={iframeRef}>
-                    <SWVideoPlayer roomUrl={roomUrl} onPlaying={setPlaying}/>
+                    <SWVideoPlayer roomUrl={roomUrl}/>
                 </div>
                 <SWChatComponent roomUrl={roomUrl}/>
             </div>

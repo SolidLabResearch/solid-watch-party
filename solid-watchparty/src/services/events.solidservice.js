@@ -8,14 +8,12 @@ import {
     setThing,
     getThingAll,
     getThing,
-    addUrl,
     createThing,
     buildThing,
     asUrl,
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine as IncQueryEngine } from '@incremunica/query-sparql-incremental';
-import { QueryEngine } from '@comunica/query-sparql-solid';
 
 /* service imports */
 import VideoSolidService from '../services/videos.solidservice.js';
@@ -90,7 +88,7 @@ class EventsSolidService {
                     .build();
                 roomDataset = setThing(roomDataset, newVideoObject);
                 eventBuilder = eventBuilder.addUrl(SCHEMA_ORG + 'workFeatured', asUrl(newVideoObject, roomUrl));
-            };
+            }
 
             const newWatchingEvent = eventBuilder.build();
             roomDataset = setThing(roomDataset, newWatchingEvent);
