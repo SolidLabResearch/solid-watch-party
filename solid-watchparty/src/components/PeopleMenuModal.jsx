@@ -83,7 +83,21 @@ function PersonCard({person}) {
     );
 }
 
-function RequestingPersonCard({person, roomUrl, onAccept}) {
+function RequestingPersonCard({person, roomUrl, removeFromPeople}) {
+    const sessionContext = useSession();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const onAccept = async (person) => {
+        setIsLoading(true);
+        const result = await RoomSolidService.addPerson(sessionContext, roomUrl, person.messageBoxUrl, person.webId);
+        setIsLoading(false);
+        if (result.error) {
+            console.error(result.error);
+            return;
+        }
+        removeFromPeople(person);
+    }
+
     return (
         <div className="rgb-bg-1 sw-border flex justify-between p-4 h-fit">
             <div className="flex gap-3 justify-between w-full items-center">
@@ -91,12 +105,17 @@ function RequestingPersonCard({person, roomUrl, onAccept}) {
                     <FaUserCircle className="rgb-1 sw-fw-1 w-6 h-6"/>
                     <p className="rgb-on">{person.name}</p>
                 </div>
-                <button className="p-2 rounded items-center
-                                   rgb-bg-active-1 hover:rgb-bg-1 active:rgb-bg-active-2
-                                   rgb-active-1 active:rgb-1"
-                        onClick={() => onAccept(person)}>
-                    <FaCheck/>
-                </button>
+                {isLoading ? (
+                    <div className="p-1">
+                        <SWLoadingIcon className={`w-5`}/>
+                    </div>
+                ) : (
+                    <button onClick={() => onAccept(person)}
+                        className="p-2 rounded items-center rgb-bg-active-1 hover:rgb-bg-1
+                        active:rgb-bg-active-2 rgb-active-1 active:rgb-1">
+                        <FaCheck/>
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -154,8 +173,8 @@ function RequestingPeople({roomUrl}) {
         }
     }, []);
 
-    const onAccept = async (person) => {
-        const result = await RoomSolidService.addPerson(sessionContext, roomUrl, person.messageBoxUrl, person.webId);
+    const removeFromPeople = (person) => {
+        setPeople(people.filter((p) => (p.webId !== person.webId)));
     }
 
     if (isLoading) {
@@ -163,7 +182,10 @@ function RequestingPeople({roomUrl}) {
     }
     return (
         <div className="overflow-auto grid grid-cols-2 auto-rows-min gap-4 h-[90%]">
-            {people.map((person, index) => <RequestingPersonCard person={person} key={index} onAccept={onAccept}/>)}
+            {people.map((person, index) => (
+                <RequestingPersonCard person={person} key={index} roomUrl={roomUrl}
+                                      removeFromPeople={removeFromPeople}/>
+            ))}
         </div>
     );
 }
