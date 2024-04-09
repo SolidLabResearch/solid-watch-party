@@ -186,15 +186,17 @@ class RoomSolidService
             SELECT ?webId ?name
             WHERE {
                 <${roomUrl}> schema:attendee ?webId .
-                ?webId foaf:name ?name .
+                OPTIONAL { ?webId foaf:name ?name . }
             }`, {
                 sources: [roomUrl],
                 fetch: sessionContext.fetch,
             });
         const resultBindings = await resultStream.toArray()
         const result = resultBindings.map((binding) => {
+            let name = binding.get('name');
+            name = name ? name.value : '[Anonymous]';
             return ({
-                name: binding.get('name').value,
+                name: name,
                 webId: binding.get('webId').value,
             });
         });
@@ -221,7 +223,7 @@ class RoomSolidService
                 ?registerAction schema:actionStatus schema:ActiveActionStatus .
                 ?registerAction schema:additionalType ?messageBoxUrl .
                 ?registerAction schema:agent ?webId .
-                ?webId foaf:name ?name .
+                OPTIONAL { ?webId foaf:name ?name . }
             }`, {
                 sources: [file],
                 fetch: sessionContext.fetch,
@@ -229,8 +231,10 @@ class RoomSolidService
             });
         const resultBindings = await resultStream.toArray()
         const result = resultBindings.map((binding) => {
+            let name = binding.get('name');
+            name = name ? name.value : '[Anonymous]';
             return ({
-                name: binding.get('name').value,
+                name: name,
                 webId: binding.get('webId').value,
                 messageBoxUrl: binding.get('messageBoxUrl').value,
             });
