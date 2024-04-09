@@ -8,14 +8,12 @@ import {
     setThing,
     getThingAll,
     getThing,
-    addUrl,
     createThing,
     buildThing,
     asUrl,
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine as IncQueryEngine } from '@incremunica/query-sparql-incremental';
-import { QueryEngine } from '@comunica/query-sparql-solid';
 
 /* service imports */
 import VideoSolidService from '../services/videos.solidservice.js';
@@ -27,8 +25,8 @@ import { inSession } from '../utils/solidUtils';
 
 class EventsSolidService {
 
-    async newWatchingEventFromVideoObject(session, roomUrl, videoUrl) {
-        if (!inSession(session)) {
+    async newWatchingEventFromVideoObject(sessionContext, roomUrl, videoUrl) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!roomUrl) {
             return { error: "no room url", errorMsg: "No room url was provided" }
@@ -37,7 +35,7 @@ class EventsSolidService {
         }
 
         try {
-            let roomDataset = await getSolidDataset(roomUrl);
+            let roomDataset = await getSolidDataset(roomUrl, { fetch: sessionContext.fetch });
             const now = new Date();
             let newWatchingEvent = buildThing(createThing())
                 .addUrl(RDF.type, SCHEMA_ORG + 'Event')
@@ -45,14 +43,14 @@ class EventsSolidService {
                 .addUrl(SCHEMA_ORG + 'workFeatured', videoUrl)
                 .build();
             roomDataset = setThing(roomDataset, newWatchingEvent);
-            await saveSolidDatasetAt(roomUrl, roomDataset);
+            await saveSolidDatasetAt(roomUrl, roomDataset, { fetch: sessionContext.fetch });
         } catch (error) {
             console.log(error)
         }
     }
 
-    async newWatchingEventFromSrc(session, roomUrl, srcUrl, metaUrl) {
-        if (!inSession(session)) {
+    async newWatchingEventFromSrc(sessionContext, roomUrl, srcUrl, metaUrl) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!roomUrl) {
             return { error: "no room url", errorMsg: "No room url was provided" }
@@ -61,12 +59,13 @@ class EventsSolidService {
         }
 
         try {
-            let videoObject = await VideoSolidService.getVideoObject(session, metaUrl);
+            let videoObject = await VideoSolidService.getVideoObject(sessionContext, metaUrl);
+            console.log(videoObject)
             if (!videoObject) {
                 return { error: "video object not found", errorMsg: "The specified video object was not found" }
             }
 
-            let roomDataset = await getSolidDataset(roomUrl);
+            let roomDataset = await getSolidDataset(roomUrl, { fetch: sessionContext.fetch });
             if (!roomDataset) {
                 return { error: "room dataset not found", errorMsg: "The specified room dataset was not found" }
             }
@@ -89,12 +88,12 @@ class EventsSolidService {
                     .build();
                 roomDataset = setThing(roomDataset, newVideoObject);
                 eventBuilder = eventBuilder.addUrl(SCHEMA_ORG + 'workFeatured', asUrl(newVideoObject, roomUrl));
-            };
+            }
 
             const newWatchingEvent = eventBuilder.build();
             roomDataset = setThing(roomDataset, newWatchingEvent);
 
-            await saveSolidDatasetAt(roomUrl, roomDataset);
+            await saveSolidDatasetAt(roomUrl, roomDataset, { fetch: sessionContext.fetch });
         } catch (error) {
             console.log(error)
             return {error: error};
@@ -102,35 +101,35 @@ class EventsSolidService {
     }
 
 
-    async getWatchingEventStream(session, roomUrl) {
-        if (!inSession(session)) {
+    async getWatchingEventStream(sessionContext, roomUrl) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!roomUrl) {
             return { error: "no room url", errorMsg: "No room url was provided" }
         }
 
-        const sparqlQuery = `
-      PREFIX schema: <${SCHEMA_ORG}>
-      SELECT ?watchingEvent ?startDate ?videoObject
-      WHERE {
-        ?watchingEvent a schema:Event .
-        ?watchingEvent schema:startDate ?startDate .
-        ?watchingEvent schema:workFeatured ?videoObject .
-      }
-      `;
-
         const queryEngine = new IncQueryEngine();
-        const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [roomUrl] });
+        const resultStream = await queryEngine.queryBindings(`
+            PREFIX schema: <${SCHEMA_ORG}>
+            SELECT ?watchingEvent ?startDate ?videoObject
+            WHERE {
+                ?watchingEvent a schema:Event .
+                ?watchingEvent schema:startDate ?startDate .
+                ?watchingEvent schema:workFeatured ?videoObject .
+            }`,
+            {
+                sources: [roomUrl],
+                fetch: sessionContext.fetch,
+            });
+
         return resultStream;
     }
 
 
-    async saveControlAction(session, eventUrl, isPlay, atLocationNumber) {
-        if (!inSession(session)) {
-            console.error("invalid session")
+    async saveControlAction(sessionContext, eventUrl, isPlay, atLocationNumber) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!eventUrl) {
-            console.error("no event url")
             return { error: "no event url", errorMsg: "No watching event was provided" }
         }
 
@@ -139,14 +138,14 @@ class EventsSolidService {
         const newControlAction = buildThing(createThing())
             .addUrl(RDF.type, SCHEMA_ORG + actionType)
             .addUrl(RDF.type, SCHEMA_ORG + 'ControlAction')
-            .addUrl(SCHEMA_ORG + 'agent', session.info.webId)
+            .addUrl(SCHEMA_ORG + 'agent', sessionContext.session.info.webId)
             .addUrl(SCHEMA_ORG + 'object', eventUrl)
             .addDatetime(SCHEMA_ORG + 'startTime', now)
             .addStringNoLocale(SCHEMA_ORG + 'location', atLocationNumber.toString())
             .build();
 
         try {
-            let roomDataset = await getSolidDataset(eventUrl);
+            let roomDataset = await getSolidDataset(eventUrl, { fetch: sessionContext.fetch });
 
             roomDataset = setThing(roomDataset, newControlAction);
 
@@ -161,7 +160,7 @@ class EventsSolidService {
                 .build();
             roomDataset = setThing(roomDataset, eventThing);
 
-            const savedDataset = await saveSolidDatasetAt(eventUrl, roomDataset);
+            const savedDataset = await saveSolidDatasetAt(eventUrl, roomDataset, { fetch: sessionContext.fetch });
             return savedDataset;
         } catch (error) {
             console.error(error)
@@ -169,40 +168,41 @@ class EventsSolidService {
     }
 
 
-    async getControlActionStream(session, eventUrl) {
-        if (!inSession(session)) {
+    async getControlActionStream(sessionContext, eventUrl) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!eventUrl) {
             return { error: "no event url", errorMsg: "No event url was provided" }
         }
 
-        /* NOTE(Elias): Asssumes controlActions and event are in the same file */
-        const sparqlQuery = `
-          PREFIX schema: <${SCHEMA_ORG}>
-          SELECT ?controlAction ?actionType ?agent ?datetime ?location
-          WHERE {
-            ?controlAction a schema:ControlAction .
-            ?controlAction a ?actionType .
-            ?controlAction schema:agent ?agent .
-            ?controlAction schema:object <${eventUrl}> .
-            ?controlAction schema:startTime ?datetime .
-            ?controlAction schema:location ?location .
-          }
-          `;
         const queryEngine = new IncQueryEngine();
-        const resultStream = await queryEngine.queryBindings(sparqlQuery, { sources: [eventUrl] });
+        const resultStream = await queryEngine.queryBindings(`
+            PREFIX schema: <${SCHEMA_ORG}>
+            SELECT ?controlAction ?actionType ?agent ?datetime ?location
+            WHERE {
+                ?controlAction a schema:ControlAction .
+                ?controlAction a ?actionType .
+                ?controlAction schema:agent ?agent .
+                ?controlAction schema:object <${eventUrl}> .
+                ?controlAction schema:startTime ?datetime .
+                ?controlAction schema:location ?location .
+            }`, {
+                sources: [eventUrl],
+                fetch: sessionContext.fetch,
+            });
+
         return resultStream;
     }
 
-    async getPauseTimeContext(session, watchingEvent) {
-        if (!inSession(session)) {
+    async getPauseTimeContext(sessionContext, watchingEvent) {
+        if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!watchingEvent) {
             return { error: "no event url", errorMsg: "No event provided" }
         }
 
         try {
-            const dataset = await getSolidDataset(watchingEvent?.eventUrl);
+            const dataset = await getSolidDataset(watchingEvent?.eventUrl, { fetch: sessionContext.fetch });
             let things = getThingAll(dataset)
                 .filter((thing) => {
                     const types = getUrlAll(thing, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type");

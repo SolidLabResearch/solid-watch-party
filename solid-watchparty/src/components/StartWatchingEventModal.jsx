@@ -1,28 +1,20 @@
 /* library imports */
-import { useEffect, useState, useRef } from 'react';
+import { useState, } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
-import { useSearchParams } from 'react-router-dom';
-import dashjs from 'dashjs';
+import PropTypes from 'prop-types';
 
 /* component imports */
-import SWPageWrapper from '../components/SWPageWrapper'
-import SWChatComponent from '../components/SWChatComponent';
 import SWModal from '../components/SWModal';
-import SWVideoPlayer from '../components/SWVideoPlayer';
-import SWLoadingIcon from '../components/SWLoadingIcon';
 
 /* service imports */
-import RoomSolidService from '../services/room.solidservice.js';
 import EventsSolidService from '../services/events.solidservice.js';
 
 /* util imports */
-import { inSession } from '../utils/solidUtils';
-import { SCHEMA_ORG } from '../utils/schemaUtils';
 
 function Tab1({className, roomUrl, setModalIsShown}) {
     const [videoSourceUrl, setVideoSourceUrl] = useState("");
     const [videoMetaUrl, setVideoMetaUrl] = useState("");
-    const {session, sessionRequestInProgress} = useSession();
+    const sessionContext = useSession();
     return (
         <div className={className + " flex flex-col justify-between"}>
             <div>
@@ -43,7 +35,7 @@ function Tab1({className, roomUrl, setModalIsShown}) {
             </div>
             <button className={`sw-btn flex-grow h-6 mt-6 flex justify-center`}
                 onClick={() => {
-                    EventsSolidService.newWatchingEventFromSrc(session, roomUrl, videoSourceUrl, videoMetaUrl)
+                    EventsSolidService.newWatchingEventFromSrc(sessionContext, roomUrl, videoSourceUrl, videoMetaUrl)
                     setVideoSourceUrl(null);
                     setVideoMetaUrl(null);
                     setModalIsShown(false);
@@ -53,11 +45,16 @@ function Tab1({className, roomUrl, setModalIsShown}) {
         </div>
     );
 }
+Tab1.propTypes = {
+    className:          PropTypes.string,
+    roomUrl:            PropTypes.string,
+    setModalIsShown:    PropTypes.func,
+}
 
 function
 Tab2({className, roomUrl, setModalIsShown}) {
     const [videoObjectUrl, setVideoObjectUrl] = useState("");
-    const {session, sessionRequestInProgress} = useSession();
+    const sessionContext = useSession();
     return (
         <div className={className + " flex flex-col justify-between"}>
             <div>
@@ -71,7 +68,7 @@ Tab2({className, roomUrl, setModalIsShown}) {
             </div>
             <button className={`sw-btn h-6 mt-6 flex justify-center`}
                 onClick={() => {
-                    EventsSolidService.newWatchingEventFromVideoObject(session, roomUrl, videoObjectUrl)
+                    EventsSolidService.newWatchingEventFromVideoObject(sessionContext, roomUrl, videoObjectUrl)
                     setVideoObjectUrl(null);
                     setModalIsShown(false);
                 }}>
@@ -79,6 +76,11 @@ Tab2({className, roomUrl, setModalIsShown}) {
             </button>
         </div>
     );
+}
+Tab2.propTypes = {
+    className:          PropTypes.string,
+    roomUrl:            PropTypes.string,
+    setModalIsShown:    PropTypes.func,
 }
 
 function StartWatchingEventModal({setModalIsShown, roomUrl}) {
@@ -92,6 +94,9 @@ function StartWatchingEventModal({setModalIsShown, roomUrl}) {
         </SWModal>
     );
 }
-
+StartWatchingEventModal.propTypes = {
+    setModalIsShown:    PropTypes.func,
+    roomUrl:            PropTypes.string,
+}
 
 export default StartWatchingEventModal;

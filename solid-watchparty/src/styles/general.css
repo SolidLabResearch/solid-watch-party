@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap');
+
 @import "tailwind.css";
 @import "colors.css";
 @import "fonts.css";
@@ -19,7 +20,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--col-bg5);
+    background: var(--col-fg4);
     border-radius: 360px;
 }
 
@@ -28,7 +29,7 @@
   height: 100%;
 }
 
-/* NOTE(Elias): Base HTML tags */
+/* Base HTML tags */
 
 body::-webkit-scrollbar
 {
@@ -52,20 +53,31 @@ input, button, a
   all: unset;
 }
 
+div
+{
+    box-sizing: border-box;
+}
+
+
+a
+{
+  @apply cursor-pointer;
+}
+
 a:hover
 {
   color: var(--col-fg2) !important;
   text-decoration: none !important;
 }
 
-/* NOTE(Elias): Utility tags */
+/* Utility tags */
 
 .rounded-max
 {
-  border-radius: 120px;
+  border-radius: 360px;
 }
 
-/* NOTE(Elias): sw tags */
+/* sw tags */
 
 .sw-emoji {
     font-family: 'Noto Color Emoji', sans-serif;
@@ -74,7 +86,7 @@ a:hover
 .sw-border
 {
   border: 1px solid var(--col-fg4);
-  border-radius: 3px;
+  border-radius: 8px;
 }
 
 .sw-btn
@@ -100,7 +112,8 @@ a:hover
 
 .sw-btn-player:hover
 {
-    @apply cursor-pointer
+    @apply cursor-pointer;
+    color: var(--col-fg1);
 }
 
 .sw-btn-loading
@@ -126,22 +139,4 @@ a:hover
   padding: 0px 0px;
   margin: 12px 0px;
   border: 1px solid var(--col-bg4);
-}
-
-.sw-card-pressable
-{
-  @apply font-bold;
-  @apply text-center;
-  border-radius: 3px;
-}
-
-.sw-card-pressable:hover
-{
-  background-color: var(--col-bg1);
-}
-
-.sw-card-pressable:active
-{
-  color: var(--col-fg3);
-  background-color: var(--col-bg3);
 }

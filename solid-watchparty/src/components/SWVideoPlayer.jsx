@@ -16,8 +16,8 @@ import VideoSolidService from '../services/videos.solidservice.js';
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 
 
-async function handleNewWatchingEvent(session, data) {
-    const videoObject = await VideoSolidService.getVideoObject(session, data.get('videoObject').value);
+async function handleNewWatchingEvent(sessionContext, data) {
+    const videoObject = await VideoSolidService.getVideoObject(sessionContext, data.get('videoObject').value);
     if (videoObject.error) {
         return null;
     }
@@ -30,7 +30,7 @@ async function handleNewWatchingEvent(session, data) {
         videoUrl:   getUrl(videoObject, SCHEMA_ORG + 'contentUrl'),
         startDate:  new Date(data.get('startDate').value),
     };
-    const pauseTimeContext = await EventsSolidService.getPauseTimeContext(session, newWatchingEvent);
+    const pauseTimeContext = await EventsSolidService.getPauseTimeContext(sessionContext, newWatchingEvent);
     if (pauseTimeContext.error) {
         return null;
     }
@@ -42,7 +42,7 @@ async function handleNewWatchingEvent(session, data) {
     };
 }
 
-async function handleControlAction(session, data, watchingEvent) {
+async function handleControlAction(sessionContext, data, watchingEvent) {
     const date = new Date(data.get('datetime').value);
     if (data.diff != true || date <= watchingEvent.joinedAt) {
         return null;
@@ -56,7 +56,6 @@ async function handleControlAction(session, data, watchingEvent) {
         /* NOTE(Elias): This might happen since 'Incremunica' sends events for all instances of type */
         return null;
     }
-
     return {
         loc:        parseFloat(data.get('location').value),
         isPlaying:  isPlaying,
@@ -64,11 +63,11 @@ async function handleControlAction(session, data, watchingEvent) {
     }
 }
 
-function SWVideoPlayer({className, roomUrl}) {
+function SWVideoPlayer({roomUrl}) {
     const [playerReady, setPlayerReady] = useState(false);
     const [isPlaying, setIsPlaying] = useState({is: false, from: 0});
     const [watchingEvent, setWatchingEvent] = useState(null);
-    const {session, sessionRequestInProgress} = useSession();
+    const sessionContext = useSession();
     const videoRef = useRef(null);
     const fullscreenHandle = useFullScreenHandle();
 
@@ -76,14 +75,14 @@ function SWVideoPlayer({className, roomUrl}) {
         let watchingEventStream = null;
         let lastWatchingEvent = null;
         const act = async () => {
-            watchingEventStream = await EventsSolidService.getWatchingEventStream(session, roomUrl);
+            watchingEventStream = await EventsSolidService.getWatchingEventStream(sessionContext, roomUrl);
             if (watchingEventStream.error) {
                 watchingEventStream = null;
                 return;
             }
             console.log('NOW LISTENING FOR NEW WATCHING EVENTS');
             watchingEventStream.on('data', (data) => {
-                handleNewWatchingEvent(session, data).then((newWatchingEvent) => {
+                handleNewWatchingEvent(sessionContext, data).then((newWatchingEvent) => {
                     if (!newWatchingEvent) {
                         return;
                     }
@@ -100,7 +99,7 @@ function SWVideoPlayer({className, roomUrl}) {
         return (() => {
             watchingEventStream?.close();
         });
-    }, [session, sessionRequestInProgress, roomUrl]);
+    }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl]);
 
 
     useEffect(() => {
@@ -110,9 +109,9 @@ function SWVideoPlayer({className, roomUrl}) {
             if (!watchingEvent) {
                 return;
             }
-            controlActionStream = await EventsSolidService.getControlActionStream(session, watchingEvent?.eventUrl);
+            controlActionStream = await EventsSolidService.getControlActionStream(sessionContext, watchingEvent?.eventUrl);
             controlActionStream.on('data', (data) => {
-                handleControlAction(session, data, watchingEvent).then((controlAction) => {
+                handleControlAction(sessionContext, data, watchingEvent).then((controlAction) => {
                     if (!controlAction) {
                         return;
                     }
@@ -129,7 +128,7 @@ function SWVideoPlayer({className, roomUrl}) {
         return () => {
             controlActionStream?.close();
         };
-    }, [session, sessionRequestInProgress, watchingEvent]);
+    }, [sessionContext.session, sessionContext.sessionRequestInProgress, watchingEvent]);
 
 
     useEffect(() => {
@@ -158,7 +157,6 @@ function SWVideoPlayer({className, roomUrl}) {
 
 SWVideoPlayer.propTypes = {
   roomUrl:      PropTypes.string,
-  className:    PropTypes.string,
 };
 
 export default SWVideoPlayer;
