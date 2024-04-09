@@ -54,8 +54,10 @@ function SWChatComponent({roomUrl, joined}) {
                         date:    new Date(data.get('dateSent').value),
                         key:     (name + data.get('dateSent').value),
                     };
-                    setMessages(messages => [...messages, message].sort(
-                        (m1, m2) => (m1.date > m2.date) ? 1 : ((m1.date < m2.date) ? -1 :  0)));
+                    const newMessages = [...messages, message]
+                        .sort((m1, m2) => (m1.date > m2.date) ? 1 : ((m1.date < m2.date) ? -1 :  0))
+                        .filter((m, i, self) => i === self.findIndex((t) => (t.key === m.key)));
+                    setMessages(newMessages);
                 })
             })
             setState({isLoading: false, hasAccess: true});
