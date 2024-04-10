@@ -1,5 +1,5 @@
 /* library imports */
-import { useState, useEffect, } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import PropTypes from 'prop-types';
 
@@ -7,6 +7,9 @@ import PropTypes from 'prop-types';
 import SWMessageComponent from '../components/SWMessageComponent'
 import SWAutoScrollDiv from '../components/SWAutoScrollDiv';
 import SWLoadingIcon from '../components/SWLoadingIcon';
+
+/* context imports */
+import { MessageBoxContext } from '../contexts';
 
 /* service imports */
 import MessageSolidService from '../services/message.solidservice.js'
@@ -21,6 +24,7 @@ function SWChatComponent({roomUrl, joined}) {
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState([]);
     const sessionContext = useSession();
+    const [messageBox,] = useContext(MessageBoxContext);
 
     useEffect(() => {
         let messageSeriesStreams = null;
@@ -33,9 +37,7 @@ function SWChatComponent({roomUrl, joined}) {
                 setState({isLoading: false, hasAccess: false});
                 return;
             }
-            console.log('NOW LISTENING FOR MESSAGE STREAMS')
             messageSeriesStreams.on('data', async (data) => {
-                console.log('NEW MESSAGESTREAM ACQUIRED')
                 let messageStream = await MessageSolidService.getMessageStream(sessionContext,
                                                                                data.get('messageSeries').value);
                 messageStreams.push(messageStream);
@@ -85,7 +87,11 @@ function SWChatComponent({roomUrl, joined}) {
         if (input.length === 0) {
             return;
         }
-        MessageSolidService.createMessage(sessionContext, input, roomUrl);
+        MessageSolidService.createMessage(sessionContext, input, roomUrl, messageBox).then((r) => {
+            if (r.error) {
+                console.error(r.error);
+            }
+        })
         setInput('');
     }
 
