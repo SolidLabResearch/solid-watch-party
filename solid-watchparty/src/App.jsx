@@ -7,6 +7,7 @@ import { SessionProvider } from '@inrupt/solid-ui-react'
 import LoginPage from './pages/LoginPage';
 import MenuPage from './pages/MenuPage';
 import WatchPage from './pages/WatchPage';
+import LandingPage from './pages/LandingPage';
 
 /* context imports */
 import { MessageBoxContext } from './contexts';
@@ -15,7 +16,8 @@ import { MessageBoxContext } from './contexts';
 import config from '../config';
 
 const router = createBrowserRouter([
-    {path: (config.baseDir + "/"), element: <LoginPage/>},
+    {path: (config.baseDir + "/"), element: <LandingPage/>},
+    {path: (config.baseDir + "/auth"), element: <LoginPage/>},
     {path: (config.baseDir + "/menu"), element: <MenuPage/>},
     {path: (config.baseDir + "/watch"), element: <WatchPage/>},
 ]);
