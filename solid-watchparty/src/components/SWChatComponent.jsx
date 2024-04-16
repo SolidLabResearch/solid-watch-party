@@ -29,6 +29,7 @@ function SWChatComponent({roomUrl, joined}) {
     useEffect(() => {
         let messageSeriesStreams = null;
         let messageStreams = [];
+        let usernames = []
         const fetch = async () => {
             messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(sessionContext, roomUrl);
             if (messageSeriesStreams.error) {
@@ -40,19 +41,22 @@ function SWChatComponent({roomUrl, joined}) {
             messageSeriesStreams.on('data', async (data) => {
                 let messageStream = await MessageSolidService.getMessageStream(sessionContext,
                                                                                data.get('messageSeries').value);
+                const senderIndex = messageStreams.length;
                 messageStreams.push(messageStream);
+
                 if (messageStream.error) {
                     messageStream = null;
                     return;
                 }
                 messageStream.on('data', async (data) => {
-                    let name = await UserSolidService.getName(sessionContext, data.get('sender').value);
-                    if (name.error) {
-                        name = '[Anonymous]';
+                    if (usernames.length <= senderIndex) {
+                        let name = await UserSolidService.getName(sessionContext, data.get('sender').value);
+                        name = (name.error) ? 'Unknown' : name;
+                        usernames.push(name);
                     }
                     const message = {
                         text:    data.get('text').value,
-                        sender:  name,
+                        sender:  usernames[senderIndex],
                         date:    new Date(data.get('dateSent').value),
                         key:     (name + data.get('dateSent').value),
                     };

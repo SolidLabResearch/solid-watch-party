@@ -48,7 +48,7 @@ function MenuPage()
         const isValid = validateAll(roomName, setRoomName, [
             {run: validateRequired, message: "Provide a name!"},
             {run: (v) => validateLength(v, 1, 42), message: "Your name can only be 42 characters long!"},
-        ])
+        ]);
         if (isValid) {
             // TODO: At the moment an error in this process will cause dangling dataset
             const roomResult = await RoomSolidService.createNewRoom(sessionContext, roomName.value)
