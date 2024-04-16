@@ -125,9 +125,9 @@ a:hover
 
 .sw-input
 {
+  border: 1px solid var(--col-fg4);
   text-align: left;
   background-color: var(--col-bg2);
-  border: 2px solid var(--col-fg2);
   border-radius: 3px;
   padding: 4px 6px;
   margin: 0;
