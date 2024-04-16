@@ -12,10 +12,10 @@ import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine as QueryEngineLT } from '@comunica/query-sparql-link-traversal';
 
 /* util imports */
-import { SCHEMA_ORG } from '../utils/schemaUtils';
-import { getPodUrl, urlify, getDirectoryOfUrl } from '../utils/urlUtils';
-import { inSession } from '../utils/solidUtils';
-import { sprql_patch } from '../utils/queryUtils';
+import { SCHEMA_ORG } from '../utils/schemaUtils.js';
+import { getPodUrl, urlify, getDirectoryOfUrl } from '../utils/urlUtils.js';
+import { inSession } from '../utils/solidUtils.js';
+import { sprql_patch } from '../utils/queryUtils.js';
 
 /* config imports */
 import { ROOMS_ROOT, } from '../config.js'
@@ -164,7 +164,6 @@ class RoomSolidService
             const access = await universalAccess.setAgentAccess(roomUrl, webId,
                                                                 {read: true, write: true, append: true},
                                                                 {fetch: sessionContext.fetch});
-            console.log(access);
             return access;
         } catch (error) {
             console.error(error);

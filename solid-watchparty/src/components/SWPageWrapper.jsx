@@ -25,7 +25,6 @@ function SWPageWrapper({children, className, mustBeAuthenticated})
 
     useEffect(() => {
         if (mustBeAuthenticated && !sessionContext.sessionRequestInProgress && !inSession(sessionContext)) {
-            console.log('navigate back')
             navigateTo(`${config.baseDir}/`, {state: {from: currentLocation.pathname + currentLocation.search}});
         }
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, currentLocation, navigateTo, mustBeAuthenticated])

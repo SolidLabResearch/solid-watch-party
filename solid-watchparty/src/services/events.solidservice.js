@@ -45,7 +45,7 @@ class EventsSolidService {
             roomDataset = setThing(roomDataset, newWatchingEvent);
             await saveSolidDatasetAt(roomUrl, roomDataset, { fetch: sessionContext.fetch });
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     }
 
@@ -60,7 +60,7 @@ class EventsSolidService {
 
         try {
             let videoObject = await VideoSolidService.getVideoObject(sessionContext, metaUrl);
-            console.log(videoObject)
+            console.error(videoObject)
             if (!videoObject) {
                 return { error: "video object not found", errorMsg: "The specified video object was not found" }
             }
@@ -95,7 +95,7 @@ class EventsSolidService {
 
             await saveSolidDatasetAt(roomUrl, roomDataset, { fetch: sessionContext.fetch });
         } catch (error) {
-            console.log(error)
+            console.error(error)
             return {error: error};
         }
     }
@@ -235,7 +235,7 @@ class EventsSolidService {
 
             return { aggregatedPauseTime: aggregatedTime, lastPauseAt: lastPauseLocation, isPlaying: isPlaying };
         } catch (error) {
-            console.log(error)
+            console.error(error)
             return { error: error }
         }
     }

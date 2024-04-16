@@ -23,49 +23,66 @@ import { MessageBoxContext } from '../contexts';
 /* util imports */
 import { inSession } from '../utils/solidUtils';
 
+
+async function requestAccess(sessionContext, roomUrl) {
+    const messageBoxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomUrl);
+    if (!messageBoxResult || messageBoxResult.error) {
+        return { error: "create message box error", errorMsg: "Could not create message box!" };
+    }
+    const registerResult = await RoomSolidService.register(sessionContext, messageBoxResult.messageBoxUrl, roomUrl);
+    if (!registerResult || registerResult.error) {
+        return { error: "register error", errorMsg: "Could not register to room!" };
+    }
+    return { success: true };
+}
+
 function WatchPage() {
     const iframeRef = useRef(null);
+    const [parentHeight, setParentHeight] = useState('auto');
+
+    const [pageError, setPageError] = useState(0);
+    const [joinState, setJoinState] = useState('loading');
+
     const [menuModalIsShown, setMenuModalIsShown] = useState(false);
     const [modalIsShown, setModalIsShown] = useState(false);
-    const [parentHeight, setParentHeight] = useState('auto');
-    const [joinedRoom, setJoinedRoom] = useState(false);
+
     const sessionContext = useSession();
     const [,setMessageBox] = useContext(MessageBoxContext);
 
-    /* TODO(Elias): Add error handling, what if there is no parameter */
+    /* TODO(Elias): Add error handling, what if there is no parameter, or a wrong parameter */
     const [searchParams] = useSearchParams();
     const roomUrl = decodeURIComponent(searchParams.get('roomUrl'));
 
     useInterval(async () => {
         const result = await RoomSolidService.amIRegistered(sessionContext, roomUrl);
         if (result && !result.error) {
-            setJoinedRoom(true);
+            setJoinState('success');
         }
-    }, (joinedRoom ? null : 2 * 1000));
+    }, ((joinState === 'success') ? null : 2 * 1000));
 
     useEffect(() => {
-        const register = async () => {
-            const registeredCheck = await RoomSolidService.amIRegistered(sessionContext, roomUrl);
-            if (registeredCheck && !registeredCheck.error) {
-                setJoinedRoom(true);
-                return;
-            }
-            const messageBoxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomUrl);
-            if (!messageBoxResult || messageBoxResult.error) {
-                return;
-            }
-            setMessageBox(messageBoxResult.messageBoxUrl);
-            const registerResult = await RoomSolidService.register(sessionContext, messageBoxResult.messageBoxUrl,
-                                                                   roomUrl);
-            if (!registerResult || registerResult.error) {
-                return;
-            }
+        if (!inSession(sessionContext) || sessionContext.sessionRequestInProgress || (joinState === 'success')) {
+            return;
         }
-        if (inSession(sessionContext) && !sessionContext.sessionRequestInProgress && !joinedRoom) {
-            register();
-        }
-    }, [sessionContext.sessionRequestInProgress, sessionContext.session, roomUrl, setMessageBox, joinedRoom]);
+        RoomSolidService.amIRegistered(sessionContext, roomUrl).then((result) => {
+            if (result && !result.error) {
+                setJoinState('success');
+                return;
+            }
+            requestAccess(sessionContext, roomUrl).then((access) => {
+                setJoinState((access && !access.error) ? 'requested' : 'error');
+            });
+        });
+    }, [sessionContext.sessionRequestInProgress, sessionContext.session, roomUrl, setMessageBox, joinState]);
 
+    useEffect(() => {
+        if (!inSession(sessionContext) || sessionContext.sessionRequestInProgress || (joinState !== 'success')) {
+            setMessageBox(null);
+        }
+        MessageSolidService.getMessageBox(sessionContext, roomUrl).then((result) => {
+            setMessageBox(result);
+        });
+    }, [joinState, roomUrl, sessionContext.session, sessionContext.sessionRequestInProgress, setMessageBox]);
 
     useEffect(() => {
         const updateChatHeight = () => {
@@ -75,21 +92,26 @@ function WatchPage() {
         }
         updateChatHeight();
         window.addEventListener("resize", updateChatHeight, false);
-    }, [joinedRoom]);
-
+    }, [iframeRef, joinState]);
 
     let body = <></>;
-    if (!joinedRoom) {
+    if (joinState != 'success') {
         body = (
             <div className="flex w-full h-full items-center justify-center gap-3">
-                <div>
-                    <div className="flex my-6 gap-3 justify-center items-center">
-                        <SWLoadingIcon className="w-8 h-8"/>
+                {joinState === 'error' && (
+                    <p className="sw-fw-1">Joining Room failed... Try again by reloading the page.</p>
+                )}
+                {joinState === 'loading' && (
+                    <div>
+                        <div className="flex my-6 gap-3 justify-center items-center">
+                            <SWLoadingIcon className="w-8 h-8"/>
+                        </div>
+                        <p className="sw-fw-1">Requesting access too Room...</p>
                     </div>
-                    <p className="sw-fw-1">Joining Room...</p>
-                    {/* <p> A join request was sent to the party owner.</p> */}
-                </div>
-                <p className="absolute m-2 bottom-0 right-0 rgb-2">{roomUrl}</p>
+                )}
+                {joinState === 'requested' && (
+                    <p>A join request was sent to the party owner.</p>
+                )}
             </div>
         );
     } else {
