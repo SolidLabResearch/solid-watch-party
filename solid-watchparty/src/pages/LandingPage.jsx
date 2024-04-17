@@ -34,14 +34,14 @@ export default function LandingPage()
         <div className={
             "flex grow justify-between items-baseline grid grid-cols-3"
                 + " top-0 left-0 fixed w-full px-12 py-6 z-10"
-                + " border-b border-[#333] bg-[#000]"
+                + " rgb-bg-1"
             }>
             <h1 className="sw-fw-1 mb-5">Solid Watch Party</h1>
             <div className="flex justify-center">
                 <MenuBar>
-                    <MenuItem><a href="#home">Home</a></MenuItem>
-                    <MenuItem><a href="#about">About</a></MenuItem>
-                    <MenuItem><a href="#solid">Solid</a></MenuItem>
+                    <MenuItem href="#home">Home</MenuItem>
+                    <MenuItem href="#about">About</MenuItem>
+                    <MenuItem href="#solid">Solid</MenuItem>
                 </MenuBar>
             </div>
             <div className="flex justify-end">
@@ -50,12 +50,11 @@ export default function LandingPage()
             </div>
         </div>
         <div className="w-full h-full">
-            {/* navbar */}
             <div className="h-full">
                 <Banner name="home" className="text-center" showArrow={true}>
-                    <p className="mt-40 sw-fw-1 sw-fs-1 mb-2 bg-gradient-to-r from-indigo-500 to-[#d9a12A] bg-clip-text text-[#fff0]">
-                        solid-watchparty
-                    </p>
+                    <div className="flex justify-center">
+                        <p className="mt-40 sw-fw-1 sw-fs-1 mb-2 sw-text-gradient">solid-watchparty</p>
+                    </div>
                     <p className="sw-fs-3 sw-fw-1 rgb-2">
                         Watching videos with friends and familiy in a private and secure manner
                     </p>

@@ -29,10 +29,10 @@ MenuBar.propTypes = {
 }
 
 
-export function MenuItem({children, onClick}) {
+export function MenuItem({children, onClick, href}) {
     return (
         <button className="flex flex-row" onClick={onClick}>
-            <a>{children}</a>
+            <a href={href}>{children}</a>
         </button>
     );
 }
