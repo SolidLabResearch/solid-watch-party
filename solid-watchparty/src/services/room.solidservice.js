@@ -24,6 +24,12 @@ import { ROOMS_ROOT, } from '../config.js'
 class RoomSolidService
 {
 
+    async getMyRooms(sessionContext) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+        }
+    }
+
     async createNewRoom(sessionContext, name)
     {
         // check context

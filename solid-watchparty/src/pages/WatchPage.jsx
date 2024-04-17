@@ -117,14 +117,14 @@ function WatchPage() {
     } else {
         body = (<>
             <div className="flex justify-between px-8 py-4 rgb-2 gap-12 items-center">
-                <p>{roomUrl}</p>
+                <div></div>
                 <div className="flex gap-3">
                     <div className="rgb-2">
-                        <button className={`sw-btn flex-grow h-6 flex justify-center`} onClick={() => setModalIsShown(true)}>
+                        <button className={`sw-btn sw-btn-1 flex-grow h-6 flex justify-center`} onClick={() => setModalIsShown(true)}>
                             Start new video
                         </button>
                     </div>
-                    <button onClick={() => setMenuModalIsShown(!menuModalIsShown)} className="sw-btn border">
+                    <button onClick={() => setMenuModalIsShown(!menuModalIsShown)} className="sw-btn sw-btn-2 border">
                         <FaUserFriends className="sw-btn-player w-6 h-6"/>
                     </button>
                 </div>

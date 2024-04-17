@@ -123,10 +123,10 @@ function SWChatComponent({roomUrl, joined}) {
                         {messages.map((message) => <SWMessageComponent message={message} key={message.key}/>)}
                     </SWAutoScrollDiv>
                     <form autoComplete="off" className="grow-0 flex flex-between items-center" onSubmit={submitMessage}>
-                        <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full"
+                        <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full border-solid"
                             onChange={(e) => setInput(parseMessage(e.target.value))}
                             value={input} type='text'/>
-                        <button className="sw-btn hidden"> P </button>
+                        <button className="sw-btn hidden"> > </button>
                     </form>
                 </>
             );
