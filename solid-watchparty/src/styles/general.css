@@ -46,6 +46,7 @@ html, body
   font-size: 13px;
   background-color: var(--col-bg1);
   color: var(--col-fg1);
+  scroll-behavior: smooth;
 }
 
 input, button, a
@@ -134,9 +135,45 @@ a:hover
   box-sizing: border-box;
 }
 
+.sw-input-error
+{
+  border: 1px solid var(--col-alert);
+  text-align: left;
+  background-color: var(--col-bg2);
+  border-radius: 3px;
+  padding: 4px 6px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
 .sw-hr
 {
   padding: 0px 0px;
   margin: 12px 0px;
   border: 1px solid var(--col-bg4);
+}
+
+.sw-text-gradient
+{
+    @apply bg-gradient-to-r;
+    @apply from-indigo-500;
+    @apply to-[#d9a12A];
+    @apply bg-clip-text;
+    @apply text-[#aaa8];
+    @apply inline-block;
+    @apply w-fit;
+}
+
+.sw-bg-gradient-1
+{
+    @apply bg-gradient-to-r;
+    @apply from-indigo-500;
+    @apply to-[#d9a12A];
+}
+
+.sw-bg-gradient-2
+{
+    @apply bg-gradient-to-br;
+    @apply from-[#000];
+    @apply to-[#131419];
 }
