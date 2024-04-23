@@ -78,6 +78,7 @@ function MenuPage()
 {
     const [modalIsShown, setModalIsShown] = useState(false);
     const [action, setAction] = useState({name: "", f: null});
+    const [isLoading, setIsLoading] = useState(true);
 
     const sessionContext = useSession();
     const navigateTo = useNavigate();
@@ -90,6 +91,7 @@ function MenuPage()
 
     const [rooms, setRooms] = useState([]);
     useEffect(() => {
+        setIsLoading(true);
         console.log("MenuPage: useEffect");
         if (!inSession(sessionContext) || sessionContext.sessionRequestInProgress) {
             return;
@@ -101,15 +103,16 @@ function MenuPage()
             }
             console.log(rooms);
             setRooms(rooms);
+            setIsLoading(false);
         });
     }, [sessionContext.sessionRequestInProgress, sessionContext.session]);
 
     return (
-        <SWPageWrapper className="h-screen px-24" mustBeAuthenticated={true}>
+        <SWPageWrapper className="px-24" mustBeAuthenticated={true}>
             <div className="flex justify-between items-baseline my-16 grid grid-cols-3">
                 <div></div>
                 <div className="sw-input h-fit flex justify-between">
-                    <input type="text" placeholder="Room URL" className="w-full"/>
+                    <input type="text" placeholder="Find a room" className="w-full"/>
                     <button className="hover:cursor-pointer">
                         <FaMagnifyingGlass className="w-6 h-6 p-1"/>
                     </button>
@@ -131,11 +134,18 @@ function MenuPage()
                     </button>
                 </div>
             </div>
-            <div className="flex flex-wrap gap-12 h-3/4 overflow-y-auto">
-                { rooms.map((room, i) => (
-                    <SWRoomPoster key={i} room={room}/>
-                ))}
-            </div>
+            { isLoading ? (
+                <div className="h-56 flex flex-col items-center">
+                    <SWLoadingIcon className="w-6 h-6 py-8"/>
+                    <p className="sw-fw-1">Retrieving rooms...</p>
+                </div>
+            ) : (
+                <div className="flex flex-wrap gap-12 h-2/4 overflow-y-auto">
+                    { rooms.map((room, i) => (
+                        <SWRoomPoster key={i} room={room}/>
+                    ))}
+                </div>
+            )}
             { modalIsShown && (
                 <SWModalInputBar title={action.name}f={action.f} args={actionArgs} setModalIsShown={setModalIsShown}/>
             )}

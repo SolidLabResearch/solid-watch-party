@@ -42,13 +42,16 @@ function RoomPoster({room}) {
     ]
     const thumbnailUrl = room.thumbnailUrl;
 
+    const navigateTo = useNavigate();
+
     return (
         <div className={
             "sw-border relative flex-col justify-center items-center aspect-[27/39]"
                 + " h-96 shadow-lg rounded bg-black hover:cursor-pointer active:rgb-bg-1"
             }>
             {/* there needs to be a name, last-active date, thumbnail, # members and movie title */}
-            <div className="absolute h-full w-full z-10 bg-black opacity-0 hover:opacity-30 transition-opacity duration-200"/>
+            <button className="absolute h-full w-full z-10 bg-black opacity-0 hover:opacity-30 transition-opacity duration-200"
+                    onClick={() => navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(room.roomUrl)}`)}/>
             <div className="h-full w-full">
                 {thumbnailUrl ? (
                     <img className="absolute h-full w-full bg-cover rounded" src={thumbnailUrl} alt="room thumbnail"/>
