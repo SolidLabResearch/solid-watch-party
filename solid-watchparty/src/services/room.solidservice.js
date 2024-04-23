@@ -9,7 +9,9 @@ import {
     universalAccess,
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
+import { QueryEngine } from '@comunica/query-sparql';
 import { QueryEngine as QueryEngineLT } from '@comunica/query-sparql-link-traversal';
+import { QueryEngine as QueryEngineLTS } from '@comunica/query-sparql-link-traversal-solid';
 
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils.js';
@@ -18,7 +20,7 @@ import { inSession } from '../utils/solidUtils.js';
 import { sprql_patch } from '../utils/queryUtils.js';
 
 /* config imports */
-import { ROOMS_ROOT, } from '../config.js'
+import { ROOMS_ROOT, MESSAGES_ROOT } from '../config.js'
 
 
 class RoomSolidService
@@ -247,8 +249,86 @@ class RoomSolidService
         return result;
     }
 
+    async getRoomInfo(sessionContext, roomUrl) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+        } else if (!roomUrl) {
+            return { error: "No room url", errorMsg: "No url was provided" }
+        }
+
+        const file = roomUrl;
+        const queryEngine = new QueryEngine();
+        try {
+            const resultStream = await queryEngine.queryBindings(`
+                PREFIX schema: <${SCHEMA_ORG}>
+                SELECT ?name ?members ?organizer ?startDate
+                WHERE {
+                    <${file}> a schema:EventSeries .
+                    <${file}> schema:name ?name .
+                    <${file}> schema:attendee ?members .
+                    <${file}> schema:organizer ?organizer .
+                    <${file}> schema:startDate ?startDate .
+                }`, {
+                    sources: [file],
+                    fetch: sessionContext.fetch,
+                });
+            const resultBindings = await resultStream.toArray()
+
+            const members = resultBindings.map((binding) => binding.get('members').value) || [];
+            return {
+                roomUrl:        roomUrl,
+                name:           resultBindings[0].get('name').value,
+                isOrganizer:    resultBindings[0].get('organizer').value === sessionContext.session.info.webId,
+                nMembers:       members.length,
+            }
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: 'failed to get room info'};
+        }
+        return {error: "unknown", errorMsg: "An unknown error occurred"};
+    }
+
     async getRooms(sessionContext) {
-        return {error: "not implemented", errorMsg: "This function is not implemented yet"};
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+        }
+
+        const sourceDir = `${getPodUrl(sessionContext.session.info.webId)}/${MESSAGES_ROOT}/`;
+        const queryEngine = new QueryEngineLTS();
+
+        try {
+            const roomStream = await queryEngine.queryBindings(`
+                PREFIX schema: <${SCHEMA_ORG}>
+                SELECT ?roomUrl
+                WHERE {
+                    ?messageBox a schema:CreativeWorkSeries .
+                    ?messageBox schema:about ?roomUrl .
+                }`, {
+                    sources: [sourceDir],
+                    fetch: sessionContext.fetch,
+                });
+            const roomBindings = await roomStream.toArray()
+
+            const roomPromises = [];
+            for (const binding of roomBindings) {
+                console.log(binding.get('roomUrl').value);
+                const promise = this.getRoomInfo(sessionContext, binding.get('roomUrl').value).then((room) => {
+                    if (room.error) {
+                        console.error(room.error);
+                        return {error: 'failed to get room info'};
+                    }
+                    return room;
+                });
+                roomPromises.push(promise);
+            }
+            const rooms = await Promise.all(roomPromises);
+            console.log(rooms);
+            return rooms;
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: 'failed to get rooms'};
+        }
+        return {error: "unknown", errorMsg: "An unknown error occurred"};
     }
 
 

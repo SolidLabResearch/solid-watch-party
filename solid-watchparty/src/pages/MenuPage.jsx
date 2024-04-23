@@ -22,6 +22,7 @@ import { MessageBoxContext } from '../contexts';
 /* util imports */
 import { validateAll, validateRequired, validateIsUrl, validateLength } from '../utils/validationUtils';
 import { displayDate } from '../utils/general';
+import { inSession } from '../utils/solidUtils';
 
 /* config imports */
 import config from '../../config';
@@ -89,21 +90,26 @@ function MenuPage()
 
     const [rooms, setRooms] = useState([]);
     useEffect(() => {
+        console.log("MenuPage: useEffect");
+        if (!inSession(sessionContext) || sessionContext.sessionRequestInProgress) {
+            return;
+        }
         RoomSolidService.getRooms(sessionContext).then((rooms) => {
             if (rooms.error) {
                 console.error(rooms.errorMsg);
                 return;
             }
-            setRooms(rooms.rooms);
+            console.log(rooms);
+            setRooms(rooms);
         });
-    }, []);
+    }, [sessionContext.sessionRequestInProgress, sessionContext.session]);
 
     return (
-        <SWPageWrapper className="px-24" mustBeAuthenticated={true}>
-            <div className="flex justify-between items-center my-16 grid grid-cols-3">
+        <SWPageWrapper className="h-screen px-24" mustBeAuthenticated={true}>
+            <div className="flex justify-between items-baseline my-16 grid grid-cols-3">
                 <div></div>
                 <div className="sw-input h-fit flex justify-between">
-                    <input type="text" placeholder="Room URL"/>
+                    <input type="text" placeholder="Room URL" className="w-full"/>
                     <button className="hover:cursor-pointer">
                         <FaMagnifyingGlass className="w-6 h-6 p-1"/>
                     </button>
@@ -125,7 +131,7 @@ function MenuPage()
                     </button>
                 </div>
             </div>
-            <div className="flex flex-wrap gap-12">
+            <div className="flex flex-wrap gap-12 h-3/4 overflow-y-auto">
                 { rooms.map((room, i) => (
                     <SWRoomPoster key={i} room={room}/>
                 ))}
