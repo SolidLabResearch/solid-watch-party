@@ -276,12 +276,14 @@ class RoomSolidService
                     fetch: sessionContext.fetch,
                 });
             const resultBindings = await resultStream.toArray()
-
+            if (!resultBindings || resultBindings.length === 0) {
+                throw new Error("no room info found");
+            }
             const members = resultBindings.map((binding) => binding.get('members').value) || [];
-            return {
+            return  {
                 roomUrl:        roomUrl,
-                name:           resultBindings[0].get('name').value,
-                isOrganizer:    resultBindings[0].get('organizer').value === sessionContext.session.info.webId,
+                name:           resultBindings[0]?.get('name').value,
+                isOrganizer:    resultBindings[0]?.get('organizer').value === sessionContext.session.info.webId,
                 nMembers:       members.length,
             }
         } catch (error) {
@@ -305,7 +307,7 @@ class RoomSolidService
                 SELECT ?roomUrl
                 WHERE {
                     ?messageBox a schema:CreativeWorkSeries .
-                    ?messageBox schema:about ?roomUrl .
+                    ?messageBox schema:about ?roomUrl.
                 }`, {
                     sources: [sourceDir],
                     fetch: sessionContext.fetch,
@@ -314,7 +316,6 @@ class RoomSolidService
 
             const roomPromises = [];
             for (const binding of roomBindings) {
-                console.log(binding.get('roomUrl').value);
                 const promise = this.getRoomInfo(sessionContext, binding.get('roomUrl').value).then((room) => {
                     if (room.error) {
                         console.error(room.error);
@@ -325,7 +326,6 @@ class RoomSolidService
                 roomPromises.push(promise);
             }
             const rooms = await Promise.all(roomPromises);
-            console.log(rooms);
             return rooms;
         } catch (error) {
             console.error(error);
@@ -334,6 +334,31 @@ class RoomSolidService
         return {error: "unknown", errorMsg: "An unknown error occurred"};
     }
 
+    async endRoom(sessionContext, roomUrl) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" };
+        } else if (!roomUrl) {
+            return { error: "no room url", errorMsg: "No url was provided" };
+        }
+        const file = roomUrl;
+        const query = `
+            PREFIX schema: <${SCHEMA_ORG}>
+            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+            INSERT DATA {
+                <${roomUrl}> schema:endDate "${new Date().toISOString()}"^^xsd:dateTime .
+            }`;
+        try {
+            const result = await sprql_patch(sessionContext, file, query);
+            if (result.status < 200 || result.status >= 300) {
+                console.error(result);
+                return { error: result.statusText, errorMsg: 'failed to end room'};
+            }
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: 'failed to delete room'};
+        }
+    }
 
 }
 

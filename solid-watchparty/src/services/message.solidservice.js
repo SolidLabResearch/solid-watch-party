@@ -208,6 +208,34 @@ MessageSolidService
         }
     }
 
+    async endMessageBox(sessionContext, boxUrl) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" };
+        } else if (!boxUrl) {
+            return { error: "invalid box url", errorMsg: "The box url is invalid!" };
+        }
+
+        const file = boxUrl;
+        const query = `
+            PREFIX schema: <${SCHEMA_ORG}>
+            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+            INSERT DATA {
+                <${boxUrl}> schema:endDate "${new Date().toISOString()}"^^xsd:dateTime .
+            }
+        `;
+        try {
+            const result = await sprql_patch(sessionContext, file, query);
+            if (result.status < 200 || result.status >= 300) {
+                console.error(result)
+                return { error: result.statusText, errorMsg: 'failed to end room'};
+            }
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: 'failed to delete room'};
+        }
+    }
+
 }
 
 export default new MessageSolidService();

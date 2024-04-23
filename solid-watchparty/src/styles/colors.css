@@ -25,7 +25,8 @@
     --col-bg-on-2: #00E774;
 
     --col-solid: #7C4DFF;
-    --col-alert: #f33;
+    --col-fg-alert: #f33;
+    --col-bg-alert-1: #f339;
 
     --col-trans: #0000;
 }
@@ -52,7 +53,7 @@
 .rgb-bg-on-2 { background-color: var(--col-bg-on-2); }
 
 .rgb-solid { color: var(--col-solid); }
-.rgb-alert { color: var(--col-alert); }
+.rgb-alert { color: var(--col-fg-alert); }
 .rgb-bg-tr { background-color: var(--col-trans); }
 .rgb-bg-solid { background-color: var(--col-solid); }
 }

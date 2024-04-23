@@ -103,7 +103,7 @@ function MenuPage()
                 console.error(rooms.errorMsg);
                 return;
             }
-            console.log(rooms);
+            rooms = rooms.filter((room) => !room.error);
             setRooms(rooms);
             setFilteredRooms(rooms);
             setIsLoading(false);
@@ -111,7 +111,7 @@ function MenuPage()
     }, [sessionContext.sessionRequestInProgress, sessionContext.session]);
 
     useEffect(() => {
-        const filteredrooms = rooms.filter((room) => room.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        const filteredrooms = rooms.filter((room) => room.name?.toLowerCase().includes(searchTerm.toLowerCase()));
         setFilteredRooms(filteredrooms);
     }, [searchTerm]);
 
@@ -127,7 +127,7 @@ function MenuPage()
                     </button>
                 </div>
                 <div className="flex w-full gap-3 justify-end">
-                    <button className="hover:cursor-pointer sw-btn sw-btn-1 w-24"
+                    <button className="hover:cursor-pointer sw-btn sw-btn-2 w-24"
                             onClick={() => {
                                 setAction({name: "Room url", f: joinRoom});
                                 setModalIsShown(true);

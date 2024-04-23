@@ -91,6 +91,13 @@ a:hover
   border-radius: 8px;
 }
 
+.sw-border-error
+{
+  border-width: 1px;
+  border-color: var(--col-fg-alert);
+  border-radius: 8px;
+}
+
 .sw-btn
 {
   @apply font-bold;
@@ -133,6 +140,23 @@ a:hover
 }
 
 .sw-btn-2:active
+{
+  color: var(--col-fg2);
+  background-color: var(--col-bg2);
+}
+
+.sw-btn-alert
+{
+  color: var(--col-fg1);
+  background-color: var(--col-fg-alert);
+}
+
+.sw-btn-alert:hover
+{
+  background-color: var(--col-bg-alert-1);
+}
+
+.sw-btn-alert:active
 {
   color: var(--col-fg2);
   background-color: var(--col-bg2);
