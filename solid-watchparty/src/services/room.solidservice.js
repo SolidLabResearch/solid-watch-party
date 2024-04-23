@@ -247,6 +247,11 @@ class RoomSolidService
         return result;
     }
 
+    async getRooms(sessionContext) {
+        return {error: "not implemented", errorMsg: "This function is not implemented yet"};
+    }
+
+
 }
 
 export default new RoomSolidService();

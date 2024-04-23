@@ -9,6 +9,8 @@ import { FaChevronRight } from 'react-icons/fa';
 import SWPageWrapper from '../components/SWPageWrapper';
 import SWLoadingIcon from '../components/SWLoadingIcon';
 import SWModal from '../components/SWModal';
+import SWRoomPoster from '../components/SWRoomPoster';
+import SWModalInputBar from '../components/SWModalInputBar';
 
 /* service imports */
 import RoomSolidService from '../services/room.solidservice';
@@ -69,112 +71,33 @@ async function createRoom({input, setError, sessionContext, setMessageBox, navig
     return errors;
 }
 
-function RoomPoster({room: {name, url, lastMovie, nMembers, isOwner, isPlaying, lastActive, thumbnailUrl}}) {
-    thumbnailUrl = thumbnailUrl || "https://media.istockphoto.com/id/995815438/vector/movie-and-film-modern-retro-vintage-poster-background.jpg?s=612x612&w=0&k=20&c=UvRsJaKcp0EKIuqDKp6S7Dwhltt0D5rbegPkS-B8nDQ="
-    return (
-        <div className={
-            "sw-border relative flex-col justify-center items-center aspect-[27/39]"
-                + " h-96 shadow-lg rounded bg-black hover:cursor-pointer active:rgb-bg-1"
-            }>
-            {/* there needs to be a name, last-active date, thumbnail, # members and movie title */}
-            <div className="h-full w-full hover:opacity-40 transition-opacity">
-                <img className="absolute h-full w-full bg-cover rounded" src={thumbnailUrl} alt="room thumbnail"/>
-            </div>
-            <div className="w-full absolute top-0 bg-[#000A] p-3">
-                <div className="flex items-center gap-3">
-                    { isPlaying ? (
-                        <>
-                            <div className="w-3 h-3 rgb-bg-on-2 rounded-max"/>
-                            <p className="sw-fw-1">{lastMovie}</p>
-                        </>
-                    ) : (
-                        <p className="">Last active: {displayDate(lastActive)}</p>
-                    )}
-                </div>
-            </div>
-            <div className="w-full absolute bottom-0 bg-[#000A] p-3">
-                <p className="sw-fw-1">{nMembers} members</p>
-                <div className="flex gap-3 items-center">
-                    <p className="sw-fw-1 sw-fs-3">{name}</p>
-                    { isOwner && (
-                        <div className="sw-border px-3 rounded-max rgb-bg-1">
-                            <label>Owner</label>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function AddRoomPoster({setModalIsShown}) {
-    return (
-        <button className={
-            "relative flex flex-col justify-center items-center"
-            + " aspect-[27/39] h-96 rgb-bg-2 sw-border shadow-lg rounded border-dashed"
-            + " hover:cursor-pointer hover:shadow-xl hover:rgb-bg-1"
-            + " active:shadow-none active:rgb-bg-active-1 active:bg-opacity-10"
-            + " sw-fs-1 rgb-2 hover:fg-opacity-10 active:rgb-active-1"
-            } onClick={() => setModalIsShown(true)}>
-            <p>+</p>
-        </button>
-    );
-}
-
-function AddRoomModal({setModalIsShown, action}) {
-    const inputRef = useRef(null);
-
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState("");
-
-    const sessionContext = useSession();
-    const navigateTo = useNavigate();
-    const [,setMessageBox] = useContext(MessageBoxContext);
-
-    useEffect(() => {
-        inputRef.current.focus();
-    }, []);
-
-    const onSubmit = async (e) => {
-        e.preventDefault();
-        if (isLoading) {
-            return;
-        }
-        setIsLoading(true);
-        const result = await action.f({
-            input: inputRef.current.value,
-            setError: setError,
-            sessionContext: sessionContext,
-            setMessageBox: setMessageBox,
-            navigateTo: navigateTo,
-        });
-        if (result) {
-            setError(result);
-        }
-        setIsLoading(false);
-    }
-
-    return (
-        <SWModal className="p-12 z-10 w-1/2" setIsShown={setModalIsShown}>
-            <form onSubmit={onSubmit} className={`p-24 flex w-full items-center justify-between gap-6 border sw-input${error === "" ? "" : "-error"}`}>
-                <label className="w-fit sw-fw-1">{action.name}:</label>
-                <input className="flex grow" ref={inputRef} onChange={() => setError("")} disabled={isLoading} />
-                <button className={`sw-btn w-fit`} type="submit">
-                    { isLoading ? <SWLoadingIcon className="w-4"/> : <FaChevronRight className="w-4 h-4"/> }
-                </button>
-            </form>
-            <div className="h-12 mt-3 rgb-alert sw-fw-1">
-                <label>{error}</label>
-            </div>
-        </SWModal>
-    );
-}
 
 
 function MenuPage()
 {
     const [modalIsShown, setModalIsShown] = useState(false);
     const [action, setAction] = useState({name: "", f: null});
+
+    const sessionContext = useSession();
+    const navigateTo = useNavigate();
+    const [,setMessageBox] = useContext(MessageBoxContext);
+    const actionArgs = {
+            sessionContext: sessionContext,
+            setMessageBox:  setMessageBox,
+            navigateTo:     navigateTo,
+    }
+
+    const [rooms, setRooms] = useState([]);
+    useEffect(() => {
+        RoomSolidService.getRooms(sessionContext).then((rooms) => {
+            if (rooms.error) {
+                console.error(rooms.errorMsg);
+                return;
+            }
+            setRooms(rooms.rooms);
+        });
+    }, []);
+
     return (
         <SWPageWrapper className="px-24" mustBeAuthenticated={true}>
             <div className="flex justify-between items-center my-16 grid grid-cols-3">
@@ -203,33 +126,13 @@ function MenuPage()
                 </div>
             </div>
             <div className="flex flex-wrap gap-12">
-                <RoomPoster room={{
-                    name: ":woozy_face:",
-                    roomUrl: "https://test.com",
-                    lastMovie: "Jaws",
-                    nMembers: 5,
-                    isOwner: false,
-                    isPlaying: false,
-                    lastActive: new Date(),
-                }}/>
-                <RoomPoster room={{
-                    name: "Hello World!",
-                    roomUrl: "https://test.com",
-                    lastMovie: "Jaws",
-                    nMembers: 5,
-                    isOwner: true,
-                    isPlaying: true,
-                    lastActive: new Date(),
-                }}/>
-                <RoomPoster room={{ name: "HAAI-P!!!", roomUrl: "https://test.com", lastMovie: "Jaws", nMembers: 5, isOwner: true, isPlaying: false, lastActive: new Date(), thumbnailUrl: "https://i.ebayimg.com/images/g/GsEAAOSw~DtilaQH/s-l1200.webp", }}/>
-                <RoomPoster room={{ name: "HAAI-P!!!", roomUrl: "https://test.com", lastMovie: "Jaws", nMembers: 5, isOwner: true, isPlaying: false, lastActive: new Date(), thumbnailUrl: "https://i.ebayimg.com/images/g/GsEAAOSw~DtilaQH/s-l1200.webp", }}/>
-                <RoomPoster room={{ name: "HAAI-P!!!", roomUrl: "https://test.com", lastMovie: "Jaws", nMembers: 5, isOwner: true, isPlaying: false, lastActive: new Date(), thumbnailUrl: "https://i.ebayimg.com/images/g/GsEAAOSw~DtilaQH/s-l1200.webp", }}/>
-                <RoomPoster room={{ name: "HAAI-P!!!", roomUrl: "https://test.com", lastMovie: "Jaws", nMembers: 5, isOwner: true, isPlaying: false, lastActive: new Date(), thumbnailUrl: "https://i.ebayimg.com/images/g/GsEAAOSw~DtilaQH/s-l1200.webp", }}/>
-                <RoomPoster room={{ name: "HAAI-P!!!", roomUrl: "https://test.com", lastMovie: "Jaws", nMembers: 5, isOwner: true, isPlaying: false, lastActive: new Date(), thumbnailUrl: "https://i.ebayimg.com/images/g/GsEAAOSw~DtilaQH/s-l1200.webp", }}/>
-                <RoomPoster room={{ name: "HAAI-P!!!", roomUrl: "https://test.com", lastMovie: "Jaws", nMembers: 5, isOwner: true, isPlaying: false, lastActive: new Date(), thumbnailUrl: "https://i.ebayimg.com/images/g/GsEAAOSw~DtilaQH/s-l1200.webp", }}/>
-                <RoomPoster room={{ name: "HAAI-P!!!", roomUrl: "https://test.com", lastMovie: "Jaws", nMembers: 5, isOwner: true, isPlaying: false, lastActive: new Date(), thumbnailUrl: "https://i.ebayimg.com/images/g/GsEAAOSw~DtilaQH/s-l1200.webp", }}/>
+                { rooms.map((room, i) => (
+                    <SWRoomPoster key={i} room={room}/>
+                ))}
             </div>
-            { modalIsShown && <AddRoomModal setModalIsShown={setModalIsShown} action={action}/> }
+            { modalIsShown && (
+                <SWModalInputBar title={action.name}f={action.f} args={actionArgs} setModalIsShown={setModalIsShown}/>
+            )}
         </SWPageWrapper>
     )
 }
