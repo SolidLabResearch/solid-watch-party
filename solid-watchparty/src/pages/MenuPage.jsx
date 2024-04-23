@@ -80,6 +80,8 @@ function MenuPage()
     const [action, setAction] = useState({name: "", f: null});
     const [isLoading, setIsLoading] = useState(true);
 
+    const [searchTerm, setSearchTerm] = useState("");
+
     const sessionContext = useSession();
     const navigateTo = useNavigate();
     const [,setMessageBox] = useContext(MessageBoxContext);
@@ -90,9 +92,9 @@ function MenuPage()
     }
 
     const [rooms, setRooms] = useState([]);
+    const [filteredRooms, setFilteredRooms] = useState([]);
     useEffect(() => {
         setIsLoading(true);
-        console.log("MenuPage: useEffect");
         if (!inSession(sessionContext) || sessionContext.sessionRequestInProgress) {
             return;
         }
@@ -103,16 +105,23 @@ function MenuPage()
             }
             console.log(rooms);
             setRooms(rooms);
+            setFilteredRooms(rooms);
             setIsLoading(false);
         });
     }, [sessionContext.sessionRequestInProgress, sessionContext.session]);
+
+    useEffect(() => {
+        const filteredrooms = rooms.filter((room) => room.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        setFilteredRooms(filteredrooms);
+    }, [searchTerm]);
 
     return (
         <SWPageWrapper className="px-24" mustBeAuthenticated={true}>
             <div className="flex justify-between items-baseline my-16 grid grid-cols-3">
                 <div></div>
                 <div className="sw-input h-fit flex justify-between">
-                    <input type="text" placeholder="Find a room" className="w-full"/>
+                        <input type="text" placeholder="Find a room" className="w-full"
+                               onChange={(e) => setSearchTerm(e.target.value)}/>
                     <button className="hover:cursor-pointer">
                         <FaMagnifyingGlass className="w-6 h-6 p-1"/>
                     </button>
@@ -141,7 +150,7 @@ function MenuPage()
                 </div>
             ) : (
                 <div className="flex flex-wrap gap-12 h-2/4 overflow-y-auto">
-                    { rooms.map((room, i) => (
+                    { filteredRooms.map((room, i) => (
                         <SWRoomPoster key={i} room={room}/>
                     ))}
                 </div>
