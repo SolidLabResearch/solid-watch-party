@@ -117,11 +117,14 @@ class RoomSolidService
             await getSolidDataset(roomUrl, {fetch: sessionContext.fetch});
             return true;
         } catch (error) {
-            if (error.response.status !== 403) {
-                console.error(error);
-                return {error: error, errorMsg: 'Failed to check if you are registered'};
+            if (error.response.status === 403 || error.response.status === 401) {
+                return false;
             }
-            return false;
+            if (error.response.status === 404) {
+                return {error: error, errorMsg: 'Room does not exist'};
+            }
+            console.error(error);
+            return {error: error, errorMsg: 'Failed to check if you are registered'};
         }
     }
 
