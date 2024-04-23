@@ -2,8 +2,10 @@
 import { useEffect, useState, useRef, useContext } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaUserFriends } from "react-icons/fa";
 import { useInterval } from 'usehooks-ts'
+import { FaChevronLeft } from "react-icons/fa";
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
@@ -22,6 +24,9 @@ import { MessageBoxContext } from '../contexts';
 
 /* util imports */
 import { inSession } from '../utils/solidUtils';
+
+/* config imports */
+import config from '../../config';
 
 
 async function requestAccess(sessionContext, roomUrl) {
@@ -52,6 +57,8 @@ function WatchPage() {
     /* TODO(Elias): Add error handling, what if there is no parameter, or a wrong parameter */
     const [searchParams] = useSearchParams();
     const roomUrl = decodeURIComponent(searchParams.get('roomUrl'));
+
+    const navigateTo = useNavigate();
 
     useInterval(async () => {
         const result = await RoomSolidService.amIRegistered(sessionContext, roomUrl);
@@ -117,7 +124,11 @@ function WatchPage() {
     } else {
         body = (<>
             <div className="flex justify-between px-8 py-4 rgb-2 gap-12 items-center">
-                <div></div>
+                <button className="flex gap-2 items-center rgb-1 hover:rgb-2"
+                        onClick={() => navigateTo(`${config.baseDir}/menu`)}>
+                    <FaChevronLeft className="w-3 h-3"/>
+                    <p className="sw-fw-1">Back to menu</p>
+                </button>
                 <div className="flex gap-3">
                     <div className="rgb-2">
                         <button className={`sw-btn sw-btn-1 flex-grow h-6 flex justify-center`} onClick={() => setModalIsShown(true)}>
