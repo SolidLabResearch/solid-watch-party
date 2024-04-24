@@ -246,10 +246,11 @@ MessageSolidService
         try {
             const messageBoxStream = await queryEngine.queryBindings(`
                 PREFIX schema: <${SCHEMA_ORG}>
-                SELECT ?roomUrl ?messageBox
+                SELECT ?roomUrl ?messageBox ?endDate
                 WHERE {
                     ?messageBox a schema:CreativeWorkSeries .
                     ?messageBox schema:about ?roomUrl.
+                    OPTIONAL { ?messageBox schema:endDate ?endDate . }
                 }`, {
                     sources: [sourceDir],
                     fetch: sessionContext.fetch,

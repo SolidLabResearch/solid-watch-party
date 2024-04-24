@@ -265,13 +265,14 @@ class RoomSolidService
         try {
             const resultStream = await queryEngine.queryBindings(`
                 PREFIX schema: <${SCHEMA_ORG}>
-                SELECT ?name ?members ?organizer ?startDate
+                SELECT ?name ?members ?organizer ?startDate ?endDate
                 WHERE {
                     <${file}> a schema:EventSeries .
                     <${file}> schema:name ?name .
                     <${file}> schema:attendee ?members .
                     <${file}> schema:organizer ?organizer .
                     <${file}> schema:startDate ?startDate .
+                    OPTIONAL { <${file}> schema:endDate ?endDate . }
                 }`, {
                     sources: [file],
                     fetch: sessionContext.fetch,
@@ -281,12 +282,13 @@ class RoomSolidService
                 throw new Error("no room info found");
             }
             const members = resultBindings.map((binding) => binding.get('members').value) || [];
-            return { room: {
+            return {
                 roomUrl:        roomUrl,
                 name:           resultBindings[0]?.get('name').value,
                 isOrganizer:    resultBindings[0]?.get('organizer').value === sessionContext.session.info.webId,
                 nMembers:       members.length,
-            }}
+                endDate:        resultBindings[0]?.get('endDate')?.value,
+            }
         } catch (error) {
             console.error(error);
             return { error: error, errorMsg: 'failed to get room info'};

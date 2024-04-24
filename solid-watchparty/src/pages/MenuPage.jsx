@@ -99,15 +99,26 @@ function MenuPage()
             return;
         }
         let stream = null;
+
+        const timeout = setTimeout(() => {
+            setIsLoading(false);
+        }, 10000);
+
         MessageSolidService.getMessageBoxesStream(sessionContext).then((s) => {
-            stream = s;
+            if (!s || s.error) {
+                setIsLoading(false);
+                return;
+            }
+            stream = s
+            console.log("Stream: ", s);
             s.on('data', (r) => {
                 const roomUrl = r.get('roomUrl').value;
-                if (!roomUrl) {
+                const endDate = r.get('endDate')?.value;
+                if (!roomUrl || endDate) {
                     return;
                 }
                 RoomSolidService.getRoomInfo(sessionContext, roomUrl).then((room) => {
-                    if (!room || room.error) {
+                    if (!room || room.error || room.endDate) {
                         return;
                     }
                     setIsLoading(false);
@@ -116,9 +127,8 @@ function MenuPage()
             });
         });
         return () => {
-            console.log("closing stream: ", stream);
             if (stream) {
-                stream.close();
+                stream?.close();
             }
         }
     }, [sessionContext.sessionRequestInProgress, sessionContext.session]);
@@ -127,6 +137,10 @@ function MenuPage()
         const filteredrooms = rooms.filter((room) => room.name?.toLowerCase().includes(searchTerm.toLowerCase()));
         setFilteredRooms(filteredrooms);
     }, [searchTerm, rooms]);
+
+    const onDelete = (r1) => {
+        setRooms((rooms) => rooms.filter((r2) => r1.roomUrl !== r2.roomUrl));
+    }
 
     return (
         <SWPageWrapper className="px-24" mustBeAuthenticated={true}>
@@ -157,14 +171,18 @@ function MenuPage()
                 </div>
             </div>
             { isLoading ? (
-                <div className="h-56 flex flex-col items-center">
+                <div className="flex flex-col justify-center items-center">
                     <SWLoadingIcon className="w-6 h-6 py-8"/>
                     <p className="sw-fw-1">Retrieving rooms...</p>
+                </div>
+            ) : (rooms.length === 0) ? (
+                <div className="flex flex-col justify-center items-center">
+                    <p className="sw-fw-1 rgb-1">No rooms found</p>
                 </div>
             ) : (
                 <div className="flex flex-wrap gap-12 h-2/4 overflow-y-auto">
                     { filteredRooms.map((room, i) => (
-                        <SWRoomPoster key={i} room={room}/>
+                        <SWRoomPoster key={i} room={room} onDelete={onDelete}/>
                     ))}
                 </div>
             )}

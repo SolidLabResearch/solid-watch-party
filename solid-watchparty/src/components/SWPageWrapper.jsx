@@ -34,7 +34,7 @@ function SWPageWrapper({children, className, mustBeAuthenticated})
             <SWNavbar/>
             <div className={`flex-grow ${className}`}>
                 { sessionContext.sessionRequestInProgress ? (
-                    <div className="flex flex-col items-center">
+                    <div className="h-screen flex flex-col items-center justify-center">
                         <SWLoadingIcon className="w-6 h-6 mb-3"/>
                         <p className="sw-fw-1">Autenticating...</p>
                     </div>

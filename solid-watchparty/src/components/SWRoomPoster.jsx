@@ -28,7 +28,7 @@ import { getPodUrl, urlify } from '../utils/urlUtils.js';
 import config from '../../config';
 import { MESSAGES_ROOT } from '../config.js'
 
-function DeleteRoomModal({room, setIsShown}) {
+function DeleteRoomModal({room, setIsShown, onDelete}) {
     const sessionContext = useSession();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
@@ -51,8 +51,11 @@ function DeleteRoomModal({room, setIsShown}) {
             setError(result.errorMsg);
         }
 
+        console.log("DeleteRoomModal: Room deleted: ", room.roomUrl);
+        onDelete(room);
+
         setIsShown(false);
-        setisloading(false);
+        setIsLoading(false);
     }
 
     return (
@@ -79,7 +82,7 @@ function DeleteRoomModal({room, setIsShown}) {
     );
 }
 
-function RoomPoster({room}) {
+function RoomPoster({room, onDelete}) {
     if (!room) {
         console.error("RoomPoster: room is null");
         return null;
@@ -134,7 +137,7 @@ function RoomPoster({room}) {
                 <p className="sw-fw-1 sw-fs-3 overflow-hidden whitespace-nowrap overflow-ellipsis">{name}</p>
             </div>
             { deleteModalIsShown && (
-                <DeleteRoomModal room={room} setIsShown={setDeleteModalIsShown}/>
+                <DeleteRoomModal room={room} setIsShown={setDeleteModalIsShown} onDelete={onDelete}/>
             )}
         </div>
     );
