@@ -35,7 +35,7 @@ function SWModalInputBar({setModalIsShown, title, f, args}) {
 
     useEffect(() => {
         inputRef.current.focus();
-    }, []);
+    }, [isLoading]);
 
     const onSubmit = async (e) => {
         e.preventDefault();

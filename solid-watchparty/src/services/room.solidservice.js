@@ -12,6 +12,7 @@ import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine } from '@comunica/query-sparql';
 import { QueryEngine as QueryEngineLT } from '@comunica/query-sparql-link-traversal';
 import { QueryEngine as QueryEngineLTS } from '@comunica/query-sparql-link-traversal-solid';
+import { Transform } from 'stream';
 
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils.js';
@@ -293,16 +294,14 @@ class RoomSolidService
         return {error: "unknown", errorMsg: "An unknown error occurred"};
     }
 
-    async getRooms(sessionContext) {
+    async getRoomsStream(sessionContext) {
         if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         }
-
         const sourceDir = `${getPodUrl(sessionContext.session.info.webId)}/${MESSAGES_ROOT}/`;
-        const queryEngine = new QueryEngineLTS();
-
+        const queryEngine = new QueryEngineInc();
         try {
-            const roomStream = await queryEngine.queryBindings(`
+            const messageBoxStream = await queryEngine.queryBindings(`
                 PREFIX schema: <${SCHEMA_ORG}>
                 SELECT ?roomUrl
                 WHERE {
@@ -312,26 +311,28 @@ class RoomSolidService
                     sources: [sourceDir],
                     fetch: sessionContext.fetch,
                 });
-            const roomBindings = await roomStream.toArray()
-
-            const roomPromises = [];
-            for (const binding of roomBindings) {
-                const promise = this.getRoomInfo(sessionContext, binding.get('roomUrl').value).then((room) => {
-                    if (room.error) {
-                        console.error(room.error);
-                        return {error: 'failed to get room info'};
+            messageBoxStream.on("error", (e) => {
+                console.error(e);
+            });
+            const processedMessageBoxStream = new Transform({
+                transform: async (binding, encoding, callback) => {
+                    try {
+                        const roomUrl = binding.get('roomUrl').value;
+                        const roomInfo = await this.getRoomInfo(sessionContext, roomUrl);
+                        callback(null, { roomInfo });
+                    } catch (error) {
+                        callback(new Error('failed to process message box stream: ' + error.message));
                     }
-                    return room;
-                });
-                roomPromises.push(promise);
-            }
-            const rooms = await Promise.all(roomPromises);
-            return rooms;
+                }
+            });
+            processedMessageBoxStream.on("error", (e) => {
+                console.error(e);
+            });
+            return processedMessageBoxStream;
         } catch (error) {
             console.error(error);
-            return { error: error, errorMsg: 'failed to get rooms'};
+            return { error: error, errorMsg: 'failed to get message boxes stream'};
         }
-        return {error: "unknown", errorMsg: "An unknown error occurred"};
     }
 
     async endRoom(sessionContext, roomUrl) {

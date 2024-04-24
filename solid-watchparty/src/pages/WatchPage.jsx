@@ -124,7 +124,7 @@ function WatchPage() {
     } else {
         body = (<>
             <div className="flex justify-between px-8 py-4 rgb-2 gap-12 items-center">
-                <button className="flex gap-2 items-center rgb-1 hover:rgb-2"
+                <button className="flex gap-2 items-center rgb-1 hover:rgb-2 hover:cursor-pointer"
                         onClick={() => navigateTo(`${config.baseDir}/menu`)}>
                     <FaChevronLeft className="w-3 h-3"/>
                     <p className="sw-fw-1">Back to menu</p>
@@ -141,7 +141,7 @@ function WatchPage() {
                 </div>
             </div>
             <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
-                <div className={`w-2/3 h-fit flex rgb-bg-2 sw-border`} ref={iframeRef}>
+                <div className={`w-2/3 h-fit flex bg-black sw-border`} ref={iframeRef}>
                     <SWVideoPlayer roomUrl={roomUrl}/>
                 </div>
                 <SWChatComponent roomUrl={roomUrl}/>

@@ -98,14 +98,13 @@ function MenuPage()
         if (!inSession(sessionContext) || sessionContext.sessionRequestInProgress) {
             return;
         }
-        RoomSolidService.getRooms(sessionContext).then((rooms) => {
-            if (rooms.error) {
-                console.error(rooms.errorMsg);
-                return;
-            }
-            rooms = rooms.filter((room) => !room.error);
-            setRooms(rooms);
-            setFilteredRooms(rooms);
+        const roomsStream = RoomSolidService.getRoomsStream(sessionContext)
+        roomsStream.on('data', async (data) => {
+            console.log("NEW ROOM", data);
+            // rooms = rooms.push(data);
+            // rooms = rooms.filter((room) => !room.error);
+            // setRooms(rooms);
+            // setFilteredRooms(rooms);
             setIsLoading(false);
         });
     }, [sessionContext.sessionRequestInProgress, sessionContext.session]);
