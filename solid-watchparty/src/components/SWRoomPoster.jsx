@@ -86,18 +86,9 @@ function RoomPoster({room, onDelete}) {
         return null;
     }
 
-    const { name, lastActive, nMembers, isOrganizer, isPlaying, lastMovie } = room;
+    const { name, lastActive, nMembers, isOrganizer, isPlaying, lastMovie, thumbnailUrl } = room;
     const [deleteModalIsShown, setDeleteModalIsShown] = useState(false);
     const navigateTo = useNavigate();
-
-    const randomposters = [
-        "https://media.istockphoto.com/id/995815438/vector/movie-and-film-modern-retro-vintage-poster-background.jpg?s=612x612&w=0&k=20&c=UvRsJaKcp0EKIuqDKp6S7Dwhltt0D5rbegPkS-B8nDQ=",
-        "https://thumbs.dreamstime.com/b/movie-film-poster-template-design-modern-retro-vintage-style-can-be-used-background-backdrop-banner-brochure-leaflet-flyer-128343314.jpg",
-        "https://thumbs.dreamstime.com/b/movie-film-poster-template-design-modern-retro-vintage-style-movie-film-poster-template-design-modern-retro-vintage-style-125779532.jpg",
-        "https://media.istockphoto.com/id/1127899152/vector/movie-and-film-poster-design-template-background-modern-vintage-retro-style.jpg?s=612x612&w=0&k=20&c=brNq4L210W-Vp4m-0Lg78JLyt86pdIcSDFDBWI0v4qc=",
-        "https://media.istockphoto.com/id/995815438/vector/movie-and-film-modern-retro-vintage-poster-background.jpg?s=612x612&w=0&k=20&c=UvRsJaKcp0EKIuqDKp6S7Dwhltt0D5rbegPkS-B8nDQ="
-    ]
-    const thumbnailUrl = room.thumbnailUrl;
 
     return (
         <div className={

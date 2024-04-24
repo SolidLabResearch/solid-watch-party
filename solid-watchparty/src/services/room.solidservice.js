@@ -265,13 +265,14 @@ class RoomSolidService
         try {
             const resultStream = await queryEngine.queryBindings(`
                 PREFIX schema: <${SCHEMA_ORG}>
-                SELECT ?name ?members ?organizer ?startDate ?endDate
+                SELECT ?name ?members ?organizer ?startDate ?endDate ?thumbnailUrl
                 WHERE {
                     <${file}> a schema:EventSeries .
                     <${file}> schema:name ?name .
                     <${file}> schema:attendee ?members .
                     <${file}> schema:organizer ?organizer .
                     <${file}> schema:startDate ?startDate .
+                    OPTIONAL { <${file}> schema:image ?thumbnailUrl . }
                     OPTIONAL { <${file}> schema:endDate ?endDate . }
                 }`, {
                     sources: [file],
@@ -288,6 +289,7 @@ class RoomSolidService
                 isOrganizer:    resultBindings[0]?.get('organizer').value === sessionContext.session.info.webId,
                 nMembers:       members.length,
                 endDate:        resultBindings[0]?.get('endDate')?.value,
+                thumbnailUrl:   resultBindings[0]?.get('thumbnailUrl')?.value,
             }
         } catch (error) {
             console.error(error);

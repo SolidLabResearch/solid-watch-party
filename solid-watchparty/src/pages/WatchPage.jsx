@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaUserFriends } from "react-icons/fa";
 import { useInterval } from 'usehooks-ts'
 import { FaChevronLeft } from "react-icons/fa";
+import { FaGear } from "react-icons/fa6";
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
@@ -14,6 +15,7 @@ import SWVideoPlayer from '../components/SWVideoPlayer';
 import SWLoadingIcon from '../components/SWLoadingIcon';
 import StartWatchingEventModal from '../components/StartWatchingEventModal';
 import PeopleMenuModal from '../components/PeopleMenuModal';
+import SettingsModal from '../components/SettingsModal';
 
 /* service imports */
 import RoomSolidService from '../services/room.solidservice.js';
@@ -48,7 +50,8 @@ function WatchPage() {
     const [pageError, setPageError] = useState(0);
     const [joinState, setJoinState] = useState('loading');
 
-    const [menuModalIsShown, setMenuModalIsShown] = useState(false);
+    const [peopleModalIsShown, setPeopleModalIsShown] = useState(false);
+    const [settingsModalIsShown, setSettingsModalIsShown] = useState(false);
     const [modalIsShown, setModalIsShown] = useState(false);
 
     const sessionContext = useSession();
@@ -135,8 +138,11 @@ function WatchPage() {
                             Start new video
                         </button>
                     </div>
-                    <button onClick={() => setMenuModalIsShown(!menuModalIsShown)} className="sw-btn sw-btn-2 border">
+                    <button onClick={() => setPeopleModalIsShown(!peopleModalIsShown)} className="sw-btn sw-btn-2 border">
                         <FaUserFriends className="w-6 h-6"/>
+                    </button>
+                    <button onClick={() => setSettingsModalIsShown(!settingsModalIsShown)} className="sw-btn sw-btn-2 border">
+                        <FaGear className="w-6 h-6"/>
                     </button>
                 </div>
             </div>
@@ -146,8 +152,11 @@ function WatchPage() {
                 </div>
                 <SWChatComponent roomUrl={roomUrl}/>
             </div>
-            { menuModalIsShown && (
-                <PeopleMenuModal setModalIsShown={setMenuModalIsShown} roomUrl={roomUrl}/>
+            { settingsModalIsShown && (
+                <SettingsModal setModalIsShown={setSettingsModalIsShown} roomUrl={roomUrl}/>
+            )}
+            { peopleModalIsShown && (
+                <PeopleMenuModal setModalIsShown={setPeopleModalIsShown} roomUrl={roomUrl}/>
             )}
             { modalIsShown && (
                 <StartWatchingEventModal setModalIsShown={setModalIsShown} roomUrl={roomUrl}/>
