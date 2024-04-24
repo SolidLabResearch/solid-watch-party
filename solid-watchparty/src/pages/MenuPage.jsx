@@ -98,21 +98,35 @@ function MenuPage()
         if (!inSession(sessionContext) || sessionContext.sessionRequestInProgress) {
             return;
         }
-        const roomsStream = RoomSolidService.getRoomsStream(sessionContext)
-        roomsStream.on('data', async (data) => {
-            console.log("NEW ROOM", data);
-            // rooms = rooms.push(data);
-            // rooms = rooms.filter((room) => !room.error);
-            // setRooms(rooms);
-            // setFilteredRooms(rooms);
-            setIsLoading(false);
+        let stream = null;
+        MessageSolidService.getMessageBoxesStream(sessionContext).then((s) => {
+            stream = s;
+            s.on('data', (r) => {
+                const roomUrl = r.get('roomUrl').value;
+                if (!roomUrl) {
+                    return;
+                }
+                RoomSolidService.getRoomInfo(sessionContext, roomUrl).then((room) => {
+                    if (!room || room.error) {
+                        return;
+                    }
+                    setIsLoading(false);
+                    setRooms((rooms) => [...rooms, room]);
+                });
+            });
         });
+        return () => {
+            console.log("closing stream: ", stream);
+            if (stream) {
+                stream.close();
+            }
+        }
     }, [sessionContext.sessionRequestInProgress, sessionContext.session]);
 
     useEffect(() => {
         const filteredrooms = rooms.filter((room) => room.name?.toLowerCase().includes(searchTerm.toLowerCase()));
         setFilteredRooms(filteredrooms);
-    }, [searchTerm]);
+    }, [searchTerm, rooms]);
 
     return (
         <SWPageWrapper className="px-24" mustBeAuthenticated={true}>

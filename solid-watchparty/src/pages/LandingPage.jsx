@@ -19,7 +19,11 @@ function Banner({name, children, className, showArrow=false}) {
                 {children}
             </div>
             <div>
-                {showArrow && <FaChevronDown className="w-8 h-8 mb-20"/>}
+                {showArrow && (
+                    <a href="#about">
+                        <FaChevronDown className="w-8 h-8 mb-20"/>
+                    </a>
+                )}
             </div>
         </div>
     );

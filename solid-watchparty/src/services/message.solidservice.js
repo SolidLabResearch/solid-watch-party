@@ -15,6 +15,7 @@ import {
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine as QueryEngineInc } from '@incremunica/query-sparql-incremental';
+import { QueryEngine as QueryEngineLTS } from '@comunica/query-sparql-link-traversal-solid';
 import { QueryEngine } from '@comunica/query-sparql';
 
 /* util imports */
@@ -233,6 +234,33 @@ MessageSolidService
         } catch (error) {
             console.error(error);
             return { error: error, errorMsg: 'failed to delete room'};
+        }
+    }
+
+    async getMessageBoxesStream(sessionContext) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+        }
+        const sourceDir = `${getPodUrl(sessionContext.session.info.webId)}/${MESSAGES_ROOT}/`;
+        const queryEngine = new QueryEngineLTS();
+        try {
+            const messageBoxStream = await queryEngine.queryBindings(`
+                PREFIX schema: <${SCHEMA_ORG}>
+                SELECT ?roomUrl ?messageBox
+                WHERE {
+                    ?messageBox a schema:CreativeWorkSeries .
+                    ?messageBox schema:about ?roomUrl.
+                }`, {
+                    sources: [sourceDir],
+                    fetch: sessionContext.fetch,
+                });
+            messageBoxStream.on('error', (data) => {
+                console.error(data);
+            });
+            return messageBoxStream;
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: 'failed to get message boxes stream'};
         }
     }
 
