@@ -12,7 +12,6 @@ function SWVideoPlayerControls({watchingEvent, videoRef, isPlaying, fullscreenHa
     const sessionContext = useSession();
 
     const onPause = () => {
-        console.log("ON PAUSE CLICKED");
         EventsSolidService.saveControlAction(sessionContext, watchingEvent?.eventUrl,
                                              !isPlaying, videoRef.current.getCurrentTime())
     }

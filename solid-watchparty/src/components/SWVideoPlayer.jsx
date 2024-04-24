@@ -80,7 +80,6 @@ function SWVideoPlayer({roomUrl}) {
                 watchingEventStream = null;
                 return;
             }
-            console.log('NOW LISTENING FOR NEW WATCHING EVENTS');
             watchingEventStream.on('data', (data) => {
                 handleNewWatchingEvent(sessionContext, data).then((newWatchingEvent) => {
                     if (!newWatchingEvent) {
@@ -89,7 +88,6 @@ function SWVideoPlayer({roomUrl}) {
                     if (lastWatchingEvent && newWatchingEvent.startDate <= lastWatchingEvent.startDate) {
                         return;
                     }
-                    console.log("NEW WATCHING EVENT", newWatchingEvent);
                     lastWatchingEvent = newWatchingEvent;
                     setWatchingEvent(lastWatchingEvent);
                 });

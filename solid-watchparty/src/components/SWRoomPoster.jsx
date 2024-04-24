@@ -51,9 +51,7 @@ function DeleteRoomModal({room, setIsShown, onDelete}) {
             setError(result.errorMsg);
         }
 
-        console.log("DeleteRoomModal: Room deleted: ", room.roomUrl);
         onDelete(room);
-
         setIsShown(false);
         setIsLoading(false);
     }
