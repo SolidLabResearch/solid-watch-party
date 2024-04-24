@@ -49,14 +49,11 @@ function SWChatComponent({roomUrl, joined}) {
                     return;
                 }
                 messageStream.on('data', async (data) => {
-                    if (usernames.length <= senderIndex) {
-                        let name = await UserSolidService.getName(sessionContext, data.get('sender').value);
-                        name = (name.error) ? 'Unknown' : name;
-                        usernames.push(name);
-                    }
+                    let name = await UserSolidService.getName(sessionContext, data.get('sender').value);
+                    name = (!name || name.error) ? 'Unknown' : name;
                     const message = {
                         text:    data.get('text').value,
-                        sender:  usernames[senderIndex],
+                        sender:  name,
                         date:    new Date(data.get('dateSent').value),
                         key:     (name + data.get('dateSent').value),
                     };
@@ -71,18 +68,6 @@ function SWChatComponent({roomUrl, joined}) {
             setState({isLoading: false, hasAccess: true});
         }
         fetch();
-
-        return (() => {
-            if (messageSeriesStreams) {
-                messageSeriesStreams.close();
-            }
-            for (let i = 0; i < messageStreams.length; i++) {
-                if (messageStreams[i]) {
-                    messageStreams[i].close()
-                }
-            }
-            setMessages([]);
-        });
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl, joined])
 
 

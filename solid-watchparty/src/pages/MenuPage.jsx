@@ -110,8 +110,8 @@ function MenuPage()
                 return;
             }
             stream = s
-            console.log("Stream: ", s);
             s.on('data', (r) => {
+                console.log("NEW MESSAGE BOX", r);
                 const roomUrl = r.get('roomUrl').value;
                 const endDate = r.get('endDate')?.value;
                 if (!roomUrl || endDate) {
@@ -126,11 +126,6 @@ function MenuPage()
                 });
             });
         });
-        return () => {
-            if (stream) {
-                stream?.close();
-            }
-        }
     }, [sessionContext.sessionRequestInProgress, sessionContext.session]);
 
     useEffect(() => {

@@ -104,11 +104,24 @@ a:hover
   @apply py-2 px-4;
   border-radius: 3px;
   @apply text-center;
+  @apply cursor-pointer;
 }
 
-.sw-btn
+.sw-btn-player
 {
-    @apply cursor-pointer;
+  @apply py-2 px-4;
+  border-radius: 3px;
+  @apply cursor-pointer;
+}
+
+.sw-btn-player:hover
+{
+    background-color: var(--col-bg2);
+}
+
+.sw-btn-player:active
+{
+    background-color: var(--col-bg3);
 }
 
 .sw-btn-1

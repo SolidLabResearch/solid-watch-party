@@ -252,12 +252,10 @@ MessageSolidService
                     ?messageBox schema:about ?roomUrl.
                     OPTIONAL { ?messageBox schema:endDate ?endDate . }
                 }`, {
+                    lenient: true,
                     sources: [sourceDir],
                     fetch: sessionContext.fetch,
                 });
-            messageBoxStream.on('error', (data) => {
-                console.error(data);
-            });
             return messageBoxStream;
         } catch (error) {
             console.error(error);

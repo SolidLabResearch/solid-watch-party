@@ -136,7 +136,7 @@ function WatchPage() {
                         </button>
                     </div>
                     <button onClick={() => setMenuModalIsShown(!menuModalIsShown)} className="sw-btn sw-btn-2 border">
-                        <FaUserFriends className="sw-btn-player w-6 h-6"/>
+                        <FaUserFriends className="w-6 h-6"/>
                     </button>
                 </div>
             </div>

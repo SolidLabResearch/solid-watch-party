@@ -96,9 +96,6 @@ function SWVideoPlayer({roomUrl}) {
             });
         }
         act();
-        return (() => {
-            watchingEventStream?.close();
-        });
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl]);
 
 
@@ -125,9 +122,6 @@ function SWVideoPlayer({roomUrl}) {
             setIsPlaying({is: watchingEvent.isPlaying, from: watchingEvent.joinedAt});
         }
         act();
-        return () => {
-            controlActionStream?.close();
-        };
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, watchingEvent]);
 
 
