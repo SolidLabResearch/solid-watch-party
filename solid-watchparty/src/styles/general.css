@@ -107,6 +107,11 @@ a:hover
   @apply cursor-pointer;
 }
 
+.sw-btn:focus
+{
+  outline: 3px solid var(--col-fg4);
+}
+
 .sw-btn-player
 {
   @apply py-2 px-4;
@@ -196,6 +201,18 @@ a:hover
   padding: 4px 6px;
   margin: 0;
   box-sizing: border-box;
+}
+
+.sw-input-disabled
+{
+  border: 1px solid var(--col-fg4);
+  text-align: left;
+  border-radius: 3px;
+  padding: 4px 6px;
+  margin: 0;
+  box-sizing: border-box;
+  color: var(--col-fg4);
+  background-color: var(--col-bg1);
 }
 
 .sw-input-error

@@ -107,14 +107,14 @@ function RoomPoster({room, onDelete}) {
                     </div>
                 )}
             </div>
-            <div className="w-full absolute top-0 p-3 flex justify-between">
+            <div className="w-full absolute top-0 p-3 flex justify-between bg-[#000A]">
                 <div></div>
                 <button className="px-2 py-1 z-20 w-fit rounded-lg hover:bg-[#FaaA] active:bg-[#Faa]"
                         onClick={() => setDeleteModalIsShown(true)}>
                     <FaDeleteLeft className="h-6 w-6 text-red-500 "/>
                 </button>
             </div>
-            <div className="w-full absolute bottom-0 bg-[#000A] p-3 rounded-b-lg">
+            <div className="w-full absolute bottom-0 bg-[#000A] p-3">
                 <div className="flex gap-3 items-center py-2">
                     <p className="sw-fw-1">{nMembers} members</p>
                     { isOrganizer && (

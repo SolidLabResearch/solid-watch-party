@@ -298,6 +298,37 @@ class RoomSolidService
         return {error: "unknown", errorMsg: "An unknown error occurred"};
     }
 
+    async updateRoomInfo(sessionContext, roomUrl, room_) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" };
+        } else if (!roomUrl) {
+            return { error: "no room url", errorMsg: "No url was provided" };
+        }
+
+        const file = roomUrl;
+        const query = `
+            PREFIX schema: <${SCHEMA_ORG}>
+            DELETE WHERE {
+                ${room_.name ? `<${roomUrl}> schema:name ?name .` : ``}
+                ${room_.thumbnailUrl ? `<${roomUrl}> schema:image ?thumbnailUrl .` : ``}
+            } ;
+            INSERT DATA {
+                ${room_.name ? `<${roomUrl}> schema:name "${room_.name}" .` : ``}
+                ${room_.thumbnailUrl ? `<${roomUrl}> schema:image "${room_.thumbnailUrl}" .` : ``}
+            }`;
+        try {
+            const result = await sprql_patch(sessionContext, file, query);
+            if (result.status < 200 || result.status >= 300) {
+                console.error(result);
+                return { error: result.statusText, errorMsg: 'failed to update room'};
+            }
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: 'failed to update room'};
+        }
+
+    }
 
     async endRoom(sessionContext, roomUrl) {
         if (!inSession(sessionContext)) {

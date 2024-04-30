@@ -1,6 +1,6 @@
 
 /* library imports */
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useRef } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { FaUserCircle, FaCheck } from "react-icons/fa";
 import propTypes from 'prop-types';
@@ -23,21 +23,69 @@ import { inSession } from '../utils/solidUtils';
 
 
 function SettingsModal({setModalIsShown, roomUrl}) {
+    const sessionContext = useSession();
+    const [room, setRoom] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const nameRef = useRef();
+    const thumbnailRef = useRef();
+
+    useEffect(() => {
+        setIsLoading(true);
+        RoomSolidService.getRoomInfo(sessionContext, roomUrl).then((room) => {
+            if (room.error) {
+                return;
+            }
+            setRoom(room);
+            setIsLoading(false);
+            nameRef.current.focus();
+        });
+    }, []);
+
+    const submit = async (e) => {
+        setIsLoading(true);
+        e.preventDefault();
+        const name = nameRef.current.value;
+        const thumbnailUrl = thumbnailRef.current.value;
+        const room_ = {...room, name, thumbnailUrl};
+
+        RoomSolidService.updateRoomInfo(sessionContext, roomUrl, room_).then((result) => {
+            setIsLoading(false);
+            if (result.error) {
+                return;
+            }
+            setRoom(room_);
+        });
+
+    }
+
+    useEffect(() => {
+        nameRef.current.value = (room?.name) ? room.name: "";
+        thumbnailRef.current.value = (room?.thumbnailUrl) ? room.thumbnailUrl: "";
+    }, [room]);
+
     return (
-        <SWModal className="rgb-bg-2 h-2/3 p-12 z-10 w-1/2 sw-border" setIsShown={setModalIsShown}>
+        <SWModal className="relative rgb-bg-2 h-fit p-12 z-10 w-1/2 sw-border" setIsShown={setModalIsShown}>
             <div className="mb-6 flex items-center justify-between">
                 <p className="sw-fs-2 sw-fw-1">Settings</p>
             </div>
-            <form>
-                <div>
-                    <label className="sw-fs-1 sw-fw-1">Name</label>
-                    <input className="sw-input" type="text" placeholder="Room name"/>
+            <form onSubmit={submit}>
+                <div className="my-4">
+                    <p className="sw-fs-4 sw-fw-1 my-2 w-full">Room Name</p>
+                    <div className={`sw-input${isLoading ? "-disabled" : ""} w-full flex justify-between`}>
+                        <input className="w-full" type="text" placeholder="Room name" ref={nameRef} disabled={isLoading}/>
+                        { isLoading ? <SWLoadingIcon className="w-4 h-4"/> : null}
+                    </div>
                 </div>
-                <div>
-                    <label className="sw-fs-1 sw-fw-1">Thumbnail Url</label>
-                    <input className="sw-input" type="text" placeholder="Image Url"/>
+                <div className="my-4">
+                    <p className="sw-fs-4 sw-fw-1 my-2">Thumbnail Url</p>
+                    <div className={`sw-input${isLoading ? "-disabled" : ""} w-full flex justify-between`}>
+                        <input className="w-full" type="text" placeholder="Image Url"
+                                ref={thumbnailRef} value={room?.thumbnail} disabled={isLoading}/>
+                        { isLoading ? <SWLoadingIcon className="w-4 h-4"/> : null}
+                    </div>
                 </div>
-                <button className="sw-btn sw-btn-1 mt-6 w-full">Save</button>
+                <button className="sw-btn sw-btn-1 mt-6">Save</button>
             </form>
         </SWModal>
     );
