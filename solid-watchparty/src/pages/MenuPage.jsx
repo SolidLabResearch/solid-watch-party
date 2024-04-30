@@ -23,6 +23,7 @@ import { MessageBoxContext } from '../contexts';
 import { validateAll, validateRequired, validateIsUrl, validateLength } from '../utils/validationUtils';
 import { displayDate } from '../utils/general';
 import { inSession } from '../utils/solidUtils';
+import { parseTitle } from '../utils/messageParser';
 
 /* config imports */
 import config from '../../config';
@@ -32,9 +33,11 @@ async function joinRoom({input, setError, navigateTo}) {
     const errors = validateAll(input, [
         {run: validateRequired, message: "Provide a URL!"},
         {run: validateIsUrl, message: "Provide a valid URL!"},
+        {run: (s) => s.includes(config.baseDir), message: "Provide a valid URL!"}
     ])
+    input = input.split(`${config.baseDir}/`)[1];
     if (!errors) {
-        navigateTo(input);
+        navigateTo(`${config.baseDir}/${input}`);
     }
     return errors;
 }
@@ -44,6 +47,7 @@ async function createRoom({input, setError, sessionContext, setMessageBox, navig
         {run: validateRequired, message: "Provide a name!"},
         {run: (v) => validateLength(v, 1, 42), message: "Your name can only be 42 characters long!"},
     ]);
+    input = parseTitle(input);
     if (!errors) {
         // TODO: At the moment an error in this process will cause dangling dataset
         const roomResult = await RoomSolidService.createNewRoom(sessionContext, input)
@@ -172,6 +176,10 @@ function MenuPage()
             ) : (rooms.length === 0) ? (
                 <div className="flex flex-col justify-center items-center">
                     <p className="sw-fw-1 rgb-1">No rooms found</p>
+                </div>
+            ) : (filteredRooms.length === 0) ? (
+                <div className="flex flex-col justify-center items-center">
+                    <p className="sw-fw-1 rgb-1">No search results...</p>
                 </div>
             ) : (
                 <div className="flex flex-wrap gap-12 h-2/4 overflow-y-auto">

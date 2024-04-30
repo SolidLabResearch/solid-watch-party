@@ -65,6 +65,9 @@ function WatchPage() {
     const navigateTo = useNavigate();
 
     useEffect(() => {
+        if (joinState !== 'success') {
+            return;
+        }
         RoomSolidService.getRoomInfo(sessionContext, roomUrl).then((room) => {
             if (room.error) {
                 setJoinState('error');
@@ -72,7 +75,7 @@ function WatchPage() {
             };
             setRoom(room);
         });
-    }, [roomUrl, sessionContext.session.requestInProgress, sessionContext.session]);
+    }, [roomUrl, sessionContext.session.requestInProgress, sessionContext.session, joinState]);
 
 
     useInterval(async () => {
@@ -139,7 +142,7 @@ function WatchPage() {
     } else {
         body = (<>
             <div className="absolute top-0 left-0 w-full h-full -z-10">
-                <img src={room.thumbnailUrl} className="w-full h-full bg-image"/>
+                <img src={room.thumbnailUrl} className="w-full h-full object-cover"/>
                 <div className="absolute top-0 left-0 w-full h-full bg-black opacity-50"/>
             </div>
             <div className=" flex justify-between items-baseline px-8 py-4 gap-12 items-center">

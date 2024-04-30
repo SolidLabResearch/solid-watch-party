@@ -116,7 +116,7 @@ a:hover
 
 .sw-btn:focus
 {
-  outline: 3px solid var(--col-fg4);
+  outline: 2px solid var(--col-fg4);
 }
 
 .sw-btn-player

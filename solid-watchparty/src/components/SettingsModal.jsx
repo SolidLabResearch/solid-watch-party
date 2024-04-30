@@ -20,6 +20,7 @@ import MessageSolidService from '../services/message.solidservice.js';
 
 /* util imports */
 import { inSession } from '../utils/solidUtils';
+import { parseTitle } from '../utils/messageParser';
 
 /* context imports */
 import { RoomContext } from '../contexts';
@@ -48,7 +49,7 @@ function SettingsModal({setModalIsShown, roomUrl}) {
     const submit = async (e) => {
         setIsLoading(true);
         e.preventDefault();
-        const name = nameRef.current.value;
+        const name = parseTitle(nameRef.current.value);
         const thumbnailUrl = thumbnailRef.current.value;
         const room_ = {...room, name, thumbnailUrl};
 
