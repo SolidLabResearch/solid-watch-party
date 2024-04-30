@@ -23,6 +23,7 @@ import MessageSolidService from '../services/message.solidservice.js';
 
 /* context imports */
 import { MessageBoxContext } from '../contexts';
+import { RoomContext } from '../contexts';
 
 /* util imports */
 import { inSession } from '../utils/solidUtils';
@@ -47,7 +48,6 @@ function WatchPage() {
     const iframeRef = useRef(null);
     const [parentHeight, setParentHeight] = useState('auto');
 
-    const [pageError, setPageError] = useState(0);
     const [joinState, setJoinState] = useState('loading');
 
     const [peopleModalIsShown, setPeopleModalIsShown] = useState(false);
@@ -56,12 +56,24 @@ function WatchPage() {
 
     const sessionContext = useSession();
     const [,setMessageBox] = useContext(MessageBoxContext);
+    const [room, setRoom] = useState({});
 
     /* TODO(Elias): Add error handling, what if there is no parameter, or a wrong parameter */
     const [searchParams] = useSearchParams();
     const roomUrl = decodeURIComponent(searchParams.get('roomUrl'));
 
     const navigateTo = useNavigate();
+
+    useEffect(() => {
+        RoomSolidService.getRoomInfo(sessionContext, roomUrl).then((room) => {
+            if (room.error) {
+                setJoinState('error');
+                return;
+            };
+            setRoom(room);
+        });
+    }, [roomUrl, sessionContext.session.requestInProgress, sessionContext.session]);
+
 
     useInterval(async () => {
         const result = await RoomSolidService.amIRegistered(sessionContext, roomUrl);
@@ -126,12 +138,19 @@ function WatchPage() {
         );
     } else {
         body = (<>
-            <div className="flex justify-between px-8 py-4 rgb-2 gap-12 items-center">
-                <button className="flex gap-2 items-center rgb-1 hover:rgb-2 hover:cursor-pointer"
-                        onClick={() => navigateTo(`${config.baseDir}/menu`)}>
-                    <FaChevronLeft className="w-3 h-3"/>
-                    <p className="sw-fw-1">Back to menu</p>
-                </button>
+            <div className="absolute top-0 left-0 w-full h-full -z-10">
+                <img src={room.thumbnailUrl} className="w-full h-full bg-image"/>
+                <div className="absolute top-0 left-0 w-full h-full bg-black opacity-50"/>
+            </div>
+            <div className=" flex justify-between items-baseline px-8 py-4 gap-12 items-center">
+                <div className="flex gap-6 items-baseline">
+                    <button className="flex gap-2 items-center rgb-1 hover:rgb-2 hover:cursor-pointer"
+                            onClick={() => navigateTo(`${config.baseDir}/menu`)}>
+                        <FaChevronLeft className="w-3 h-3"/>
+                        <p className="sw-fw-1">Back to menu</p>
+                    </button>
+                    <p className="sw-fw-1 sw-fs-3 rgb-1">{room.name}</p>
+                </div>
                 <div className="flex gap-3">
                     <div className="rgb-2">
                         <button className={`sw-btn sw-btn-1 flex-grow h-6 flex justify-center`} onClick={() => setModalIsShown(true)}>
@@ -167,7 +186,9 @@ function WatchPage() {
 
     return (
         <SWPageWrapper className="h-full" mustBeAuthenticated={true}>
-            {body}
+            <RoomContext.Provider value={[room, setRoom]}>
+                {body}
+            </RoomContext.Provider>
         </SWPageWrapper>
     );
 }

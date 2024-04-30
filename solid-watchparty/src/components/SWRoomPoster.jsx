@@ -100,7 +100,7 @@ function RoomPoster({room, onDelete}) {
                     onClick={() => navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(room.roomUrl)}`)}/>
             <div className="h-full w-full">
                 {thumbnailUrl ? (
-                    <img className="absolute h-full w-full bg-cover rounded" src={thumbnailUrl} alt="room thumbnail"/>
+                    <img className="absolute w-full h-full object-cover" src={thumbnailUrl} alt="room thumbnail"/>
                 ) : (
                     <div className={`absolute h-full w-full bg-cover rounded-lg flex items-center justify-center`}>
                         <MdHideImage className="absolute h-8 w-8 rgb-2"/>

@@ -21,10 +21,13 @@ import MessageSolidService from '../services/message.solidservice.js';
 /* util imports */
 import { inSession } from '../utils/solidUtils';
 
+/* context imports */
+import { RoomContext } from '../contexts';
+
 
 function SettingsModal({setModalIsShown, roomUrl}) {
     const sessionContext = useSession();
-    const [room, setRoom] = useState(null);
+    const [room, setRoom] = useContext(RoomContext);
     const [isLoading, setIsLoading] = useState(true);
 
     const nameRef = useRef();
@@ -40,7 +43,7 @@ function SettingsModal({setModalIsShown, roomUrl}) {
             setIsLoading(false);
             nameRef.current.focus();
         });
-    }, []);
+    }, [sessionContext.session, sessionContext.requested, roomUrl]);
 
     const submit = async (e) => {
         setIsLoading(true);
