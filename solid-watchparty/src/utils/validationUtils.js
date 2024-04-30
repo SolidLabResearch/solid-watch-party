@@ -1,3 +1,4 @@
+
 export function validateAll(input, validations)
 {
     for (let i = 0; i < validations.length; ++i) {
@@ -19,3 +20,4 @@ export function validateIsUrl(string) {
 export function validateLength(string, min, max) {
     return string.length >= min && string.length < max;
 }
+

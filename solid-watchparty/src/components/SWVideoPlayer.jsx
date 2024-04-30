@@ -15,14 +15,15 @@ import VideoSolidService from '../services/videos.solidservice.js';
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 
-
 async function handleNewWatchingEvent(sessionContext, data) {
     const videoObject = await VideoSolidService.getVideoObject(sessionContext, data.get('videoObject').value);
     if (videoObject.error) {
+        console.log("NO VIDEO OBJECT");
         return null;
     }
     const contentUrl = getUrlAll(videoObject, SCHEMA_ORG + 'contentUrl');
     if (!contentUrl || contentUrl.length === 0) {
+        console.log("NO CONTENT URL");
         return null;
     }
     const newWatchingEvent  = {
@@ -30,15 +31,32 @@ async function handleNewWatchingEvent(sessionContext, data) {
         videoUrl:   getUrl(videoObject, SCHEMA_ORG + 'contentUrl'),
         startDate:  new Date(data.get('startDate').value),
     };
-    const pauseTimeContext = await EventsSolidService.getPauseTimeContext(sessionContext, newWatchingEvent);
-    if (pauseTimeContext.error) {
+    let lastPause = await EventsSolidService.getLastPause(sessionContext, newWatchingEvent);
+    if (!lastPause) {
+        lastPause = {
+            datetime:   newWatchingEvent.startDate,
+            location:   0.0,
+            actionType: `${SCHEMA_ORG}ResumeAction`,
+        };
+    }
+    if (lastPause.error) {
+        console.log("LAST PAUSE ERROR: ", lastPause.error);
         return null;
     }
+    const lastPauseOutdated = lastPause.datetime < newWatchingEvent.startDate;
+    const joinedAt = (
+        lastPauseOutdated
+        ? 0
+        : (lastPause.actionType === `${SCHEMA_ORG}ResumeAction`)
+        ? lastPause.location
+        : lastPause.location + (new Date() - lastPause.datetime) / 1000
+    );
     return {
         ...newWatchingEvent,
-        joinedAt:       ((new Date() - newWatchingEvent.startDate) - pauseTimeContext.aggregatedPauseTime) / 1000.0,
-        isPlaying:      pauseTimeContext.isPlaying,
-        lastPauseAt:    pauseTimeContext.lastPauseAt,
+        isPlaying:          lastPauseOutdated ? true : lastPause.actionType === `${SCHEMA_ORG}ResumeAction`,
+        lastPauseDatetime:  lastPause.datetime,
+        lastPauseAt:        lastPause.location,
+        joinedAt:           joinedAt,
     };
 }
 
@@ -57,6 +75,7 @@ async function handleControlAction(sessionContext, data, watchingEvent) {
         return null;
     }
     return {
+        ...watchingEvent,
         loc:        parseFloat(data.get('location').value),
         isPlaying:  isPlaying,
         date:       date,
@@ -72,6 +91,7 @@ function SWVideoPlayer({roomUrl}) {
     const fullscreenHandle = useFullScreenHandle();
 
     useEffect(() => {
+        console.log("player ready");
         let watchingEventStream = null;
         let lastWatchingEvent = null;
         const act = async () => {
@@ -81,11 +101,13 @@ function SWVideoPlayer({roomUrl}) {
                 return;
             }
             watchingEventStream.on('data', (data) => {
+                console.log("NEW WATCHING EVENT RECEIVED");
                 handleNewWatchingEvent(sessionContext, data).then((newWatchingEvent) => {
                     if (!newWatchingEvent) {
                         return;
                     }
                     if (lastWatchingEvent && newWatchingEvent.startDate <= lastWatchingEvent.startDate) {
+                        console.log("OUTDATED WATCHING EVENT");
                         return;
                     }
                     lastWatchingEvent = newWatchingEvent;
@@ -94,7 +116,7 @@ function SWVideoPlayer({roomUrl}) {
             });
         }
         act();
-    }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl]);
+    }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl, playerReady]);
 
 
     useEffect(() => {
@@ -106,6 +128,7 @@ function SWVideoPlayer({roomUrl}) {
             }
             controlActionStream = await EventsSolidService.getControlActionStream(sessionContext, watchingEvent?.eventUrl);
             controlActionStream.on('data', (data) => {
+                console.log("NEW CONTROL ACTION RECEIVED");
                 handleControlAction(sessionContext, data, watchingEvent).then((controlAction) => {
                     if (!controlAction) {
                         return;
@@ -117,7 +140,7 @@ function SWVideoPlayer({roomUrl}) {
                     setIsPlaying({is: lastControlAction.isPlaying, from: lastControlAction.loc});
                 });
             })
-            setIsPlaying({is: watchingEvent.isPlaying, from: watchingEvent.joinedAt});
+            setIsPlaying({is: watchingEvent.isPlaying, from: watchingEvent.joinAt});
         }
         act();
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, watchingEvent]);

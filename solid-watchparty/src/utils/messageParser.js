@@ -1,6 +1,5 @@
 import { literalToEmoji } from './literalToEmoji.js'
 
-
 export function parseMessage(message)
 {
   const messageLength = message.length
