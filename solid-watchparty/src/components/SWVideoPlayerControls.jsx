@@ -38,7 +38,6 @@ function SWVideoPlayerControls(
     }, [progress]);
 
     const onStartMove = (e) => {
-        console.log('Slider moving at:', e.target.value);
         setMoving(true);
         setAt(e.target.value);
     }

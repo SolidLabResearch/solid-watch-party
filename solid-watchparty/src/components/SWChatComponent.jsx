@@ -28,10 +28,8 @@ function SWChatComponent({roomUrl, joined}) {
     const [userNames, setUserNames] = useState({});
 
     useEffect(() => {
-        let messageSeriesStreams = null;
-        let messageStreams = [];
         const fetch = async () => {
-            messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(sessionContext, roomUrl);
+            const messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(sessionContext, roomUrl);
             if (messageSeriesStreams.error) {
                 console.error(messageSeriesStreams.error)
                 messageSeriesStreams = null;
@@ -40,9 +38,6 @@ function SWChatComponent({roomUrl, joined}) {
             }
             messageSeriesStreams.on('data', async (data) => {
                 const messageSeries = data.get('messageSeries').value;
-                let messageStream = await MessageSolidService.getMessageStream(sessionContext, messageSeries);
-                const senderIndex = messageStreams.length;
-                messageStreams.push(messageStream);
 
                 let senderName = "Unknown";
                 let creatorUrlStream = await MessageSolidService.getMessageSeriesCreatorStream(sessionContext, messageSeries);
@@ -58,7 +53,14 @@ function SWChatComponent({roomUrl, joined}) {
                     });
                 });
 
-                if (messageStream.error) {
+                // TODO(Elias): Switch out restart of stream when Incremunica has internal handling for this
+                let messageStreamAuthCheck = await MessageSolidService.getMessageStream(sessionContext, messageSeries);
+                messageStreamAuthCheck.on('data', async (data) => {
+                    messageStreamAuthCheck.close();
+                });
+
+                let messageStream = await MessageSolidService.getMessageStream(sessionContext, messageSeries);
+                if (!messageStream || messageStream.error) {
                     messageStream = null;
                     return;
                 }
@@ -69,6 +71,7 @@ function SWChatComponent({roomUrl, joined}) {
                         date:           new Date(data.get('dateSent').value),
                         key:            (name + data.get('dateSent').value),
                     };
+                    // TODO: Make this more efficient
                     setMessages(messages => (
                         [...messages, message]
                         .sort((m1, m2) => (m1.date > m2.date) ? 1 : ((m1.date < m2.date) ? -1 :  0))
