@@ -133,7 +133,6 @@ class EventsSolidService {
         } else if (!eventUrl) {
             return { error: "no event url", errorMsg: "No watching event was provided" }
         }
-
         const actionType = (isPlay) ? 'ResumeAction' : 'SuspendAction';
         const now = new Date();
         const newControlAction = buildThing(createThing())
