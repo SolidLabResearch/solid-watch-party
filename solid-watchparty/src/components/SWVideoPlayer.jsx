@@ -130,7 +130,7 @@ function SWVideoPlayer({roomUrl}) {
                         return;
                     }
                     lastPause_ = pause;
-                    if (pause.location <= lastPause.location) {
+                    if (pause.datetime <= lastPause.datetime) {
                         return;
                     }
                     setLastPause(pause);
@@ -145,16 +145,22 @@ function SWVideoPlayer({roomUrl}) {
     }, [lastPause, videoRef]);
 
     const playerConfig = { youtube: { playerVars: { rel: 0, disablekb: 1 } }, }
+    const [progress, setProgress] = useState(0);
+    const [duration, setDuration] = useState(0);
+
     return (
         <div className="h-full w-full relative aspect-video">
             <FullScreen handle={fullscreenHandle} className="h-full w-full">
                 <div className="absolute bottom-0 right-0 w-full h-full z-5 flex flex-col justify-end">
                     <SWVideoPlayerControls videoRef={videoRef} watchingEvent={watchingEvent}
-                                           isPlaying={lastPause?.isPlaying} fullscreenHandle={fullscreenHandle} />
+                                           isPlaying={lastPause?.isPlaying} fullscreenHandle={fullscreenHandle}
+                                           duration={duration} progress={progress} />
                 </div>
                 <ReactPlayer url={watchingEvent?.videoUrl} width="100%" height="100%" controls={false}
                              playing={lastPause?.isPlaying} config={playerConfig} ref={videoRef}
-                             onStart={() => playFrom(videoRef, lastPause)} />
+                             onStart={() => playFrom(videoRef, lastPause)}
+                             onDuration={(duration) => setDuration(duration)}
+                             onProgress={(state) => setProgress(state.playedSeconds)} />
             </FullScreen>
         </div>
     );
