@@ -71,7 +71,6 @@ class EventsSolidService {
 
             let addSourceObject = true;
             if (metaUrl) {
-                console.log("metaUrl", metaUrl);
                 let videoObject = await VideoSolidService.getVideoObject(sessionContext, metaUrl);
                 if (!videoObject) {
                     return { error: "video object not found", errorMsg: "The specified video object was not found" }
@@ -82,7 +81,6 @@ class EventsSolidService {
             }
 
             if (addSourceObject) {
-                console.log("srcUrl", srcUrl);
                 const newVideoObject = buildThing(createThing())
                     .addUrl(RDF.type, SCHEMA_ORG + 'VideoObject')
                     .addUrl(SCHEMA_ORG + 'contentUrl', srcUrl)

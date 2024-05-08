@@ -46,7 +46,7 @@ async function handleNewWatchingEvent(sessionContext, data) {
     if (!lastPause || lastPause.datetime < newWatchingEvent.startDate) {
         lastPause = {
             datetime:   newWatchingEvent.startDate,
-            location:   0.0,
+            location:   0,
             isPlaying:  true,
         };
     }
@@ -130,7 +130,7 @@ function SWVideoPlayer({roomUrl}) {
                         return;
                     }
                     lastPause_ = pause;
-                    if (pause.datetime <= lastPause.datetime) {
+                    if (pause.datetime < lastPause.datetime) {
                         return;
                     }
                     setLastPause(pause);
@@ -141,8 +141,9 @@ function SWVideoPlayer({roomUrl}) {
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, watchingEvent]);
 
     useEffect(() => {
+        console.log("PLAYING FROM: ", lastPause);
         playFrom(videoRef, lastPause);
-    }, [lastPause, videoRef]);
+    }, [lastPause, videoRef, watchingEvent]);
 
     const playerConfig = { youtube: { playerVars: { rel: 0, disablekb: 1 } }, }
     const [progress, setProgress] = useState(0);
@@ -158,7 +159,6 @@ function SWVideoPlayer({roomUrl}) {
                 </div>
                 <ReactPlayer url={watchingEvent?.videoUrl} width="100%" height="100%" controls={false}
                              playing={lastPause?.isPlaying} config={playerConfig} ref={videoRef}
-                             onStart={() => playFrom(videoRef, lastPause)}
                              onDuration={(duration) => setDuration(duration)}
                              onProgress={(state) => setProgress(state.playedSeconds)} />
             </FullScreen>
