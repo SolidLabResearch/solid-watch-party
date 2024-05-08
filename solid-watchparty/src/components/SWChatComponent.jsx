@@ -25,13 +25,11 @@ function SWChatComponent({roomUrl, joined}) {
     const [messages, setMessages] = useState([]);
     const sessionContext = useSession();
     const [messageBox,] = useContext(MessageBoxContext);
+    const [userNames, setUserNames] = useState({});
 
     useEffect(() => {
-        let messageSeriesStreams = null;
-        let messageStreams = [];
-        let usernames = []
         const fetch = async () => {
-            messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(sessionContext, roomUrl);
+            const messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(sessionContext, roomUrl);
             if (messageSeriesStreams.error) {
                 console.error(messageSeriesStreams.error)
                 messageSeriesStreams = null;
@@ -39,27 +37,41 @@ function SWChatComponent({roomUrl, joined}) {
                 return;
             }
             messageSeriesStreams.on('data', async (data) => {
-                let messageStream = await MessageSolidService.getMessageStream(sessionContext,
-                                                                               data.get('messageSeries').value);
-                const senderIndex = messageStreams.length;
-                messageStreams.push(messageStream);
+                const messageSeries = data.get('messageSeries').value;
 
-                if (messageStream.error) {
+                let senderName = "Unknown";
+                let creatorUrlStream = await MessageSolidService.getMessageSeriesCreatorStream(sessionContext, messageSeries);
+                creatorUrlStream.on('data', (data) => {
+                    const creatorUrl = data?.get('creator')?.value;
+                    UserSolidService.getName(sessionContext, creatorUrl).then((name) => {
+                        if (!name.error) {
+                            setUserNames((userNames) => {
+                                userNames[messageSeries] = name;
+                                return userNames;
+                            });
+                        }
+                    });
+                });
+
+                // TODO(Elias): Switch out restart of stream when Incremunica has internal handling for this
+                let messageStreamAuthCheck = await MessageSolidService.getMessageStream(sessionContext, messageSeries);
+                messageStreamAuthCheck.on('data', async (data) => {
+                    messageStreamAuthCheck.close();
+                });
+
+                let messageStream = await MessageSolidService.getMessageStream(sessionContext, messageSeries);
+                if (!messageStream || messageStream.error) {
                     messageStream = null;
                     return;
                 }
                 messageStream.on('data', async (data) => {
-                    if (usernames.length <= senderIndex) {
-                        let name = await UserSolidService.getName(sessionContext, data.get('sender').value);
-                        name = (name.error) ? 'Unknown' : name;
-                        usernames.push(name);
-                    }
                     const message = {
-                        text:    data.get('text').value,
-                        sender:  usernames[senderIndex],
-                        date:    new Date(data.get('dateSent').value),
-                        key:     (name + data.get('dateSent').value),
+                        text:           data.get('text').value,
+                        messageBoxUrl:  messageSeries,
+                        date:           new Date(data.get('dateSent').value),
+                        key:            (name + data.get('dateSent').value),
                     };
+                    // TODO: Make this more efficient
                     setMessages(messages => (
                         [...messages, message]
                         .sort((m1, m2) => (m1.date > m2.date) ? 1 : ((m1.date < m2.date) ? -1 :  0))
@@ -71,18 +83,6 @@ function SWChatComponent({roomUrl, joined}) {
             setState({isLoading: false, hasAccess: true});
         }
         fetch();
-
-        return (() => {
-            if (messageSeriesStreams) {
-                messageSeriesStreams.close();
-            }
-            for (let i = 0; i < messageStreams.length; i++) {
-                if (messageStreams[i]) {
-                    messageStreams[i].close()
-                }
-            }
-            setMessages([]);
-        });
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl, joined])
 
 
@@ -120,13 +120,18 @@ function SWChatComponent({roomUrl, joined}) {
             pageContent = (
                 <>
                     <SWAutoScrollDiv className="overflow-y-auto overflow-x-auto mb-2 shrink">
-                        {messages.map((message) => <SWMessageComponent message={message} key={message.key}/>)}
+                        {messages.map((message) => {
+                            const sender = userNames[message.messageBoxUrl];
+                            return (
+                                <SWMessageComponent message={{...message, sender}} key={message.key}/>
+                            );
+                        })}
                     </SWAutoScrollDiv>
                     <form autoComplete="off" className="grow-0 flex flex-between items-center" onSubmit={submitMessage}>
-                        <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full"
+                        <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full border-solid"
                             onChange={(e) => setInput(parseMessage(e.target.value))}
                             value={input} type='text'/>
-                        <button className="sw-btn hidden"> P </button>
+                        <button className="sw-btn hidden"></button>
                     </form>
                 </>
             );

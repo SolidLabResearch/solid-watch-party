@@ -15,6 +15,7 @@ import {
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine as QueryEngineInc } from '@incremunica/query-sparql-incremental';
+import { QueryEngine as QueryEngineLTS } from '@comunica/query-sparql-link-traversal-solid';
 import { QueryEngine } from '@comunica/query-sparql';
 
 /* util imports */
@@ -145,29 +146,27 @@ MessageSolidService
         return resultStream;
     }
 
-    async getMessageSeriesCreatorName(sessionContext, messageSeriesUrl) {
-        try {
-            let messagesDataset = await getSolidDataset(messageSeriesUrl, { fetch: sessionContext.fetch });
-            const outboxThings = getThingAll(messagesDataset).filter(t =>
-                                                                     getUrlAll(t, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-                                                                     .includes(SCHEMA_ORG + 'CreativeWorkSeries')
-            );
-            if (outboxThings.length < 1) {
-                throw { error: "no outbox present" }
-            }
-            const outbox = outboxThings[0];
-            const creatorUrl = getUrl(outbox, "http://schema.org/creator");
-            let profileDataset = await getSolidDataset(creatorUrl, { fetch: sessionContext.fetch });
-            let profileThing = getThing(profileDataset, creatorUrl);
-            const name = getStringNoLocale(profileThing, "http://xmlns.com/foaf/0.1/name");
-            if (!name) {
-                throw { error: "Name not found" };
-            }
-            return name;
-        } catch (error) {
-            console.error(error)
-            return {error: error}
+    async getMessageSeriesCreatorStream(sessionContext, messageSeriesUrl) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "The session has ended, log in again" };
+        } else if (!messageSeriesUrl) {
+            return { error: "invalid message series", errorMsg: "The message series is invalid" };
         }
+        const queryEngine = new QueryEngineInc();
+        const resultStream = await queryEngine.queryBindings(`
+            PREFIX schema: <${SCHEMA_ORG}>
+            SELECT ?creator
+            WHERE {
+              <${messageSeriesUrl}> schema:creator ?creator .
+            }`, {
+                sources: [messageSeriesUrl],
+                fetch: sessionContext.fetch,
+                lenient: true
+            });
+        resultStream.on("error", (e) => {
+            console.error(e);
+        });
+        return resultStream;
     }
 
     async checkAccess(sessionContext, messageBoxUrl, webId) {
@@ -205,6 +204,60 @@ MessageSolidService
         } catch (error) {
             console.error(error);
             return { error: error, errorMsg: "Failed to grant access" };
+        }
+    }
+
+    async endMessageBox(sessionContext, boxUrl) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" };
+        } else if (!boxUrl) {
+            return { error: "invalid box url", errorMsg: "The box url is invalid!" };
+        }
+
+        const file = boxUrl;
+        const query = `
+            PREFIX schema: <${SCHEMA_ORG}>
+            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+            INSERT DATA {
+                <${boxUrl}> schema:endDate "${new Date().toISOString()}"^^xsd:dateTime .
+            }
+        `;
+        try {
+            const result = await sprql_patch(sessionContext, file, query);
+            if (result.status < 200 || result.status >= 300) {
+                console.error(result)
+                return { error: result.statusText, errorMsg: 'failed to end room'};
+            }
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: 'failed to delete room'};
+        }
+    }
+
+    async getMessageBoxesStream(sessionContext) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+        }
+        const sourceDir = `${getPodUrl(sessionContext.session.info.webId)}/${MESSAGES_ROOT}/`;
+        const queryEngine = new QueryEngineLTS();
+        try {
+            const messageBoxStream = await queryEngine.queryBindings(`
+                PREFIX schema: <${SCHEMA_ORG}>
+                SELECT ?roomUrl ?messageBox ?endDate
+                WHERE {
+                    ?messageBox a schema:CreativeWorkSeries .
+                    ?messageBox schema:about ?roomUrl.
+                    OPTIONAL { ?messageBox schema:endDate ?endDate . }
+                }`, {
+                    lenient: true,
+                    sources: [sourceDir],
+                    fetch: sessionContext.fetch,
+                });
+            return messageBoxStream;
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: 'failed to get message boxes stream'};
         }
     }
 

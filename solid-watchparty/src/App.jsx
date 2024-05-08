@@ -27,7 +27,7 @@ function App() {
     return (
         <SessionProvider>
             <MessageBoxContext.Provider value={messageBox}>
-                <RouterProvider router={router}/>
+                    <RouterProvider router={router}/>
             </MessageBoxContext.Provider>
         </SessionProvider>
     );

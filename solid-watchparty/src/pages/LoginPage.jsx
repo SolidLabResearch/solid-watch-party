@@ -56,10 +56,6 @@ export default function LoginPage()
                                             setOidcIssuer(e.target.value);
                                             setError("");
                                         }}/>
-                                    <SWLoginButton className="w-fit"
-                                        authOptions={authOptions}
-                                        oidcIssuer={oidcIssuer}
-                                        onError={console.error}/>
                                     <LoginButton authOptions={authOptions}
                                         oidcIssuer={oidcIssuer}
                                         redirectUrl={window.location.protocol + '//' + window.location.host + redirectLocation}
