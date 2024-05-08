@@ -1,11 +1,16 @@
 /* libary imports */
 import { useSession, } from '@inrupt/solid-ui-react';
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaMagnifyingGlass } from "react-icons/fa6";
+import { FaChevronRight } from 'react-icons/fa';
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper';
 import SWLoadingIcon from '../components/SWLoadingIcon';
+import SWModal from '../components/SWModal';
+import SWRoomPoster from '../components/SWRoomPoster';
+import SWModalInputBar from '../components/SWModalInputBar';
 
 /* service imports */
 import RoomSolidService from '../services/room.solidservice';
@@ -16,104 +21,176 @@ import { MessageBoxContext } from '../contexts';
 
 /* util imports */
 import { validateAll, validateRequired, validateIsUrl, validateLength } from '../utils/validationUtils';
+import { displayDate } from '../utils/general';
+import { inSession } from '../utils/solidUtils';
+import { parseTitle } from '../utils/messageParser';
 
 /* config imports */
 import config from '../../config';
 
+
+async function joinRoom({input, setError, navigateTo}) {
+    const errors = validateAll(input, [
+        {run: validateRequired, message: "Provide a URL!"},
+        {run: validateIsUrl, message: "Provide a valid URL!"},
+        {run: (s) => s.includes(config.baseDir), message: "Provide a valid URL!"}
+    ])
+    input = input.split(`${config.baseDir}/`)[1];
+    if (!errors) {
+        navigateTo(`${config.baseDir}/${input}`);
+    }
+    return errors;
+}
+
+async function createRoom({input, setError, sessionContext, setMessageBox, navigateTo}) {
+    const errors = validateAll(input, [
+        {run: validateRequired, message: "Provide a name!"},
+        {run: (v) => validateLength(v, 1, 42), message: "Your name can only be 42 characters long!"},
+    ]);
+    input = parseTitle(input);
+    if (!errors) {
+        // TODO: At the moment an error in this process will cause dangling dataset
+        const roomResult = await RoomSolidService.createNewRoom(sessionContext, input)
+        if (!roomResult || roomResult.error) {
+            return roomResult.errorMsg;
+        }
+        const messageBoxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomResult.roomUrl);
+        if (!messageBoxResult || messageBoxResult.error) {
+            return "Something went wrong, try again";
+        }
+        setMessageBox(messageBoxResult.messageBoxUrl);
+        const registerResult = await RoomSolidService.register(sessionContext, messageBoxResult.messageBoxUrl,
+                                                               roomResult.roomUrl);
+        if (!registerResult || registerResult.error) {
+            return "Something went wrong, try again";
+        }
+        const addResult = await RoomSolidService.addPerson(sessionContext, roomResult.roomUrl,
+                                                           messageBoxResult.messageBoxUrl,
+                                                           sessionContext.session.info.webId);
+        if (!addResult || addResult.error) {
+            return "Something went wrong, try again";
+        }
+
+        navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(roomResult.roomUrl)}`);
+    }
+    return errors;
+}
+
+
+
 function MenuPage()
 {
-    const [roomUrl, setRoomUrl] = useState({value: "", alertMsg: null});
-    const [roomName, setRoomName] = useState({value: "", alertMsg: null});
-    const [isCreateLoading, setIsCreateLoading] = useState(false);
-    const [isJoinLoading, setIsJoinLoading] = useState(false);
-    const [,setMessageBox] = useContext(MessageBoxContext);
+    const [modalIsShown, setModalIsShown] = useState(false);
+    const [action, setAction] = useState({name: "", f: null});
+    const [isLoading, setIsLoading] = useState(true);
+
+    const [searchTerm, setSearchTerm] = useState("");
 
     const sessionContext = useSession();
     const navigateTo = useNavigate();
+    const [,setMessageBox] = useContext(MessageBoxContext);
+    const actionArgs = {
+            sessionContext: sessionContext,
+            setMessageBox:  setMessageBox,
+            navigateTo:     navigateTo,
+    }
 
-    const joinRoomClicked = async () => {
-        setIsJoinLoading(true);
-        const isValid = validateAll(roomUrl, setRoomUrl, [
-            {run: validateRequired, message: "Provide a URL!"},
-            {run: validateIsUrl, message: "Provide a valid URL!"},
-        ])
-        if (isValid) {
-            navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(roomUrl.value)}`);
+    const [rooms, setRooms] = useState([]);
+    const [filteredRooms, setFilteredRooms] = useState([]);
+    useEffect(() => {
+        setIsLoading(true);
+        if (!inSession(sessionContext) || sessionContext.sessionRequestInProgress) {
+            return;
         }
-        setIsJoinLoading(false);
-    };
+        let stream = null;
 
-    const createRoomClicked = async () => {
-        setIsCreateLoading(true);
-        const isValid = validateAll(roomName, setRoomName, [
-            {run: validateRequired, message: "Provide a name!"},
-            {run: (v) => validateLength(v, 1, 42), message: "Your name can only be 42 characters long!"},
-        ])
-        if (isValid) {
-            // TODO: At the moment an error in this process will cause dangling dataset
-            const roomResult = await RoomSolidService.createNewRoom(sessionContext, roomName.value)
-            if (!roomResult || roomResult.error) {
-                setRoomName({value: roomName.value, alertMsg: roomResult.errorMsg});
-                setIsCreateLoading(false);
+        const timeout = setTimeout(() => {
+            setIsLoading(false);
+        }, 10000);
+
+        MessageSolidService.getMessageBoxesStream(sessionContext).then((s) => {
+            if (!s || s.error) {
+                setIsLoading(false);
                 return;
             }
-            const messageBoxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomResult.roomUrl);
-            if (!messageBoxResult || messageBoxResult.error) {
-                setRoomName({value: roomName.value, alertMsg: "Something went wrong, try again"});
-                setIsCreateLoading(false);
-                return;
-            }
-            setMessageBox(messageBoxResult.messageBoxUrl);
-            const registerResult = await RoomSolidService.register(sessionContext, messageBoxResult.messageBoxUrl,
-                                                                   roomResult.roomUrl);
-            if (!registerResult || registerResult.error) {
-                setRoomName({value: roomName.value, alertMsg: "Something went wrong, try again"});
-                setIsCreateLoading(false);
-                return;
-            }
-            const addResult = await RoomSolidService.addPerson(sessionContext, roomResult.roomUrl,
-                                                               messageBoxResult.messageBoxUrl,
-                                                               sessionContext.session.info.webId);
-            if (!addResult || addResult.error) {
-                setRoomName({value: roomName.value, alertMsg: "Something went wrong, try again"});
-                setIsCreateLoading(false);
-                return;
-            }
-            navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(roomResult.roomUrl)}`);
-        }
-        setIsCreateLoading(false);
-    };
+            stream = s
+            s.on('data', (r) => {
+                const roomUrl = r.get('roomUrl').value;
+                const endDate = r.get('endDate')?.value;
+                if (!roomUrl || endDate) {
+                    return;
+                }
+                RoomSolidService.getRoomInfo(sessionContext, roomUrl).then((room) => {
+                    if (!room || room.error || room.endDate) {
+                        return;
+                    }
+                    setIsLoading(false);
+                    setRooms((rooms) => [...rooms, room]);
+                });
+            });
+        });
+    }, [sessionContext.sessionRequestInProgress, sessionContext.session]);
+
+    useEffect(() => {
+        const filteredrooms = rooms.filter((room) => room.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+        setFilteredRooms(filteredrooms);
+    }, [searchTerm, rooms]);
+
+    const onDelete = (r1) => {
+        setRooms((rooms) => rooms.filter((r2) => r1.roomUrl !== r2.roomUrl));
+    }
 
     return (
-        <SWPageWrapper className="flex justify-center items-center" mustBeAuthenticated={true}>
-            <div className="w-1/2">
-                <p className="sw-fs-2 sw-fw-1 my-4">Join a room</p>
-                <div className="flex flex-col">
-                    <p className="my-1">Room URL</p>
-                    <input type="url" name="roomUrlField" className="sw-input flex-grow"
-                        onChange={(e) => setRoomUrl({value: e.target.value, alertMsg: null})}
-                        placeholder="http://example.com/pod/rooms/new-room2023-11-21t153957921z"/>
-                    { roomUrl.alertMsg && <p className="my-1 rgb-alert sw-fw-1">{roomUrl.alertMsg}</p>}
-                    <button className={`${isJoinLoading ? 'sw-btn-loading' : 'sw-btn'} my-3 flex-grow h-6 flex justify-center`}
-                        onClick={joinRoomClicked}>
-                        {isJoinLoading ? <SWLoadingIcon className="w-4"/> : <>Join room</>}
+        <SWPageWrapper className="px-24" mustBeAuthenticated={true}>
+            <div className="flex justify-between items-baseline my-16 grid grid-cols-3">
+                <div></div>
+                <div className="sw-input h-fit flex justify-between">
+                        <input type="text" placeholder="Find a room" className="w-full"
+                               onChange={(e) => setSearchTerm(e.target.value)}/>
+                    <button className="hover:cursor-pointer">
+                        <FaMagnifyingGlass className="w-6 h-6 p-1"/>
                     </button>
                 </div>
-                <div className="my-8">
-                    <p className="sw-fs-2 sw-fw-1 my-4">Or create a new room</p>
-                    <p className="my-1">Room name</p>
-                    <div className="flex">
-                        <input type="url" name="roomName" className="sw-input w-1/2"
-                            onChange={(e) => setRoomName({value: e.target.value, alertMsg: null})}
-                            placeholder="Room (new)"/>
-                        <button className={`${isCreateLoading ? 'sw-btn-loading' : 'sw-btn'} w-32 ml-2 h-6 flex justify-center`}
-                            onClick={createRoomClicked}>
-                            {isCreateLoading ? <SWLoadingIcon className="w-4"/> : <>Create room</>}
-                        </button>
-                    </div>
-                    { roomName.alertMsg && <p className="my-1 rgb-alert sw-fw-1">{roomName.alertMsg}</p>}
+                <div className="flex w-full gap-3 justify-end">
+                    <button className="hover:cursor-pointer sw-btn sw-btn-2 w-24"
+                            onClick={() => {
+                                setAction({name: "Room url", f: joinRoom});
+                                setModalIsShown(true);
+                            }}>
+                        Join
+                    </button>
+                    <button className="hover:cursor-pointer sw-btn sw-btn-1 w-24"
+                            onClick={() => {
+                                setAction({name: "Room name", f: createRoom});
+                                setModalIsShown(true);
+                            }}>
+                        New
+                    </button>
                 </div>
             </div>
+            { isLoading ? (
+                <div className="flex flex-col justify-center items-center">
+                    <SWLoadingIcon className="w-6 h-6 py-8"/>
+                    <p className="sw-fw-1">Retrieving rooms...</p>
+                </div>
+            ) : (rooms.length === 0) ? (
+                <div className="flex flex-col justify-center items-center">
+                    <p className="sw-fw-1 rgb-1">No rooms found</p>
+                </div>
+            ) : (filteredRooms.length === 0) ? (
+                <div className="flex flex-col justify-center items-center">
+                    <p className="sw-fw-1 rgb-1">No search results...</p>
+                </div>
+            ) : (
+                <div className="flex flex-wrap gap-12 h-2/4 overflow-y-auto">
+                    { filteredRooms.map((room, i) => (
+                        <SWRoomPoster key={i} room={room} onDelete={onDelete}/>
+                    ))}
+                </div>
+            )}
+            { modalIsShown && (
+                <SWModalInputBar title={action.name}f={action.f} args={actionArgs} setModalIsShown={setModalIsShown}/>
+            )}
         </SWPageWrapper>
     )
 }

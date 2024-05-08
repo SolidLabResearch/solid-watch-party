@@ -33,7 +33,7 @@ function Tab1({className, roomUrl, setModalIsShown}) {
                     </div>
                 </div>
             </div>
-            <button className={`sw-btn flex-grow h-6 mt-6 flex justify-center`}
+            <button className={`sw-btn sw-btn-2 flex-grow h-6 mt-6 flex justify-center`}
                 onClick={() => {
                     EventsSolidService.newWatchingEventFromSrc(sessionContext, roomUrl, videoSourceUrl, videoMetaUrl)
                     setVideoSourceUrl(null);
@@ -66,7 +66,7 @@ Tab2({className, roomUrl, setModalIsShown}) {
                     </div>
                 </div>
             </div>
-            <button className={`sw-btn h-6 mt-6 flex justify-center`}
+            <button className={`sw-btn sw-btn-2 h-6 mt-6 flex justify-center`}
                 onClick={() => {
                     EventsSolidService.newWatchingEventFromVideoObject(sessionContext, roomUrl, videoObjectUrl)
                     setVideoObjectUrl(null);

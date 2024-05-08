@@ -9,20 +9,29 @@ import {
     universalAccess,
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
+import { QueryEngine } from '@comunica/query-sparql';
 import { QueryEngine as QueryEngineLT } from '@comunica/query-sparql-link-traversal';
+import { QueryEngine as QueryEngineLTS } from '@comunica/query-sparql-link-traversal-solid';
+import { QueryEngine as QueryEngineInc } from '@incremunica/query-sparql-incremental';
 
 /* util imports */
-import { SCHEMA_ORG } from '../utils/schemaUtils';
-import { getPodUrl, urlify, getDirectoryOfUrl } from '../utils/urlUtils';
-import { inSession } from '../utils/solidUtils';
-import { sprql_patch } from '../utils/queryUtils';
+import { SCHEMA_ORG } from '../utils/schemaUtils.js';
+import { getPodUrl, urlify, getDirectoryOfUrl } from '../utils/urlUtils.js';
+import { inSession } from '../utils/solidUtils.js';
+import { sprql_patch } from '../utils/queryUtils.js';
 
 /* config imports */
-import { ROOMS_ROOT, } from '../config.js'
+import { ROOMS_ROOT, MESSAGES_ROOT } from '../config.js'
 
 
 class RoomSolidService
 {
+
+    async getMyRooms(sessionContext) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+        }
+    }
 
     async createNewRoom(sessionContext, name)
     {
@@ -109,11 +118,14 @@ class RoomSolidService
             await getSolidDataset(roomUrl, {fetch: sessionContext.fetch});
             return true;
         } catch (error) {
-            if (error.response.status !== 403) {
-                console.error(error);
-                return {error: error, errorMsg: 'Failed to check if you are registered'};
+            if (error.response.status === 403 || error.response.status === 401) {
+                return false;
             }
-            return false;
+            if (error.response.status === 404) {
+                return {error: error, errorMsg: 'Room does not exist'};
+            }
+            console.error(error);
+            return {error: error, errorMsg: 'Failed to check if you are registered'};
         }
     }
 
@@ -164,7 +176,6 @@ class RoomSolidService
             const access = await universalAccess.setAgentAccess(roomUrl, webId,
                                                                 {read: true, write: true, append: true},
                                                                 {fetch: sessionContext.fetch});
-            console.log(access);
             return access;
         } catch (error) {
             console.error(error);
@@ -240,6 +251,109 @@ class RoomSolidService
             });
         });
         return result;
+    }
+
+    async getRoomInfo(sessionContext, roomUrl) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
+        } else if (!roomUrl) {
+            return { error: "No room url", errorMsg: "No url was provided" }
+        }
+
+        const file = roomUrl;
+        const queryEngine = new QueryEngine();
+        try {
+            const resultStream = await queryEngine.queryBindings(`
+                PREFIX schema: <${SCHEMA_ORG}>
+                SELECT ?name ?members ?organizer ?startDate ?endDate ?thumbnailUrl
+                WHERE {
+                    <${file}> a schema:EventSeries .
+                    <${file}> schema:name ?name .
+                    <${file}> schema:attendee ?members .
+                    <${file}> schema:organizer ?organizer .
+                    <${file}> schema:startDate ?startDate .
+                    OPTIONAL { <${file}> schema:image ?thumbnailUrl . }
+                    OPTIONAL { <${file}> schema:endDate ?endDate . }
+                }`, {
+                    sources: [file],
+                    fetch: sessionContext.fetch,
+                });
+            const resultBindings = await resultStream.toArray()
+            if (!resultBindings || resultBindings.length === 0) {
+                throw new Error("no room info found");
+            }
+            const members = resultBindings.map((binding) => binding.get('members').value) || [];
+            return {
+                roomUrl:        roomUrl,
+                name:           resultBindings[0]?.get('name').value,
+                isOrganizer:    resultBindings[0]?.get('organizer').value === sessionContext.session.info.webId,
+                nMembers:       members.length,
+                endDate:        resultBindings[0]?.get('endDate')?.value,
+                thumbnailUrl:   resultBindings[0]?.get('thumbnailUrl')?.value,
+            }
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: 'failed to get room info'};
+        }
+        return {error: "unknown", errorMsg: "An unknown error occurred"};
+    }
+
+    async updateRoomInfo(sessionContext, roomUrl, room_) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" };
+        } else if (!roomUrl) {
+            return { error: "no room url", errorMsg: "No url was provided" };
+        }
+
+        const file = roomUrl;
+        const query = `
+            PREFIX schema: <${SCHEMA_ORG}>
+            DELETE WHERE {
+                ${room_.name ? `<${roomUrl}> schema:name ?name .` : ``}
+                ${room_.thumbnailUrl ? `<${roomUrl}> schema:image ?thumbnailUrl .` : ``}
+            } ;
+            INSERT DATA {
+                ${room_.name ? `<${roomUrl}> schema:name "${room_.name}" .` : ``}
+                ${room_.thumbnailUrl ? `<${roomUrl}> schema:image "${room_.thumbnailUrl}" .` : ``}
+            }`;
+        try {
+            const result = await sprql_patch(sessionContext, file, query);
+            if (result.status < 200 || result.status >= 300) {
+                console.error(result);
+                return { error: result.statusText, errorMsg: 'failed to update room'};
+            }
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: 'failed to update room'};
+        }
+
+    }
+
+    async endRoom(sessionContext, roomUrl) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" };
+        } else if (!roomUrl) {
+            return { error: "no room url", errorMsg: "No url was provided" };
+        }
+        const file = roomUrl;
+        const query = `
+            PREFIX schema: <${SCHEMA_ORG}>
+            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+            INSERT DATA {
+                <${roomUrl}> schema:endDate "${new Date().toISOString()}"^^xsd:dateTime .
+            }`;
+        try {
+            const result = await sprql_patch(sessionContext, file, query);
+            if (result.status < 200 || result.status >= 300) {
+                console.error(result);
+                return { error: result.statusText, errorMsg: 'failed to end room'};
+            }
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { error: error, errorMsg: 'failed to delete room'};
+        }
     }
 
 }

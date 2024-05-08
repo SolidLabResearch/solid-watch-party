@@ -14,7 +14,7 @@ class VideoSolidService {
             const dataset = await getSolidDataset(videoObjectUrl, { fetch: sessionContext.fetch });
             return getThing(dataset, videoObjectUrl);
         } catch (error) {
-            console.log(error)
+            console.error(error)
             return {error: error}
         }
     }

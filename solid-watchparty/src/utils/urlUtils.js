@@ -22,3 +22,4 @@ export function getDirectoryOfUrl(url)
 {
     return url.split('/').slice(0, -1).join('/');
 }
+

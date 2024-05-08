@@ -1,5 +1,5 @@
 /* library imports */
-import { useState, useEffect, } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import PropTypes from 'prop-types';
 
@@ -7,6 +7,9 @@ import PropTypes from 'prop-types';
 import SWMessageComponent from '../components/SWMessageComponent'
 import SWAutoScrollDiv from '../components/SWAutoScrollDiv';
 import SWLoadingIcon from '../components/SWLoadingIcon';
+
+/* context imports */
+import { MessageBoxContext } from '../contexts';
 
 /* service imports */
 import MessageSolidService from '../services/message.solidservice.js'
@@ -21,39 +24,54 @@ function SWChatComponent({roomUrl, joined}) {
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState([]);
     const sessionContext = useSession();
+    const [messageBox,] = useContext(MessageBoxContext);
+    const [userNames, setUserNames] = useState({});
 
     useEffect(() => {
-        let messageSeriesStreams = null;
-        let messageStreams = [];
         const fetch = async () => {
-            messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(sessionContext, roomUrl);
+            const messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(sessionContext, roomUrl);
             if (messageSeriesStreams.error) {
                 console.error(messageSeriesStreams.error)
                 messageSeriesStreams = null;
                 setState({isLoading: false, hasAccess: false});
                 return;
             }
-            console.log('NOW LISTENING FOR MESSAGE STREAMS')
             messageSeriesStreams.on('data', async (data) => {
-                console.log('NEW MESSAGESTREAM ACQUIRED')
-                let messageStream = await MessageSolidService.getMessageStream(sessionContext,
-                                                                               data.get('messageSeries').value);
-                messageStreams.push(messageStream);
-                if (messageStream.error) {
+                const messageSeries = data.get('messageSeries').value;
+
+                let senderName = "Unknown";
+                let creatorUrlStream = await MessageSolidService.getMessageSeriesCreatorStream(sessionContext, messageSeries);
+                creatorUrlStream.on('data', (data) => {
+                    const creatorUrl = data?.get('creator')?.value;
+                    UserSolidService.getName(sessionContext, creatorUrl).then((name) => {
+                        if (!name.error) {
+                            setUserNames((userNames) => {
+                                userNames[messageSeries] = name;
+                                return userNames;
+                            });
+                        }
+                    });
+                });
+
+                // TODO(Elias): Switch out restart of stream when Incremunica has internal handling for this
+                let messageStreamAuthCheck = await MessageSolidService.getMessageStream(sessionContext, messageSeries);
+                messageStreamAuthCheck.on('data', async (data) => {
+                    messageStreamAuthCheck.close();
+                });
+
+                let messageStream = await MessageSolidService.getMessageStream(sessionContext, messageSeries);
+                if (!messageStream || messageStream.error) {
                     messageStream = null;
                     return;
                 }
                 messageStream.on('data', async (data) => {
-                    let name = await UserSolidService.getName(sessionContext, data.get('sender').value);
-                    if (name.error) {
-                        name = '[Anonymous]';
-                    }
                     const message = {
-                        text:    data.get('text').value,
-                        sender:  name,
-                        date:    new Date(data.get('dateSent').value),
-                        key:     (name + data.get('dateSent').value),
+                        text:           data.get('text').value,
+                        messageBoxUrl:  messageSeries,
+                        date:           new Date(data.get('dateSent').value),
+                        key:            (name + data.get('dateSent').value),
                     };
+                    // TODO: Make this more efficient
                     setMessages(messages => (
                         [...messages, message]
                         .sort((m1, m2) => (m1.date > m2.date) ? 1 : ((m1.date < m2.date) ? -1 :  0))
@@ -65,18 +83,6 @@ function SWChatComponent({roomUrl, joined}) {
             setState({isLoading: false, hasAccess: true});
         }
         fetch();
-
-        return (() => {
-            if (messageSeriesStreams) {
-                messageSeriesStreams.close();
-            }
-            for (let i = 0; i < messageStreams.length; i++) {
-                if (messageStreams[i]) {
-                    messageStreams[i].close()
-                }
-            }
-            setMessages([]);
-        });
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl, joined])
 
 
@@ -85,7 +91,11 @@ function SWChatComponent({roomUrl, joined}) {
         if (input.length === 0) {
             return;
         }
-        MessageSolidService.createMessage(sessionContext, input, roomUrl);
+        MessageSolidService.createMessage(sessionContext, input, roomUrl, messageBox).then((r) => {
+            if (r.error) {
+                console.error(r.error);
+            }
+        })
         setInput('');
     }
 
@@ -110,13 +120,18 @@ function SWChatComponent({roomUrl, joined}) {
             pageContent = (
                 <>
                     <SWAutoScrollDiv className="overflow-y-auto overflow-x-auto mb-2 shrink">
-                        {messages.map((message) => <SWMessageComponent message={message} key={message.key}/>)}
+                        {messages.map((message) => {
+                            const sender = userNames[message.messageBoxUrl];
+                            return (
+                                <SWMessageComponent message={{...message, sender}} key={message.key}/>
+                            );
+                        })}
                     </SWAutoScrollDiv>
                     <form autoComplete="off" className="grow-0 flex flex-between items-center" onSubmit={submitMessage}>
-                        <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full"
+                        <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full border-solid"
                             onChange={(e) => setInput(parseMessage(e.target.value))}
                             value={input} type='text'/>
-                        <button className="sw-btn hidden"> P </button>
+                        <button className="sw-btn hidden"></button>
                     </form>
                 </>
             );

@@ -13,6 +13,7 @@ import {
     asUrl,
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
+import { QueryEngine } from '@comunica/query-sparql';
 import { QueryEngine as IncQueryEngine } from '@incremunica/query-sparql-incremental';
 
 /* service imports */
@@ -45,7 +46,7 @@ class EventsSolidService {
             roomDataset = setThing(roomDataset, newWatchingEvent);
             await saveSolidDatasetAt(roomUrl, roomDataset, { fetch: sessionContext.fetch });
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     }
 
@@ -59,12 +60,6 @@ class EventsSolidService {
         }
 
         try {
-            let videoObject = await VideoSolidService.getVideoObject(sessionContext, metaUrl);
-            console.log(videoObject)
-            if (!videoObject) {
-                return { error: "video object not found", errorMsg: "The specified video object was not found" }
-            }
-
             let roomDataset = await getSolidDataset(roomUrl, { fetch: sessionContext.fetch });
             if (!roomDataset) {
                 return { error: "room dataset not found", errorMsg: "The specified room dataset was not found" }
@@ -76,6 +71,10 @@ class EventsSolidService {
 
             let addSourceObject = true;
             if (metaUrl) {
+                let videoObject = await VideoSolidService.getVideoObject(sessionContext, metaUrl);
+                if (!videoObject) {
+                    return { error: "video object not found", errorMsg: "The specified video object was not found" }
+                }
                 eventBuilder = eventBuilder.addUrl(SCHEMA_ORG + 'workFeatured', asUrl(videoObject, roomUrl));
                 const contentUrl = getUrlAll(videoObject, SCHEMA_ORG + 'contentUrl');
                 addSourceObject = (contentUrl.length === 0);
@@ -95,7 +94,7 @@ class EventsSolidService {
 
             await saveSolidDatasetAt(roomUrl, roomDataset, { fetch: sessionContext.fetch });
         } catch (error) {
-            console.log(error)
+            console.error(error)
             return {error: error};
         }
     }
@@ -132,7 +131,6 @@ class EventsSolidService {
         } else if (!eventUrl) {
             return { error: "no event url", errorMsg: "No watching event was provided" }
         }
-
         const actionType = (isPlay) ? 'ResumeAction' : 'SuspendAction';
         const now = new Date();
         const newControlAction = buildThing(createThing())
@@ -167,7 +165,6 @@ class EventsSolidService {
         }
     }
 
-
     async getControlActionStream(sessionContext, eventUrl) {
         if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
@@ -194,48 +191,47 @@ class EventsSolidService {
         return resultStream;
     }
 
-    async getPauseTimeContext(sessionContext, watchingEvent) {
+    async getLastPause(sessionContext, watchingEvent) {
         if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again!" }
         } else if (!watchingEvent) {
             return { error: "no event url", errorMsg: "No event provided" }
         }
 
+        const file = watchingEvent.eventUrl;
+        const queryEngine = new QueryEngine();
         try {
-            const dataset = await getSolidDataset(watchingEvent?.eventUrl, { fetch: sessionContext.fetch });
-            let things = getThingAll(dataset)
-                .filter((thing) => {
-                    const types = getUrlAll(thing, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
-                    const objects = getUrlAll(thing, SCHEMA_ORG + 'object');
-                    return (types.includes(SCHEMA_ORG + 'ControlAction') && objects.includes(watchingEvent.eventUrl));
-                }).map((thing) => {
-                    const types = getUrlAll(thing, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
-                    return {
-                        type: types.filter((x) => (x !== SCHEMA_ORG + 'ControlAction'))[0],
-                        at: getDatetime(thing, SCHEMA_ORG + 'startTime'),
-                        location: parseFloat(getStringNoLocale(thing, SCHEMA_ORG + 'location'))
-                    }
-                }).sort((a, b) => (a.at > b.at));
-
-            let aggregatedTime = 0.0;
-            let isPlaying = true; //(things.length > 0) ? (things[0].type !== SCHEMA_ORG + 'SuspendAction') : true;
-            let lastPauseAt = isPlaying ? undefined : watchingEvent.startDate;
-            let lastPauseLocation = 0;
-            for (const key in things) {
-                const action = things[key];
-                if (isPlaying && (action.type === SCHEMA_ORG + 'SuspendAction')) {
-                    isPlaying = false;
-                    lastPauseAt = action.at;
-                    lastPauseLocation = action.location
-                } else if (!isPlaying) {
-                    aggregatedTime += (action.at - lastPauseAt);
-                    isPlaying = true;
+            const resultStream = await queryEngine.queryBindings(`
+                PREFIX schema: <${SCHEMA_ORG}>
+                SELECT ?controlAction ?actionType ?agent ?datetime ?location
+                WHERE {
+                    ?controlAction a schema:ControlAction .
+                    ?controlAction a ?actionType .
+                    ?controlAction schema:agent ?agent .
+                    ?controlAction schema:object <${watchingEvent.eventUrl}> .
+                    ?controlAction schema:startTime ?datetime .
+                    ?controlAction schema:location ?location .
+                    FILTER (?actionType IN (schema:ResumeAction, schema:SuspendAction))
                 }
+                ORDER BY DESC(?datetime)
+                LIMIT 1
+                `, {
+                    sources: [file],
+                    fetch: sessionContext.fetch
+                });
+            const resultBindings = await resultStream.toArray();
+            if (resultBindings.length === 0) {
+                return null;
             }
-
-            return { aggregatedPauseTime: aggregatedTime, lastPauseAt: lastPauseLocation, isPlaying: isPlaying };
+            const lastPauseBinding = resultBindings[0];
+            const lastPause = {
+                isPlaying:      lastPauseBinding.get('actionType').value  === `${SCHEMA_ORG}ResumeAction`,
+                datetime:       new Date(lastPauseBinding.get('datetime').value),
+                location:       parseFloat(lastPauseBinding.get('location').value),
+            }
+            return lastPause;
         } catch (error) {
-            console.log(error)
+            console.error(error)
             return { error: error }
         }
     }

@@ -36,7 +36,7 @@ body::-webkit-scrollbar
   display: none;
 }
 
-html, body
+html
 {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -46,6 +46,7 @@ html, body
   font-size: 13px;
   background-color: var(--col-bg1);
   color: var(--col-fg1);
+  scroll-behavior: smooth;
 }
 
 input, button, a
@@ -58,6 +59,13 @@ div
     box-sizing: border-box;
 }
 
+.bg-image
+{
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(5px);
+}
 
 a
 {
@@ -85,7 +93,15 @@ a:hover
 
 .sw-border
 {
-  border: 1px solid var(--col-fg4);
+  border-width: 1px;
+  border-color: var(--col-fg4);
+  border-radius: 8px;
+}
+
+.sw-border-error
+{
+  border-width: 1px;
+  border-color: var(--col-fg-alert);
   border-radius: 8px;
 }
 
@@ -95,16 +111,77 @@ a:hover
   @apply py-2 px-4;
   border-radius: 3px;
   @apply text-center;
+  @apply cursor-pointer;
+}
+
+.sw-btn:focus
+{
+  outline: 2px solid var(--col-fg4);
+}
+
+.sw-btn-player
+{
+  @apply py-2 px-4;
+  border-radius: 3px;
+  @apply cursor-pointer;
+}
+
+.sw-btn-player:hover
+{
+    background-color: var(--col-bg2);
+}
+
+.sw-btn-player:active
+{
+    background-color: var(--col-bg3);
+}
+
+.sw-btn-1
+{
+  color: var(--col-fg1);
+  background-color: var(--col-bg-active-2);
+}
+
+.sw-btn-1:hover
+{
+  background-color: var(--col-bg-active-1);
+}
+
+.sw-btn-1:active
+{
+  color: var(--col-fg2);
+  background-color: var(--col-bg2);
+}
+
+.sw-btn-2
+{
   color: var(--col-fg3);
   background-color: var(--col-bg3);
 }
 
-.sw-btn:hover
+.sw-btn-2:hover
 {
   background-color: var(--col-bg4);
 }
 
-.sw-btn:active
+.sw-btn-2:active
+{
+  color: var(--col-fg2);
+  background-color: var(--col-bg2);
+}
+
+.sw-btn-alert
+{
+  color: var(--col-fg1);
+  background-color: var(--col-fg-alert);
+}
+
+.sw-btn-alert:hover
+{
+  background-color: var(--col-bg-alert-1);
+}
+
+.sw-btn-alert:active
 {
   color: var(--col-fg2);
   background-color: var(--col-bg2);
@@ -112,7 +189,6 @@ a:hover
 
 .sw-btn-player:hover
 {
-    @apply cursor-pointer;
     color: var(--col-fg1);
 }
 
@@ -125,9 +201,32 @@ a:hover
 
 .sw-input
 {
+  border: 1px solid var(--col-fg4);
   text-align: left;
   background-color: var(--col-bg2);
-  border: 2px solid var(--col-fg2);
+  border-radius: 3px;
+  padding: 4px 6px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.sw-input-disabled
+{
+  border: 1px solid var(--col-fg4);
+  text-align: left;
+  border-radius: 3px;
+  padding: 4px 6px;
+  margin: 0;
+  box-sizing: border-box;
+  color: var(--col-fg4);
+  background-color: var(--col-bg1);
+}
+
+.sw-input-error
+{
+  border: 1px solid var(--col-fg-alert);
+  text-align: left;
+  background-color: var(--col-bg2);
   border-radius: 3px;
   padding: 4px 6px;
   margin: 0;
@@ -139,4 +238,29 @@ a:hover
   padding: 0px 0px;
   margin: 12px 0px;
   border: 1px solid var(--col-bg4);
+}
+
+.sw-text-gradient
+{
+    @apply bg-gradient-to-r;
+    @apply from-indigo-500;
+    @apply to-[#d9a12A];
+    @apply bg-clip-text;
+    @apply text-[#aaa8];
+    @apply inline-block;
+    @apply w-fit;
+}
+
+.sw-bg-gradient-1
+{
+    @apply bg-gradient-to-r;
+    @apply from-indigo-500;
+    @apply to-[#d9a12A];
+}
+
+.sw-bg-gradient-2
+{
+    @apply bg-gradient-to-br;
+    @apply from-[#000];
+    @apply to-[#131419];
 }

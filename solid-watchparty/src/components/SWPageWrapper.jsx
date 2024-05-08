@@ -25,17 +25,16 @@ function SWPageWrapper({children, className, mustBeAuthenticated})
 
     useEffect(() => {
         if (mustBeAuthenticated && !sessionContext.sessionRequestInProgress && !inSession(sessionContext)) {
-            console.log('navigate back')
-            navigateTo(`${config.baseDir}/`, {state: {from: currentLocation.pathname + currentLocation.search}});
+            navigateTo(`${config.baseDir}/auth`, {state: {from: currentLocation.pathname + currentLocation.search}});
         }
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, currentLocation, navigateTo, mustBeAuthenticated])
 
     return (
-        <div className="h-full flex flex-col justify-between">
+        <div className="min-h-screen flex flex-col bg-[#0000]">
             <SWNavbar/>
-            <div className={"h-full w-full " + className}>
+            <div className={`flex-grow ${className}`}>
                 { sessionContext.sessionRequestInProgress ? (
-                    <div className="flex flex-col items-center">
+                    <div className="h-screen flex flex-col items-center justify-center">
                         <SWLoadingIcon className="w-6 h-6 mb-3"/>
                         <p className="sw-fw-1">Autenticating...</p>
                     </div>

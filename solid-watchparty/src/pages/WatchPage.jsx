@@ -2,8 +2,11 @@
 import { useEffect, useState, useRef, useContext } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaUserFriends } from "react-icons/fa";
 import { useInterval } from 'usehooks-ts'
+import { FaChevronLeft } from "react-icons/fa";
+import { FaGear } from "react-icons/fa6";
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
@@ -12,6 +15,7 @@ import SWVideoPlayer from '../components/SWVideoPlayer';
 import SWLoadingIcon from '../components/SWLoadingIcon';
 import StartWatchingEventModal from '../components/StartWatchingEventModal';
 import PeopleMenuModal from '../components/PeopleMenuModal';
+import SettingsModal from '../components/SettingsModal';
 
 /* service imports */
 import RoomSolidService from '../services/room.solidservice.js';
@@ -19,53 +23,91 @@ import MessageSolidService from '../services/message.solidservice.js';
 
 /* context imports */
 import { MessageBoxContext } from '../contexts';
+import { RoomContext } from '../contexts';
 
 /* util imports */
 import { inSession } from '../utils/solidUtils';
 
+/* config imports */
+import config from '../../config';
+
+
+async function requestAccess(sessionContext, roomUrl) {
+    const messageBoxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomUrl);
+    if (!messageBoxResult || messageBoxResult.error) {
+        return { error: "create message box error", errorMsg: "Could not create message box!" };
+    }
+    const registerResult = await RoomSolidService.register(sessionContext, messageBoxResult.messageBoxUrl, roomUrl);
+    if (!registerResult || registerResult.error) {
+        return { error: "register error", errorMsg: "Could not register to room!" };
+    }
+    return { success: true };
+}
+
 function WatchPage() {
     const iframeRef = useRef(null);
-    const [menuModalIsShown, setMenuModalIsShown] = useState(false);
-    const [modalIsShown, setModalIsShown] = useState(false);
     const [parentHeight, setParentHeight] = useState('auto');
-    const [joinedRoom, setJoinedRoom] = useState(false);
+
+    const [joinState, setJoinState] = useState('loading');
+
+    const [peopleModalIsShown, setPeopleModalIsShown] = useState(false);
+    const [settingsModalIsShown, setSettingsModalIsShown] = useState(false);
+    const [modalIsShown, setModalIsShown] = useState(false);
+
     const sessionContext = useSession();
     const [,setMessageBox] = useContext(MessageBoxContext);
+    const [room, setRoom] = useState({});
 
-    /* TODO(Elias): Add error handling, what if there is no parameter */
+    /* TODO(Elias): Add error handling, what if there is no parameter, or a wrong parameter */
     const [searchParams] = useSearchParams();
     const roomUrl = decodeURIComponent(searchParams.get('roomUrl'));
+
+    const navigateTo = useNavigate();
+
+    useEffect(() => {
+        if (joinState !== 'success') {
+            return;
+        }
+        RoomSolidService.getRoomInfo(sessionContext, roomUrl).then((room) => {
+            if (room.error) {
+                setJoinState('error');
+                return;
+            };
+            setRoom(room);
+        });
+    }, [roomUrl, sessionContext.session.requestInProgress, sessionContext.session, joinState]);
+
 
     useInterval(async () => {
         const result = await RoomSolidService.amIRegistered(sessionContext, roomUrl);
         if (result && !result.error) {
-            setJoinedRoom(true);
+            setJoinState('success');
         }
-    }, (joinedRoom ? null : 2 * 1000));
+    }, ((joinState === 'success') ? null : 2 * 1000));
 
     useEffect(() => {
-        const register = async () => {
-            const registeredCheck = await RoomSolidService.amIRegistered(sessionContext, roomUrl);
-            if (registeredCheck && !registeredCheck.error) {
-                setJoinedRoom(true);
-                return;
-            }
-            const messageBoxResult = await MessageSolidService.createMyMessageBox(sessionContext, roomUrl);
-            if (!messageBoxResult || messageBoxResult.error) {
-                return;
-            }
-            setMessageBox(messageBoxResult.messageBoxUrl);
-            const registerResult = await RoomSolidService.register(sessionContext, messageBoxResult.messageBoxUrl,
-                                                                   roomUrl);
-            if (!registerResult || registerResult.error) {
-                return;
-            }
+        if (!inSession(sessionContext) || sessionContext.sessionRequestInProgress || (joinState === 'success')) {
+            return;
         }
-        if (inSession(sessionContext) && !sessionContext.sessionRequestInProgress && !joinedRoom) {
-            register();
-        }
-    }, [sessionContext.sessionRequestInProgress, sessionContext.session, roomUrl, setMessageBox, joinedRoom]);
+        RoomSolidService.amIRegistered(sessionContext, roomUrl).then((result) => {
+            if (result && !result.error) {
+                setJoinState('success');
+                return;
+            }
+            requestAccess(sessionContext, roomUrl).then((access) => {
+                setJoinState((access && !access.error) ? 'requested' : 'error');
+            });
+        });
+    }, [sessionContext.sessionRequestInProgress, sessionContext.session, roomUrl, setMessageBox, joinState]);
 
+    useEffect(() => {
+        if (!inSession(sessionContext) || sessionContext.sessionRequestInProgress || (joinState !== 'success')) {
+            setMessageBox(null);
+        }
+        MessageSolidService.getMessageBox(sessionContext, roomUrl).then((result) => {
+            setMessageBox(result);
+        });
+    }, [joinState, roomUrl, sessionContext.session, sessionContext.sessionRequestInProgress, setMessageBox]);
 
     useEffect(() => {
         const updateChatHeight = () => {
@@ -75,46 +117,68 @@ function WatchPage() {
         }
         updateChatHeight();
         window.addEventListener("resize", updateChatHeight, false);
-    }, [joinedRoom]);
-
+    }, [iframeRef, joinState]);
 
     let body = <></>;
-    if (!joinedRoom) {
+    if (joinState != 'success') {
         body = (
             <div className="flex w-full h-full items-center justify-center gap-3">
-                <div>
-                    <div className="flex my-6 gap-3 justify-center items-center">
-                        <SWLoadingIcon className="w-8 h-8"/>
+                {joinState === 'error' && (
+                    <p className="sw-fw-1">Joining Room failed... Try again by reloading the page.</p>
+                )}
+                {joinState === 'loading' && (
+                    <div>
+                        <div className="flex my-6 gap-3 justify-center items-center">
+                            <SWLoadingIcon className="w-8 h-8"/>
+                        </div>
+                        <p className="sw-fw-1">Requesting access too Room...</p>
                     </div>
-                    <p className="sw-fw-1">Joining Room...</p>
-                    {/* <p> A join request was sent to the party owner.</p> */}
-                </div>
-                <p className="absolute m-2 bottom-0 right-0 rgb-2">{roomUrl}</p>
+                )}
+                {joinState === 'requested' && (
+                    <p>A join request was sent to the party owner.</p>
+                )}
             </div>
         );
     } else {
         body = (<>
-            <div className="flex justify-between px-8 py-4 rgb-2 gap-12 items-center">
-                <p>{roomUrl}</p>
+            <div className="absolute top-0 left-0 w-full h-full -z-10">
+                <img src={room.thumbnailUrl} className="w-full h-full object-cover"/>
+                <div className="absolute top-0 left-0 w-full h-full bg-black opacity-50"/>
+            </div>
+            <div className=" flex justify-between items-baseline px-8 py-4 gap-12 items-center">
+                <div className="flex gap-6 items-baseline">
+                    <button className="flex gap-2 items-center rgb-1 hover:rgb-2 hover:cursor-pointer"
+                            onClick={() => navigateTo(`${config.baseDir}/menu`)}>
+                        <FaChevronLeft className="w-3 h-3"/>
+                        <p className="sw-fw-1">Back to menu</p>
+                    </button>
+                    <p className="sw-fw-1 sw-fs-3 rgb-1">{room.name}</p>
+                </div>
                 <div className="flex gap-3">
                     <div className="rgb-2">
-                        <button className={`sw-btn flex-grow h-6 flex justify-center`} onClick={() => setModalIsShown(true)}>
+                        <button className={`sw-btn sw-btn-1 flex-grow h-6 flex justify-center`} onClick={() => setModalIsShown(true)}>
                             Start new video
                         </button>
                     </div>
-                    <button onClick={() => setMenuModalIsShown(!menuModalIsShown)} className="sw-btn border">
-                        <FaUserFriends className="sw-btn-player w-6 h-6"/>
+                    <button onClick={() => setPeopleModalIsShown(!peopleModalIsShown)} className="sw-btn sw-btn-2 border">
+                        <FaUserFriends className="w-6 h-6"/>
+                    </button>
+                    <button onClick={() => setSettingsModalIsShown(!settingsModalIsShown)} className="sw-btn sw-btn-2 border">
+                        <FaGear className="w-6 h-6"/>
                     </button>
                 </div>
             </div>
             <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
-                <div className={`w-2/3 h-fit flex rgb-bg-2 sw-border`} ref={iframeRef}>
+                <div className={`w-2/3 h-fit flex bg-black sw-border`} ref={iframeRef}>
                     <SWVideoPlayer roomUrl={roomUrl}/>
                 </div>
                 <SWChatComponent roomUrl={roomUrl}/>
             </div>
-            { menuModalIsShown && (
-                <PeopleMenuModal setModalIsShown={setMenuModalIsShown} roomUrl={roomUrl}/>
+            { settingsModalIsShown && (
+                <SettingsModal setModalIsShown={setSettingsModalIsShown} roomUrl={roomUrl}/>
+            )}
+            { peopleModalIsShown && (
+                <PeopleMenuModal setModalIsShown={setPeopleModalIsShown} roomUrl={roomUrl}/>
             )}
             { modalIsShown && (
                 <StartWatchingEventModal setModalIsShown={setModalIsShown} roomUrl={roomUrl}/>
@@ -125,7 +189,9 @@ function WatchPage() {
 
     return (
         <SWPageWrapper className="h-full" mustBeAuthenticated={true}>
-            {body}
+            <RoomContext.Provider value={[room, setRoom]}>
+                {body}
+            </RoomContext.Provider>
         </SWPageWrapper>
     );
 }
