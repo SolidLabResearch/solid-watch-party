@@ -6,6 +6,7 @@ import { displayDate } from '../utils/general.js'
 
 function MessageComponent({message})
 {
+    const sender = message.sender ? message.sender : "Name not found";
     return (
         <div className="pb-2 flex">
             <div className="w-6 h-6 m-2 rgb-bg-3 rounded-max">

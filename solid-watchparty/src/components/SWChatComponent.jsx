@@ -25,6 +25,7 @@ function SWChatComponent({roomUrl, joined}) {
     const [messages, setMessages] = useState([]);
     const sessionContext = useSession();
     const [messageBox,] = useContext(MessageBoxContext);
+    const [userNames, setUserNames] = useState({});
 
     useEffect(() => {
         let messageSeriesStreams = null;
@@ -38,23 +39,35 @@ function SWChatComponent({roomUrl, joined}) {
                 return;
             }
             messageSeriesStreams.on('data', async (data) => {
-                let messageStream = await MessageSolidService.getMessageStream(sessionContext,
-                                                                               data.get('messageSeries').value);
+                const messageSeries = data.get('messageSeries').value;
+                let messageStream = await MessageSolidService.getMessageStream(sessionContext, messageSeries);
                 const senderIndex = messageStreams.length;
                 messageStreams.push(messageStream);
+
+                let senderName = "Unknown";
+                let creatorUrlStream = await MessageSolidService.getMessageSeriesCreatorStream(sessionContext, messageSeries);
+                creatorUrlStream.on('data', (data) => {
+                    const creatorUrl = data?.get('creator')?.value;
+                    UserSolidService.getName(sessionContext, creatorUrl).then((name) => {
+                        if (!name.error) {
+                            setUserNames((userNames) => {
+                                userNames[messageSeries] = name;
+                                return userNames;
+                            });
+                        }
+                    });
+                });
 
                 if (messageStream.error) {
                     messageStream = null;
                     return;
                 }
                 messageStream.on('data', async (data) => {
-                    let name = await UserSolidService.getName(sessionContext, data.get('sender').value);
-                    name = (!name || name.error) ? 'Unknown' : name;
                     const message = {
-                        text:    data.get('text').value,
-                        sender:  name,
-                        date:    new Date(data.get('dateSent').value),
-                        key:     (name + data.get('dateSent').value),
+                        text:           data.get('text').value,
+                        messageBoxUrl:  messageSeries,
+                        date:           new Date(data.get('dateSent').value),
+                        key:            (name + data.get('dateSent').value),
                     };
                     setMessages(messages => (
                         [...messages, message]
@@ -104,7 +117,12 @@ function SWChatComponent({roomUrl, joined}) {
             pageContent = (
                 <>
                     <SWAutoScrollDiv className="overflow-y-auto overflow-x-auto mb-2 shrink">
-                        {messages.map((message) => <SWMessageComponent message={message} key={message.key}/>)}
+                        {messages.map((message) => {
+                            const sender = userNames[message.messageBoxUrl];
+                            return (
+                                <SWMessageComponent message={{...message, sender}} key={message.key}/>
+                            );
+                        })}
                     </SWAutoScrollDiv>
                     <form autoComplete="off" className="grow-0 flex flex-between items-center" onSubmit={submitMessage}>
                         <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full border-solid"

@@ -25,6 +25,7 @@ class UserSolidService {
                 });
             const resultBindings = await resultStream.toArray();
             if (resultBindings.length === 0) {
+                console.error("No name found for the given webId.");
                 return { error: "no name found", errorMsg: "No name found for the given webId." }
             }
             return resultBindings[0].get('name').value;

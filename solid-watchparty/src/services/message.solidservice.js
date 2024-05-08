@@ -146,29 +146,27 @@ MessageSolidService
         return resultStream;
     }
 
-    async getMessageSeriesCreatorName(sessionContext, messageSeriesUrl) {
-        try {
-            let messagesDataset = await getSolidDataset(messageSeriesUrl, { fetch: sessionContext.fetch });
-            const outboxThings = getThingAll(messagesDataset).filter(t =>
-                                                                     getUrlAll(t, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-                                                                     .includes(SCHEMA_ORG + 'CreativeWorkSeries')
-            );
-            if (outboxThings.length < 1) {
-                throw { error: "no outbox present" }
-            }
-            const outbox = outboxThings[0];
-            const creatorUrl = getUrl(outbox, "http://schema.org/creator");
-            let profileDataset = await getSolidDataset(creatorUrl, { fetch: sessionContext.fetch });
-            let profileThing = getThing(profileDataset, creatorUrl);
-            const name = getStringNoLocale(profileThing, "http://xmlns.com/foaf/0.1/name");
-            if (!name) {
-                throw { error: "Name not found" };
-            }
-            return name;
-        } catch (error) {
-            console.error(error)
-            return {error: error}
+    async getMessageSeriesCreatorStream(sessionContext, messageSeriesUrl) {
+        if (!inSession(sessionContext)) {
+            return { error: "invalid session", errorMsg: "The session has ended, log in again" };
+        } else if (!messageSeriesUrl) {
+            return { error: "invalid message series", errorMsg: "The message series is invalid" };
         }
+        const queryEngine = new QueryEngineInc();
+        const resultStream = await queryEngine.queryBindings(`
+            PREFIX schema: <${SCHEMA_ORG}>
+            SELECT ?creator
+            WHERE {
+              <${messageSeriesUrl}> schema:creator ?creator .
+            }`, {
+                sources: [messageSeriesUrl],
+                fetch: sessionContext.fetch,
+                lenient: true
+            });
+        resultStream.on("error", (e) => {
+            console.error(e);
+        });
+        return resultStream;
     }
 
     async checkAccess(sessionContext, messageBoxUrl, webId) {
