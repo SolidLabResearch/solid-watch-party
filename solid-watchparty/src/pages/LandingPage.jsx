@@ -19,7 +19,11 @@ function Banner({name, children, className, showArrow=false}) {
                 {children}
             </div>
             <div>
-                {showArrow && <FaChevronDown className="w-8 h-8 mb-20"/>}
+                {showArrow && (
+                    <a href="#about">
+                        <FaChevronDown className="w-8 h-8 mb-20"/>
+                    </a>
+                )}
             </div>
         </div>
     );
@@ -46,7 +50,7 @@ export default function LandingPage()
             </div>
             <div className="flex justify-end">
                 <button onClick={() => navigateTo(config.baseDir + '/auth')}
-                    className="sw-btn my-4 w-fit">Login</button>
+                    className="sw-btn sw-btn-2 my-4 w-fit">Login</button>
             </div>
         </div>
         <div className="w-full h-full">
@@ -76,7 +80,7 @@ export default function LandingPage()
                                 Solid is a technology that lets individuals and groups store their data securely in decentralized data stores called Pods. Pods are like secure web servers for data. When data is stored in a Pod, its owners control which people and applications can access it.
                             </p>
                             <a href="https://solidproject.org/users/get-a-pod" target="_blank">
-                                <button className="sw-btn my-4">Create your own pod</button>
+                                <button className="sw-btn sw-btn-2 my-4">Create your own pod</button>
                             </a>
                         </div>
                         <img src="https://solidproject.org/assets/img/solid-pod-tour.svg" className="w-1/2 p-40"/>

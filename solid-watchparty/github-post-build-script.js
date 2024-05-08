@@ -3,7 +3,8 @@ import * as fs from "fs";
 
 const routes = [
   "/menu",
-  "/watch"
+  "/watch",
+  "/auth",
 ];
 const dir = viteConfig.build.outDir;
 for (const route of routes) {

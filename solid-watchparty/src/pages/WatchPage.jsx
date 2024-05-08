@@ -2,8 +2,11 @@
 import { useEffect, useState, useRef, useContext } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaUserFriends } from "react-icons/fa";
 import { useInterval } from 'usehooks-ts'
+import { FaChevronLeft } from "react-icons/fa";
+import { FaGear } from "react-icons/fa6";
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper'
@@ -12,6 +15,7 @@ import SWVideoPlayer from '../components/SWVideoPlayer';
 import SWLoadingIcon from '../components/SWLoadingIcon';
 import StartWatchingEventModal from '../components/StartWatchingEventModal';
 import PeopleMenuModal from '../components/PeopleMenuModal';
+import SettingsModal from '../components/SettingsModal';
 
 /* service imports */
 import RoomSolidService from '../services/room.solidservice.js';
@@ -19,9 +23,13 @@ import MessageSolidService from '../services/message.solidservice.js';
 
 /* context imports */
 import { MessageBoxContext } from '../contexts';
+import { RoomContext } from '../contexts';
 
 /* util imports */
 import { inSession } from '../utils/solidUtils';
+
+/* config imports */
+import config from '../../config';
 
 
 async function requestAccess(sessionContext, roomUrl) {
@@ -40,18 +48,35 @@ function WatchPage() {
     const iframeRef = useRef(null);
     const [parentHeight, setParentHeight] = useState('auto');
 
-    const [pageError, setPageError] = useState(0);
     const [joinState, setJoinState] = useState('loading');
 
-    const [menuModalIsShown, setMenuModalIsShown] = useState(false);
+    const [peopleModalIsShown, setPeopleModalIsShown] = useState(false);
+    const [settingsModalIsShown, setSettingsModalIsShown] = useState(false);
     const [modalIsShown, setModalIsShown] = useState(false);
 
     const sessionContext = useSession();
     const [,setMessageBox] = useContext(MessageBoxContext);
+    const [room, setRoom] = useState({});
 
     /* TODO(Elias): Add error handling, what if there is no parameter, or a wrong parameter */
     const [searchParams] = useSearchParams();
     const roomUrl = decodeURIComponent(searchParams.get('roomUrl'));
+
+    const navigateTo = useNavigate();
+
+    useEffect(() => {
+        if (joinState !== 'success') {
+            return;
+        }
+        RoomSolidService.getRoomInfo(sessionContext, roomUrl).then((room) => {
+            if (room.error) {
+                setJoinState('error');
+                return;
+            };
+            setRoom(room);
+        });
+    }, [roomUrl, sessionContext.session.requestInProgress, sessionContext.session, joinState]);
+
 
     useInterval(async () => {
         const result = await RoomSolidService.amIRegistered(sessionContext, roomUrl);
@@ -116,27 +141,44 @@ function WatchPage() {
         );
     } else {
         body = (<>
-            <div className="flex justify-between px-8 py-4 rgb-2 gap-12 items-center">
-                <p>{roomUrl}</p>
+            <div className="absolute top-0 left-0 w-full h-full -z-10">
+                <img src={room.thumbnailUrl} className="w-full h-full object-cover"/>
+                <div className="absolute top-0 left-0 w-full h-full bg-black opacity-50"/>
+            </div>
+            <div className=" flex justify-between items-baseline px-8 py-4 gap-12 items-center">
+                <div className="flex gap-6 items-baseline">
+                    <button className="flex gap-2 items-center rgb-1 hover:rgb-2 hover:cursor-pointer"
+                            onClick={() => navigateTo(`${config.baseDir}/menu`)}>
+                        <FaChevronLeft className="w-3 h-3"/>
+                        <p className="sw-fw-1">Back to menu</p>
+                    </button>
+                    <p className="sw-fw-1 sw-fs-3 rgb-1">{room.name}</p>
+                </div>
                 <div className="flex gap-3">
                     <div className="rgb-2">
-                        <button className={`sw-btn flex-grow h-6 flex justify-center`} onClick={() => setModalIsShown(true)}>
+                        <button className={`sw-btn sw-btn-1 flex-grow h-6 flex justify-center`} onClick={() => setModalIsShown(true)}>
                             Start new video
                         </button>
                     </div>
-                    <button onClick={() => setMenuModalIsShown(!menuModalIsShown)} className="sw-btn border">
-                        <FaUserFriends className="sw-btn-player w-6 h-6"/>
+                    <button onClick={() => setPeopleModalIsShown(!peopleModalIsShown)} className="sw-btn sw-btn-2 border">
+                        <FaUserFriends className="w-6 h-6"/>
+                    </button>
+                    <button onClick={() => setSettingsModalIsShown(!settingsModalIsShown)} className="sw-btn sw-btn-2 border">
+                        <FaGear className="w-6 h-6"/>
                     </button>
                 </div>
             </div>
             <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
-                <div className={`w-2/3 h-fit flex rgb-bg-2 sw-border`} ref={iframeRef}>
+                <div className={`w-2/3 h-fit flex bg-black sw-border`} ref={iframeRef}>
                     <SWVideoPlayer roomUrl={roomUrl}/>
                 </div>
                 <SWChatComponent roomUrl={roomUrl}/>
             </div>
-            { menuModalIsShown && (
-                <PeopleMenuModal setModalIsShown={setMenuModalIsShown} roomUrl={roomUrl}/>
+            { settingsModalIsShown && (
+                <SettingsModal setModalIsShown={setSettingsModalIsShown} roomUrl={roomUrl}/>
+            )}
+            { peopleModalIsShown && (
+                <PeopleMenuModal setModalIsShown={setPeopleModalIsShown} roomUrl={roomUrl}/>
             )}
             { modalIsShown && (
                 <StartWatchingEventModal setModalIsShown={setModalIsShown} roomUrl={roomUrl}/>
@@ -147,7 +189,9 @@ function WatchPage() {
 
     return (
         <SWPageWrapper className="h-full" mustBeAuthenticated={true}>
-            {body}
+            <RoomContext.Provider value={[room, setRoom]}>
+                {body}
+            </RoomContext.Provider>
         </SWPageWrapper>
     );
 }

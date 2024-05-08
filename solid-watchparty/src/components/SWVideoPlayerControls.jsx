@@ -1,4 +1,5 @@
 /* library imports */
+import { useState, useEffect } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { FaPlay, FaPause, FaExpandAlt } from "react-icons/fa";
 import { FiMinimize2 } from "react-icons/fi";
@@ -8,11 +9,12 @@ import PropTypes from 'prop-types';
 import EventsSolidService from '../services/events.solidservice.js';
 
 
-function SWVideoPlayerControls({watchingEvent, videoRef, isPlaying, fullscreenHandle}) {
+function SWVideoPlayerControls(
+    {watchingEvent, videoRef, isPlaying, fullscreenHandle, duration, progress}
+) {
     const sessionContext = useSession();
 
     const onPause = () => {
-        console.log("ON PAUSE CLICKED");
         EventsSolidService.saveControlAction(sessionContext, watchingEvent?.eventUrl,
                                              !isPlaying, videoRef.current.getCurrentTime())
     }
@@ -25,13 +27,37 @@ function SWVideoPlayerControls({watchingEvent, videoRef, isPlaying, fullscreenHa
         }
     }
 
+
+    const [moving, setMoving] = useState(false);
+    const [at, setAt] = useState(0);
+
+    useEffect(() => {
+        if (!moving) {
+            setAt(progress);
+        }
+    }, [progress]);
+
+    const onStartMove = (e) => {
+        setMoving(true);
+        setAt(e.target.value);
+    }
+
+    const handleSliderRelease = () => {
+        EventsSolidService.saveControlAction(sessionContext, watchingEvent?.eventUrl, true, at).then(() => {
+            setMoving(false);
+        });
+    };
+
     return (
-        <div className="h-8 m-3 bg-[#000A] rounded flex px-5 z-20 justify-between drop-shadow-xl">
-            <button className="sw-btn-player my-2" onClick={onPause}>
-                {isPlaying ? <FaPause className="rgb-2"/> : <FaPlay className="rgb-2"/> }
+        <div className="h-9 m-3 bg-[#000A] rounded flex px-5 z-20 justify-between drop-shadow-xl">
+            <button className="sw-btn-player my-1" onClick={onPause}>
+                {isPlaying ? <FaPause/> : <FaPlay className="rgb-2"/> }
             </button>
-            <button className="sw-btn-player my-2" onClick={onFullscreen}>
-                {fullscreenHandle.active ? <FiMinimize2 className="rgb-2"/> : <FaExpandAlt className="rgb-2"/> }
+            <input type="range" className="slider cursor-pointer my-1 w-full mx-4 bg-[#2229] rounded-max px-2"
+                    min="0" max={duration} step="0.1" value={at} onChange={onStartMove}
+                    onMouseUp={handleSliderRelease}/>
+            <button className="sw-btn-player my-1" onClick={onFullscreen}>
+                {fullscreenHandle.active ? <FiMinimize2/> : <FaExpandAlt className="rgb-2"/> }
             </button>
         </div>
   );
