@@ -15,6 +15,16 @@ import VideoSolidService from '../services/videos.solidservice.js';
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 
+function playFrom(lastPause) {
+    if (!lastPause) {
+        return 0;
+    }
+    const from = lastPause.isPlaying
+        ? lastPause.location + (new Date() - lastPause.datetime) / 1000
+        : lastPause.location;
+    return from;
+}
+
 async function handleNewWatchingEvent(sessionContext, data) {
     const videoObject = await VideoSolidService.getVideoObject(sessionContext, data.get('videoObject').value);
     if (videoObject.error) {
@@ -32,37 +42,23 @@ async function handleNewWatchingEvent(sessionContext, data) {
         startDate:  new Date(data.get('startDate').value),
     };
     let lastPause = await EventsSolidService.getLastPause(sessionContext, newWatchingEvent);
-    if (!lastPause) {
+    if (!lastPause || lastPause.datetime < newWatchingEvent.startDate) {
         lastPause = {
             datetime:   newWatchingEvent.startDate,
             location:   0.0,
-            actionType: `${SCHEMA_ORG}ResumeAction`,
+            isPlaying:  true,
         };
     }
     if (lastPause.error) {
         console.log("LAST PAUSE ERROR: ", lastPause.error);
         return null;
     }
-    const lastPauseOutdated = lastPause.datetime < newWatchingEvent.startDate;
-    const joinedAt = (
-        lastPauseOutdated
-        ? 0
-        : (lastPause.actionType === `${SCHEMA_ORG}ResumeAction`)
-        ? lastPause.location
-        : lastPause.location + (new Date() - lastPause.datetime) / 1000
-    );
-    return {
-        ...newWatchingEvent,
-        isPlaying:          lastPauseOutdated ? true : lastPause.actionType === `${SCHEMA_ORG}ResumeAction`,
-        lastPauseDatetime:  lastPause.datetime,
-        lastPauseAt:        lastPause.location,
-        joinedAt:           joinedAt,
-    };
+    return { newWatchingEvent, lastPause };
 }
 
 async function handleControlAction(sessionContext, data, watchingEvent) {
     const date = new Date(data.get('datetime').value);
-    if (data.diff != true || date <= watchingEvent.joinedAt) {
+    if (data.diff != true) {
         return null;
     }
     let isPlaying = null;
@@ -75,23 +71,21 @@ async function handleControlAction(sessionContext, data, watchingEvent) {
         return null;
     }
     return {
-        ...watchingEvent,
-        loc:        parseFloat(data.get('location').value),
         isPlaying:  isPlaying,
-        date:       date,
-    }
+        datetime:   date,
+        location:   data.get('location').value,
+    };
 }
 
 function SWVideoPlayer({roomUrl}) {
     const [playerReady, setPlayerReady] = useState(false);
-    const [isPlaying, setIsPlaying] = useState({is: false, from: 0});
+    const [lastPause, setLastPause] = useState({isPlaying: false, location: 0, datetime: new Date()});
     const [watchingEvent, setWatchingEvent] = useState(null);
     const sessionContext = useSession();
     const videoRef = useRef(null);
     const fullscreenHandle = useFullScreenHandle();
 
     useEffect(() => {
-        console.log("player ready");
         let watchingEventStream = null;
         let lastWatchingEvent = null;
         const act = async () => {
@@ -101,17 +95,17 @@ function SWVideoPlayer({roomUrl}) {
                 return;
             }
             watchingEventStream.on('data', (data) => {
-                console.log("NEW WATCHING EVENT RECEIVED");
-                handleNewWatchingEvent(sessionContext, data).then((newWatchingEvent) => {
-                    if (!newWatchingEvent) {
+                handleNewWatchingEvent(sessionContext, data).then((data) => {
+                    if (!data) {
                         return;
                     }
+                    const { newWatchingEvent, lastPause } = data;
                     if (lastWatchingEvent && newWatchingEvent.startDate <= lastWatchingEvent.startDate) {
-                        console.log("OUTDATED WATCHING EVENT");
                         return;
                     }
                     lastWatchingEvent = newWatchingEvent;
                     setWatchingEvent(lastWatchingEvent);
+                    setLastPause(lastPause);
                 });
             });
         }
@@ -121,37 +115,40 @@ function SWVideoPlayer({roomUrl}) {
 
     useEffect(() => {
         let controlActionStream = null;
-        let lastControlAction = null;
+        let lastPause_ = null;
         const act = async () => {
             if (!watchingEvent) {
                 return;
             }
             controlActionStream = await EventsSolidService.getControlActionStream(sessionContext, watchingEvent?.eventUrl);
             controlActionStream.on('data', (data) => {
-                console.log("NEW CONTROL ACTION RECEIVED");
-                handleControlAction(sessionContext, data, watchingEvent).then((controlAction) => {
-                    if (!controlAction) {
+                handleControlAction(sessionContext, data, watchingEvent).then((pause) => {
+                    if (!pause) {
                         return;
                     }
-                    if (lastControlAction && controlAction.date <= lastControlAction.date) {
+                    if (lastPause_ && pause.datetime <= lastPause_.datetime) {
                         return;
                     }
-                    lastControlAction = controlAction;
-                    setIsPlaying({is: lastControlAction.isPlaying, from: lastControlAction.loc});
+                    lastPause_ = pause;
+                    if (pause.location <= lastPause.location) {
+                        return;
+                    }
+                    setLastPause(pause);
                 });
             })
-            setIsPlaying({is: watchingEvent.isPlaying, from: watchingEvent.joinAt});
         }
         act();
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, watchingEvent]);
 
 
     useEffect(() => {
-        if (playerReady === false || !isPlaying) {
+        if (playerReady === false || !lastPause) {
             return;
         }
-        videoRef.current.seekTo(Math.round(isPlaying.from), "seconds");
-    }, [isPlaying, playerReady]);
+        const from = playFrom(lastPause);
+        console.log(from);
+        videoRef.current.seekTo(from, "seconds");
+    }, [lastPause, playerReady]);
 
 
     const playerConfig = { youtube: { playerVars: { rel: 0, disablekb: 1 } }, }
@@ -160,10 +157,10 @@ function SWVideoPlayer({roomUrl}) {
             <FullScreen handle={fullscreenHandle} className="h-full w-full">
                 <div className="absolute bottom-0 right-0 w-full h-full z-5 flex flex-col justify-end">
                     <SWVideoPlayerControls videoRef={videoRef} watchingEvent={watchingEvent}
-                                           isPlaying={isPlaying.is} fullscreenHandle={fullscreenHandle} />
+                                           isPlaying={lastPause.isPlaying} fullscreenHandle={fullscreenHandle} />
                 </div>
                 <ReactPlayer url={watchingEvent?.videoUrl} width="100%" height="100%" controls={false}
-                             playing={isPlaying.is} config={playerConfig} ref={videoRef}
+                             playing={lastPause.isPlaying} config={playerConfig} ref={videoRef}
                              onReady={() => setPlayerReady(true)}/>
             </FullScreen>
         </div>

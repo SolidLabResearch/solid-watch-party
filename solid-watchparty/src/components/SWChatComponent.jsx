@@ -110,7 +110,7 @@ function SWChatComponent({roomUrl, joined}) {
                         <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full border-solid"
                             onChange={(e) => setInput(parseMessage(e.target.value))}
                             value={input} type='text'/>
-                        <button className="sw-btn hidden"> > </button>
+                        <button className="sw-btn hidden"></button>
                     </form>
                 </>
             );
