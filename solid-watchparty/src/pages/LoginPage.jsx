@@ -101,7 +101,9 @@ export default function LoginPage()
                             <div>
                                 <h1 className="sw-fs-2 sw-fw-1">Want to try it with a temporary pod?</h1>
                                 <p className="sw-fs-3 my-2 rgb-2 text-justify">
-                                    You can use <span className="rgb-solid sw-fw-1">https://pod.playground.solidlab.be/</span> as provider. This way you can try out the platform without having to create a pod.
+                                    You can use <span className="rgb-solid sw-fw-1">https://pod.playground.solidlab.be/</span> as provider.
+                                    You can then use userX@pod.playground.solidlab.be with password userX. Replace X with a number between 1 and 9.
+                                    This way you can try out the platform without having to create a pod or account.
                                 </p>
                             </div>
                             <div>
