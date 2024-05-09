@@ -197,7 +197,7 @@ RequestingPeople.propTypes = {
 }
 
 function PeopleMenuModal({setModalIsShown, roomUrl}) {
-    /* NOTE(Elias): Uses strings for pages, valid options are:
+    /* NOTE(Elias): Uses strings for pages navigation, valid options are:
      * 1. in-room
      * 2. requesting */
     const [tab, setTab] = useState("in-room");

@@ -15,15 +15,21 @@ import VideoSolidService from '../services/videos.solidservice.js';
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils';
 
-function playFrom(videoRef, lastPause) {
-    if (!videoRef || !lastPause || !videoRef.current) {
+function playFrom(videoRef, lastPause, progress) {
+    if (!videoRef || !lastPause || !videoRef.current || !progress) {
+        console.log("NO VIDEO REF OR LAST PAUSE");
         return 0;
     }
+
     let from = lastPause.isPlaying
         ? lastPause.location + ((new Date() - lastPause.datetime) / 1000.0)
         : lastPause.location;
     from = Math.ceil(from);
-    videoRef.current.seekTo(from, "seconds");
+
+    if (progress < from - 2 || progress > from + 2) {
+        console.log("SEEKING TO: ", from);
+        videoRef.current.seekTo(from, "seconds");
+    }
 }
 
 async function handleNewWatchingEvent(sessionContext, data) {
@@ -81,6 +87,7 @@ async function handleControlAction(sessionContext, data, watchingEvent) {
 function SWVideoPlayer({roomUrl}) {
     const [lastPause, setLastPause] = useState(null);
     const [watchingEvent, setWatchingEvent] = useState(null);
+    const [playerReady, setPlayerReady] = useState(false);
     const sessionContext = useSession();
     const videoRef = useRef(null);
     const fullscreenHandle = useFullScreenHandle();
@@ -140,14 +147,15 @@ function SWVideoPlayer({roomUrl}) {
         act();
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, watchingEvent]);
 
-    useEffect(() => {
-        console.log("PLAYING FROM: ", lastPause);
-        playFrom(videoRef, lastPause);
-    }, [lastPause, videoRef, watchingEvent]);
+
 
     const playerConfig = { youtube: { playerVars: { rel: 0, disablekb: 1 } }, }
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
+
+    useEffect(() => {
+        playFrom(videoRef, lastPause, progress);
+    }, [lastPause, videoRef, watchingEvent, progress]);
 
     return (
         <div className="h-full w-full relative aspect-video">
@@ -160,7 +168,10 @@ function SWVideoPlayer({roomUrl}) {
                 <ReactPlayer url={watchingEvent?.videoUrl} width="100%" height="100%" controls={false}
                              playing={lastPause?.isPlaying} config={playerConfig} ref={videoRef}
                              onDuration={(duration) => setDuration(duration)}
-                             onProgress={(state) => setProgress(state.playedSeconds)} />
+                             onProgress={(state) => setProgress(state.playedSeconds)}
+                             onError={(e) => console.error("ERROR: ", e)}
+                             onBuffer={() => console.log("BUFFERING")}
+                             />
             </FullScreen>
         </div>
     );
