@@ -14,7 +14,7 @@ import {
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine } from '@comunica/query-sparql';
-import { QueryEngine as IncQueryEngine } from '@incremunica/query-sparql-incremental';
+import { QueryEngineBase } from '@comunica/actor-init-query';
 
 /* service imports */
 import VideoSolidService from '../services/videos.solidservice.js';
@@ -107,7 +107,7 @@ class EventsSolidService {
             return { error: "no room url", errorMsg: "No room url was provided" }
         }
 
-        const queryEngine = new IncQueryEngine();
+        const queryEngine = new QueryEngineBase((await import('../../engine-config/engine.js')).default);
         const resultStream = await queryEngine.queryBindings(`
             PREFIX schema: <${SCHEMA_ORG}>
             SELECT ?watchingEvent ?startDate ?videoObject
@@ -172,7 +172,7 @@ class EventsSolidService {
             return { error: "no event url", errorMsg: "No event url was provided" }
         }
 
-        const queryEngine = new IncQueryEngine();
+        const queryEngine = new QueryEngineBase((await import('../../engine-config/engine.js')).default);
         const resultStream = await queryEngine.queryBindings(`
             PREFIX schema: <${SCHEMA_ORG}>
             SELECT ?controlAction ?actionType ?agent ?datetime ?location
