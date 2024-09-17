@@ -12,7 +12,6 @@ import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine } from '@comunica/query-sparql';
 import { QueryEngine as QueryEngineLT } from '@comunica/query-sparql-link-traversal';
 import { QueryEngine as QueryEngineLTS } from '@comunica/query-sparql-link-traversal-solid';
-import { QueryEngine as QueryEngineInc } from '@incremunica/query-sparql-incremental';
 
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils.js';
