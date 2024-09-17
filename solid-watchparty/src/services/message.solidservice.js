@@ -102,7 +102,7 @@ MessageSolidService
         if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "Your session is invalid, log in again" };
         }
-        const queryEngine = new QueryEngineBase((await import('../../engine-config/engine.js')).default);
+        const queryEngine = new QueryEngineBase(await (await import('../../engine-config/engine.js')).default());
         const resultStream = await queryEngine.queryBindings(`
         PREFIX schema: <${SCHEMA_ORG}>
         SELECT ?messageSeries
@@ -124,7 +124,7 @@ MessageSolidService
         if (!inSession(sessionContext)) {
             return { error: "invalid session", errorMsg: "The session has ended, log in again" };
         }
-        const queryEngine = new QueryEngineBase((await import('../../engine-config/engine.js')).default);
+        const queryEngine = new QueryEngineBase(await (await import('../../engine-config/engine.js')).default());
         const resultStream = await queryEngine.queryBindings(`
             PREFIX schema: <${SCHEMA_ORG}>
             PREFIX foaf: <http://xmlns.com/foaf/0.1/>
@@ -152,7 +152,7 @@ MessageSolidService
         } else if (!messageSeriesUrl) {
             return { error: "invalid message series", errorMsg: "The message series is invalid" };
         }
-        const queryEngine = new QueryEngineBase((await import('../../engine-config/engine.js')).default);
+        const queryEngine = new QueryEngineBase(await (await import('../../engine-config/engine.js')).default());
         const resultStream = await queryEngine.queryBindings(`
             PREFIX schema: <${SCHEMA_ORG}>
             SELECT ?creator

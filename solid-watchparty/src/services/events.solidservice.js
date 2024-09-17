@@ -107,7 +107,7 @@ class EventsSolidService {
             return { error: "no room url", errorMsg: "No room url was provided" }
         }
 
-        const queryEngine = new QueryEngineBase((await import('../../engine-config/engine.js')).default);
+        const queryEngine = new QueryEngineBase(await (await import('../../engine-config/engine.js')).default());
         const resultStream = await queryEngine.queryBindings(`
             PREFIX schema: <${SCHEMA_ORG}>
             SELECT ?watchingEvent ?startDate ?videoObject
@@ -172,7 +172,7 @@ class EventsSolidService {
             return { error: "no event url", errorMsg: "No event url was provided" }
         }
 
-        const queryEngine = new QueryEngineBase((await import('../../engine-config/engine.js')).default);
+        const queryEngine = new QueryEngineBase(await (await import('../../engine-config/engine.js')).default());
         const resultStream = await queryEngine.queryBindings(`
             PREFIX schema: <${SCHEMA_ORG}>
             SELECT ?controlAction ?actionType ?agent ?datetime ?location

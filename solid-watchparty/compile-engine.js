@@ -11,12 +11,19 @@ const configResourceUri = 'urn:comunica:default:Runner';
 const configPath = `./engine-config/config.json`;
 let exportVariableName = 'urn:comunica:default:init/actors#query';
 
-compileConfig(mainModulePath, configPath, configResourceUri, exportVariableName, false, true)
+compileConfig(mainModulePath, configPath, configResourceUri, exportVariableName, true, true)
     .then((out) => {
         // This instantiation is unneeded (MUST be done for excluding Components.js in browser environnments)
         out = out.replace('new (require(\'@comunica/runner\').Runner)', '');
         out = out.replace('module.exports =', 'export default');
         out = out.replaceAll(/require\(([^)]+)\)/g, '(await import($1))');
+        out = out.replaceAll(`export default function(variables) {
+function getVariableValue(name) {
+  if (!variables || !(name in variables)) {
+    throw new Error('Undefined variable: ' + name);
+  }
+  return variables[name];
+}`, 'export default async function() {');
         fs.writeFile(`./engine-config/engine.js`, out + "\n", err => {
             if (err) {
                 console.error(`error with ./engine-config/engine.js:\n`, err);
