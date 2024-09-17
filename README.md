@@ -9,10 +9,6 @@ Welcome to Solid Watchparty, a platform designed for shared media viewing experi
 Find our live deployment at [solidlabresearch.github.io/solid-watch-party/](https://solidlabresearch.github.io/solid-watch-party/). Information on how to use the platform can be found in our [faq](https://solidlabresearch.github.io/solid-watch-party/auth#faq).
 
 
-https://github.com/SolidLabResearch/solid-watch-party/assets/37975937/e78ec297-3538-44c7-ad32-14ea310a35e7
-
-
-
 ## :zap: Development Quick Start
 
 

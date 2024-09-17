@@ -29,7 +29,7 @@ function SWChatComponent({roomUrl, joined}) {
 
     useEffect(() => {
         const fetch = async () => {
-            const messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(sessionContext, roomUrl);
+            let messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(sessionContext, roomUrl);
             if (messageSeriesStreams.error) {
                 console.error(messageSeriesStreams.error)
                 messageSeriesStreams = null;
