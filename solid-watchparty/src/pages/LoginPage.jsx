@@ -18,7 +18,7 @@ const authOptions = {
 
 export default function LoginPage()
 {
-    const [oidcIssuer, setOidcIssuer] = useState("");
+    const [oidcIssuer, setOidcIssuer] = useState("https://pod.playground.solidlab.be/");
     const currentLocation = useLocation();
     const redirectLocation = (currentLocation.state?.from || `${config.baseDir}/menu`);
     const [error, setError] = useState("");
@@ -51,7 +51,12 @@ export default function LoginPage()
                                 </p>
                                 <div className={`flex w-full justify-between border sw-input${error === "" ? "" : "-error"}`}>
                                     <input name="oidcIssuerField" className="w-full"
-                                        value={oidcIssuer} placeholder="https://your.pod.provider"
+                                       value={oidcIssuer} placeholder="https://your.pod.provider"
+                                       onKeyUp={(e) => {
+                                           if(e.key === 'Enter'){
+                                               document.getElementById("loginButton").click();
+                                           }
+                                       }}
                                         onChange={(e) => {
                                             setOidcIssuer(e.target.value);
                                             setError("");
@@ -60,7 +65,7 @@ export default function LoginPage()
                                         oidcIssuer={oidcIssuer}
                                         redirectUrl={window.location.protocol + '//' + window.location.host + redirectLocation}
                                         onError={handleLoginError}>
-                                        <button className={"sw-btn w-fit"}>
+                                        <button id="loginButton" className={"sw-btn w-fit"}>
                                             <FaChevronRight className="w-4 h-4 "/>
                                         </button>
                                     </LoginButton>
