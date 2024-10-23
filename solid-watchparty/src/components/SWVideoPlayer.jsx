@@ -160,7 +160,8 @@ function SWVideoPlayer({roomUrl}) {
                 <ReactPlayer url={watchingEvent?.videoUrl} width="100%" height="100%" controls={false}
                              playing={lastPause?.isPlaying} config={playerConfig} ref={videoRef}
                              onDuration={(duration) => setDuration(duration)}
-                             onProgress={(state) => setProgress(state.playedSeconds)} />
+                             onProgress={(state) => setProgress(state.playedSeconds)}
+                             playsinline={true} />
             </FullScreen>
         </div>
     );

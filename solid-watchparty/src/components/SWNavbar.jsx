@@ -32,16 +32,13 @@ function SWNavbar()
     }
 
     return (
-        <div className="w-full flex p-8 grow-0">
-            <div className="flex items-center basis-1/3">
-                <label className="sw-fw-1 text-left">solid-watchparty-v0</label>
-            </div>
-            <div className="flex justify-center basis-1/3">
+        <div className="w-full flex p-8">
+            <div className="flex basis-1/2">
                 <p className="flex sw-fw-1 justify-center items-center sw-text-gradient">
                     solid-watchparty
                 </p>
             </div>
-            <div className="flex items-center basis-1/3 justify-end">
+            <div className="flex items-center basis-2/2 ml-auto">
                 <div className="flex gap-4 items-center sw-fw-1">
                     { (!sessionContext.sessionRequestInProgress) ? <p>{username}</p> : <LoadingIcon/> }
                     <FaUserCircle className="sw-fw-1 w-6 h-6"/>

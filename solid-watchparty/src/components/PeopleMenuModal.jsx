@@ -3,6 +3,7 @@ import { useEffect, useState, useContext } from 'react';
 import { useSession, } from "@inrupt/solid-ui-react";
 import { FaUserCircle, FaCheck } from "react-icons/fa";
 import propTypes from 'prop-types';
+import QRCode from "react-qr-code";
 
 /* component imports */
 import SWModal from '../components/SWModal';
@@ -68,7 +69,6 @@ function PersonCard({person}) {
                 <p>{person.name}</p>
             </div>
             <div className="flex gap-3 items-center">
-                <p className="rgb-1">Allow seeing my messages:</p>
                 <SWSwitch enabled={enabled} onSwitch={onSwitch} disabled={isMyCard} isLoading={isLoading}/>
             </div>
         </div>
@@ -78,7 +78,7 @@ PersonCard.propTypes = {
     person: propTypes.object.isRequired,
 }
 
-function RequestingPersonCard({person, roomUrl, removeFromPeople}) {
+function WaitingPersonCard({person, roomUrl, removeFromPeople}) {
     const sessionContext = useSession();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -115,7 +115,7 @@ function RequestingPersonCard({person, roomUrl, removeFromPeople}) {
         </div>
     );
 }
-RequestingPersonCard.propTypes = {
+WaitingPersonCard.propTypes = {
     person:             propTypes.object.isRequired,
     roomUrl:            propTypes.string.isRequired,
     removeFromPeople:   propTypes.func.isRequired,
@@ -146,16 +146,18 @@ function InRoomPeople({roomUrl}) {
         return (<LoadingCard/>);
     }
     return (
-        <div className="overflow-auto grid grid-cols-2 auto-rows-min gap-4 h-[90%]">
+        <div className="overflow-auto grid auto-rows-min gap-4 h-[90%]">
+            <p className="rgb-1">Allow seeing my messages:</p>
             {people.map((person, index) => <PersonCard person={person} key={index}/>)}
         </div>
     );
 }
+
 InRoomPeople.propTypes = {
     roomUrl: propTypes.string.isRequired,
 }
 
-function RequestingPeople({roomUrl}) {
+function WaitingPeople({roomUrl}) {
     const sessionContext = useSession();
     const [isLoading, setIsLoading] = useState(true);
     const [people, setPeople] = useState([]);
@@ -184,15 +186,32 @@ function RequestingPeople({roomUrl}) {
         return (<LoadingCard/>);
     }
     return (
-        <div className="overflow-auto grid grid-cols-2 auto-rows-min gap-4 h-[90%]">
+        <div className="overflow-auto grid auto-rows-min gap-4 h-[90%]">
             {people.map((person, index) => (
-                <RequestingPersonCard person={person} key={index} roomUrl={roomUrl}
+                <WaitingPersonCard person={person} key={index} roomUrl={roomUrl}
                                       removeFromPeople={removeFromPeople}/>
             ))}
         </div>
     );
 }
-RequestingPeople.propTypes = {
+WaitingPeople.propTypes = {
+    roomUrl: propTypes.string.isRequired,
+}
+
+function InvitePeople() {
+    console.log(window.location.href);
+    return (
+        <div className="h-full justify-center">
+            <QRCode
+                size={256}
+                style={{ maxHeight: "90%", height: "auto", maxWidth: "90%", width: "100%", margin: "auto" }}
+                value={window.location.href}
+                viewBox={`0 0 256 256`}
+            />
+        </div>
+    );
+}
+InvitePeople.propTypes = {
     roomUrl: propTypes.string.isRequired,
 }
 
@@ -207,18 +226,22 @@ function PeopleMenuModal({setModalIsShown, roomUrl}) {
         case "in-room":
             body = <InRoomPeople roomUrl={roomUrl}/>;
             break;
-        case "requesting":
-            body = <RequestingPeople roomUrl={roomUrl}/>;
+        case "waiting":
+            body = <WaitingPeople roomUrl={roomUrl}/>;
+            break;
+        case "invite":
+            body = <InvitePeople roomUrl={roomUrl}/>;
             break;
     }
 
     return (
-        <SWModal className="rgb-bg-2 h-2/3 p-12 z-10 w-1/2 sw-border" setIsShown={setModalIsShown}>
+        <SWModal className="rgb-bg-2 h-2/3 p-12 z-10 w-1/2 sw-border width-mobile padding-full-mobile" setIsShown={setModalIsShown}>
             <div className="mb-6 flex items-center justify-between">
                 <p className="sw-fs-2 sw-fw-1">People</p>
                 <MenuBar>
                     <MenuItem onClick={() => setTab("in-room")}>In Room</MenuItem>
-                    <MenuItem onClick={() => setTab("requesting")}>Requesting</MenuItem>
+                    <MenuItem onClick={() => setTab("waiting")}>Waiting</MenuItem>
+                    <MenuItem onClick={() => setTab("invite")}>Invite</MenuItem>
                 </MenuBar>
             </div>
             {body}
