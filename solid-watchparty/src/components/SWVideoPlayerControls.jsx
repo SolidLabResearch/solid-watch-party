@@ -10,15 +10,8 @@ import EventsSolidService from '../services/events.solidservice.js';
 
 
 function SWVideoPlayerControls(
-    {watchingEvent, videoRef, isPlaying, fullscreenHandle, duration, progress}
+    {isPlaying, fullscreenHandle, duration, progress, updatePauseState, updateVideoLocation}
 ) {
-    const sessionContext = useSession();
-
-    const onPause = () => {
-        EventsSolidService.saveControlAction(sessionContext, watchingEvent?.eventUrl,
-                                             !isPlaying, videoRef.current.getCurrentTime())
-    }
-
     const onFullscreen = () => {
         if (fullscreenHandle.active) {
             fullscreenHandle.exit();
@@ -26,7 +19,6 @@ function SWVideoPlayerControls(
             fullscreenHandle.enter();
         }
     }
-
 
     const [moving, setMoving] = useState(false);
     const [at, setAt] = useState(0);
@@ -43,14 +35,14 @@ function SWVideoPlayerControls(
     }
 
     const handleSliderRelease = () => {
-        EventsSolidService.saveControlAction(sessionContext, watchingEvent?.eventUrl, true, at).then(() => {
+        updateVideoLocation(at).then(() => {
             setMoving(false);
         });
     };
 
     return (
         <div className="h-9 m-3 bg-[#000A] rounded flex px-5 z-20 justify-between drop-shadow-xl">
-            <button className="sw-btn-player my-1" onClick={onPause}>
+            <button className="sw-btn-player my-1" onClick={() => updatePauseState(!isPlaying)}>
                 {isPlaying ? <FaPause/> : <FaPlay className="rgb-2"/> }
             </button>
             <input type="range" className="slider cursor-pointer my-1 w-full mx-4 bg-[#2229] rounded-max px-2"

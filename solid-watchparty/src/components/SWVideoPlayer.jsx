@@ -149,20 +149,38 @@ function SWVideoPlayer({roomUrl}) {
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
 
+    const updatePauseState = async (isPlay) => {
+        let time = videoRef.current.getCurrentTime();
+        await EventsSolidService.saveControlAction(sessionContext, watchingEvent?.eventUrl, isPlay, time)
+    }
+
+    const updateVideoLocation = async (atLocationNumber) => {
+        await EventsSolidService.saveControlAction(sessionContext, watchingEvent?.eventUrl, true, atLocationNumber)
+    };
+
     return (
         <div className="h-full w-full relative aspect-video">
-            <FullScreen handle={fullscreenHandle} className="h-full w-full">
-                <div className="absolute bottom-0 right-0 w-full h-full z-5 flex flex-col justify-end">
-                    <SWVideoPlayerControls videoRef={videoRef} watchingEvent={watchingEvent}
-                                           isPlaying={lastPause?.isPlaying} fullscreenHandle={fullscreenHandle}
-                                           duration={duration} progress={progress} />
-                </div>
-                <ReactPlayer url={watchingEvent?.videoUrl} width="100%" height="100%" controls={false}
-                             playing={lastPause?.isPlaying} config={playerConfig} ref={videoRef}
-                             onDuration={(duration) => setDuration(duration)}
-                             onProgress={(state) => setProgress(state.playedSeconds)}
-                             playsinline={true} />
-            </FullScreen>
+            <div className="absolute bottom-0 right-0 w-full flex flex-col justify-end" >
+                <SWVideoPlayerControls videoRef={videoRef} watchingEvent={watchingEvent}
+                                       isPlaying={lastPause?.isPlaying} fullscreenHandle={fullscreenHandle}
+                                       duration={duration} progress={progress} updatePauseState={updatePauseState}
+                                       updateVideoLocation={updateVideoLocation} />
+            </div>
+            <ReactPlayer url={watchingEvent?.videoUrl} width="100%" height="100%" controls={false}
+                         playing={lastPause?.isPlaying} config={playerConfig} ref={videoRef}
+                         onDuration={(duration) => setDuration(duration)}
+                         onProgress={(state) => setProgress(state.playedSeconds)}
+                         onPlay={async () => {
+                             if (!lastPause?.isPlaying) {
+                                 await updatePauseState(true)
+                             }
+                         }}
+                         onPause={async () => {
+                             if(lastPause?.isPlaying) {
+                                 await updatePauseState(false)
+                             }
+                         }}
+                         playsinline={true} />
         </div>
     );
 }
