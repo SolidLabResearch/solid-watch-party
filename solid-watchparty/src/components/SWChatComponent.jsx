@@ -99,46 +99,46 @@ function SWChatComponent({roomUrl, joined}) {
         setInput('');
     }
 
-    let pageContent = <div/>
-        if (state.isLoading) {
-            pageContent = (
-                <div className="w-full h-full flex justify-center items-center">
-                    <div className="flex flex-col items-center">
-                        <SWLoadingIcon className="w-6 h-6 mb-3"/>
-                    </div>
+    let pageContent = <div></div>
+    if (state.isLoading) {
+        pageContent = (
+            <div className="w-full h-full flex justify-center items-center">
+                <div className="flex flex-col items-center">
+                    <SWLoadingIcon className="w-6 h-6 mb-3"/>
                 </div>
-            );
-        } else if (!state.hasAccess) {
-            pageContent = (
-                <div className="w-full h-full flex justify-center items-center">
-                    <p className="rgb-2 sw-fs-2">
-                        Failed to load chat <span className="sw-emoji">😢</span>
-                    </p>
-                </div>
-            );
-        } else {
-            pageContent = (
-                <>
-                    <SWAutoScrollDiv className="overflow-y-auto overflow-x-auto mb-2 shrink">
-                        {messages.map((message) => {
-                            const sender = userNames[message.messageBoxUrl];
-                            return (
-                                <SWMessageComponent message={{...message, sender}} key={message.key}/>
-                            );
-                        })}
-                    </SWAutoScrollDiv>
-                    <form autoComplete="off" className="grow-0 flex flex-between items-center" onSubmit={submitMessage}>
-                        <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full border-solid"
-                            onChange={(e) => setInput(parseMessage(e.target.value))}
-                            value={input} type='text'/>
-                        <button className="sw-btn hidden"></button>
-                    </form>
-                </>
-            );
-        }
+            </div>
+        );
+    } else if (!state.hasAccess) {
+        pageContent = (
+            <div className="w-full h-full flex justify-center items-center">
+                <p className="rgb-2 sw-fs-2">
+                    Failed to load chat <span className="sw-emoji">😢</span>
+                </p>
+            </div>
+        );
+    } else {
+        pageContent = (
+            <>
+                <SWAutoScrollDiv className="overflow-y-auto overflow-x-auto mb-2 shrink">
+                    {messages.map((message) => {
+                        const sender = userNames[message.messageBoxUrl];
+                        return (
+                            <SWMessageComponent message={{...message, sender}} key={message.key}/>
+                        );
+                    })}
+                </SWAutoScrollDiv>
+                <form autoComplete="off" className="grow-0 flex flex-between items-center" onSubmit={submitMessage}>
+                    <input id="msgInput" className="px-2 h-10 rgb-bg-1 sw-border w-full border-solid"
+                        onChange={(e) => setInput(parseMessage(e.target.value))}
+                        value={input} type='text'/>
+                    <button className="sw-btn hidden"></button>
+                </form>
+            </>
+        );
+    }
 
     return (
-        <div className="w-1/3 rgb-bg-2 sw-border p-3 flex flex-col justify-between">
+        <div className="w-1/3 rgb-bg-2 sw-border p-3 flex flex-col justify-between width-mobile height-40vh-mobile">
             {pageContent}
         </div>
     );

@@ -141,10 +141,9 @@ function MenuPage()
     }
 
     return (
-        <SWPageWrapper className="px-24" mustBeAuthenticated={true}>
-            <div className="flex justify-between items-baseline my-16 grid grid-cols-3">
-                <div></div>
-                <div className="sw-input h-fit flex justify-between">
+        <SWPageWrapper className="px-24 padding-mobile" mustBeAuthenticated={true}>
+            <div className="flex justify-between items-baseline my-16 grid grid-cols-2">
+                <div className="sw-input h-fit flex justify-between" style={{marginRight: 10, maxWidth: 400}}>
                         <input type="text" placeholder="Find a room" className="w-full"
                                onChange={(e) => setSearchTerm(e.target.value)}/>
                     <button className="hover:cursor-pointer">
@@ -182,7 +181,7 @@ function MenuPage()
                     <p className="sw-fw-1 rgb-1">No search results...</p>
                 </div>
             ) : (
-                <div className="flex flex-wrap gap-12 h-2/4 overflow-y-auto">
+                <div className="grid gap-12 h-2/4 overflow-y-auto justify-center" style={{gridTemplateColumns: "repeat(auto-fill, 216px)"}}>
                     { filteredRooms.map((room, i) => (
                         <SWRoomPoster key={i} room={room} onDelete={onDelete}/>
                     ))}

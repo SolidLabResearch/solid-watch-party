@@ -264,3 +264,38 @@ a:hover
     @apply from-[#000];
     @apply to-[#131419];
 }
+
+@media (max-width: 1000px) {
+    .flex-mobile {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .width-mobile {
+        width: 100%;
+    }
+
+    .height-40vh-mobile {
+        height: 40vh;
+    }
+
+    .height-mobile {
+        height: auto;
+    }
+
+    .padding-mobile {
+        padding: 0 20px;
+    }
+
+    .padding-full-mobile {
+        padding: 20px 20px;
+    }
+
+    .text-center-mobile {
+        text-align: center;
+    }
+
+    .justify-center-mobile {
+        justify-content: center;
+    }
+}

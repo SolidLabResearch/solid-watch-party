@@ -69,7 +69,7 @@ function SettingsModal({setModalIsShown, roomUrl}) {
     }, [room]);
 
     return (
-        <SWModal className="relative rgb-bg-2 h-fit p-12 z-10 w-1/2 sw-border" setIsShown={setModalIsShown}>
+        <SWModal className="relative rgb-bg-2 h-fit p-12 z-10 w-1/2 sw-border width-mobile" setIsShown={setModalIsShown}>
             <div className="mb-6 flex items-center justify-between">
                 <p className="sw-fs-2 sw-fw-1">Settings</p>
             </div>

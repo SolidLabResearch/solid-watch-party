@@ -57,7 +57,7 @@ function DeleteRoomModal({room, setIsShown, onDelete}) {
     }
 
     return (
-        <SWModal className="z-10 w-1/3" setIsShown={setIsShown}>
+        <SWModal className="z-10 w-1/3 width-mobile" setIsShown={setIsShown}>
             <div className={`h-48 rgb-bg-1 flex w-full items-center justify-between gap-6 sw-border${error ? "-error" : ""}`}>
                 { isLoading ? (
                     <div className="w-full flex justify-center">
