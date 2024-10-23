@@ -46,7 +46,6 @@ async function requestAccess(sessionContext, roomUrl) {
 
 function WatchPage() {
     const iframeRef = useRef(null);
-    const [parentHeight, setParentHeight] = useState('auto');
 
     const [joinState, setJoinState] = useState('loading');
 
@@ -108,16 +107,6 @@ function WatchPage() {
             setMessageBox(result);
         });
     }, [joinState, roomUrl, sessionContext.session, sessionContext.sessionRequestInProgress, setMessageBox]);
-
-    useEffect(() => {
-        const updateChatHeight = () => {
-            if (iframeRef.current) {
-                setParentHeight(`${iframeRef.current.clientHeight}px`);
-            }
-        }
-        updateChatHeight();
-        window.addEventListener("resize", updateChatHeight, false);
-    }, [iframeRef, joinState]);
 
     let body = <></>;
     if (joinState != 'success') {

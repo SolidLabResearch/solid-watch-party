@@ -12,7 +12,7 @@
       "@id": "urn:comunica:default:resource-watch/actors#polling",
       "@type": "ActorResourceWatchPolling",
       "mediatorHttp": { "@id": "urn:comunica:default:http/mediators#main" },
-      "defaultPollingFrequency": 1,
+      "defaultPollingFrequency": 2,
       "priority": 5
     },
     {
