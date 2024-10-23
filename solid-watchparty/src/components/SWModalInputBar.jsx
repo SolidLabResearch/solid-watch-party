@@ -59,10 +59,10 @@ function SWModalInputBar({setModalIsShown, title, f, args}) {
         : (error) ? "sw-input-error"
         : "sw-input";
     return (
-        <SWModal className="p-12 z-10 w-1/2" setIsShown={setModalIsShown}>
-            <form onSubmit={onSubmit} className={`p-24 flex w-full items-center justify-between gap-6 border ${inputStyle}`}>
+        <SWModal className="p-12 z-10 w-1/2 width-mobile" setIsShown={setModalIsShown}>
+            <form onSubmit={onSubmit} className={`p-24 flex w-full items-center justify-between gap-1 border ${inputStyle}`}>
                 <label className="w-fit sw-fw-1 rgb-1">{title}:</label>
-                <input className="flex grow" ref={inputRef} onChange={() => setError("")} disabled={isLoading} />
+                <input className="flex-auto" ref={inputRef} onChange={() => setError("")} disabled={isLoading} />
                 <button className={`sw-btn w-fit`} type="submit">
                     { isLoading ? <SWLoadingIcon className="w-4"/> : <FaChevronRight className="w-4 h-4"/> }
                 </button>

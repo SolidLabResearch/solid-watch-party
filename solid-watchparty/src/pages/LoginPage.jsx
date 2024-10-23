@@ -40,7 +40,7 @@ export default function LoginPage()
             <div className="w-full flex justify-center items-center">
                 <div className="rounded">
                     <div className="h-screen flex flex-col justify-center sw-bg-gradient-2 items-center">
-                        <div className="w-1/3">
+                        <div className="w-1/3 width-mobile padding-mobile">
                             <h1 className="sw-fs-2 sw-fw-1 sw-text-gradient">Login to solid-watchparty</h1>
                             <div className="my-6">
                                 <p className="sw-fs-4 sw-fw-1 my-2 rgb-2 flex items-center gap-2">
@@ -76,8 +76,8 @@ export default function LoginPage()
                             </div>
                         </div>
                     </div>
-                    <div className="h-screen flex justify-center">
-                        <div className="flex flex-col justify-center gap-12 w-1/3">
+                    <div className="h-screen flex justify-center height-mobile">
+                        <div className="flex flex-col justify-center gap-12 w-1/3 width-mobile padding-mobile">
                             <a name="faq"></a>
                             <h1 className="sw-fs-2 sw-fw-1">FAQ</h1>
                             <div>

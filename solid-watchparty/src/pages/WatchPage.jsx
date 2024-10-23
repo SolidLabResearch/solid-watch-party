@@ -141,35 +141,40 @@ function WatchPage() {
         );
     } else {
         body = (<>
-            <div className="absolute top-0 left-0 w-full h-full -z-10">
+            <div className="fixed top-0 left-0 w-full h-full -z-10">
                 <img src={room.thumbnailUrl} className="w-full h-full object-cover"/>
-                <div className="absolute top-0 left-0 w-full h-full bg-black opacity-50"/>
+                <div className="fixed top-0 left-0 w-full h-full bg-black opacity-50"/>
             </div>
-            <div className=" flex justify-between items-baseline px-8 py-4 gap-12 items-center">
-                <div className="flex gap-6 items-baseline">
-                    <button className="flex gap-2 items-center rgb-1 hover:rgb-2 hover:cursor-pointer"
+            <div className=" flex justify-between px-8 py-4 gap-6 items-center flex-mobile">
+                <div className="flex gap-3">
+                    <button className="flex items-center rgb-1 hover:rgb-2 hover:cursor-pointer"
                             onClick={() => navigateTo(`${config.baseDir}/menu`)}>
-                        <FaChevronLeft className="w-3 h-3"/>
-                        <p className="sw-fw-1">Back to menu</p>
+                        <FaChevronLeft className="w-4 h-4"/>
+                        <p className="sw-fw-1 text-center-mobile">Back to menu</p>
                     </button>
-                    <p className="sw-fw-1 sw-fs-3 rgb-1">{room.name}</p>
                 </div>
                 <div className="flex gap-3">
-                    <div className="rgb-2">
-                        <button className={`sw-btn sw-btn-1 flex-grow h-6 flex justify-center`} onClick={() => setModalIsShown(true)}>
+                    <p className="sw-fw-1 sw-fs-3 rgb-1">{room.name}</p>
+                </div>
+                <div className="flex gap-3 justify-end">
+                <div className="rgb-2">
+                        <button className={`sw-btn sw-btn-1 flex-grow h-6 flex justify-center`}
+                                onClick={() => setModalIsShown(true)}>
                             Start new video
                         </button>
                     </div>
-                    <button onClick={() => setPeopleModalIsShown(!peopleModalIsShown)} className="sw-btn sw-btn-2 border">
+                    <button onClick={() => setPeopleModalIsShown(!peopleModalIsShown)}
+                            className="sw-btn sw-btn-2 border">
                         <FaUserFriends className="w-6 h-6"/>
                     </button>
-                    <button onClick={() => setSettingsModalIsShown(!settingsModalIsShown)} className="sw-btn sw-btn-2 border">
+                    <button onClick={() => setSettingsModalIsShown(!settingsModalIsShown)}
+                            className="sw-btn sw-btn-2 border">
                         <FaGear className="w-6 h-6"/>
                     </button>
                 </div>
             </div>
-            <div className="w-full flex px-8 gap-4" style={{height: parentHeight}}>
-                <div className={`w-2/3 h-fit flex bg-black sw-border`} ref={iframeRef}>
+            <div className="w-full flex px-8 gap-4 flex-mobile">
+                <div className={`w-2/3 h-fit flex bg-black sw-border width-mobile`} ref={iframeRef}>
                     <SWVideoPlayer roomUrl={roomUrl}/>
                 </div>
                 <SWChatComponent roomUrl={roomUrl}/>

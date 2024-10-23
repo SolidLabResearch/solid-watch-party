@@ -85,7 +85,7 @@ Tab2.propTypes = {
 
 function StartWatchingEventModal({setModalIsShown, roomUrl}) {
     return (
-        <SWModal className="rgb-bg-2 p-12 sw-border z-10 w-1/2" setIsShown={setModalIsShown}>
+        <SWModal className="rgb-bg-2 p-12 sw-border z-10 w-1/2 width-mobile padding-full-mobile" setIsShown={setModalIsShown}>
             <p className="sw-fs-2 sw-fw-1 my-4">Start new movie/clip</p>
             <div className="flex w-full gap-3">
                 <Tab2 className="w-full rgb-bg-1 p-4 sw-border" setModalIsShown={setModalIsShown} roomUrl={roomUrl}/>
