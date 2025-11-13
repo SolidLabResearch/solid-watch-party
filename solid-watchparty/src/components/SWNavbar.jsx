@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSession } from "@inrupt/solid-ui-react";
+import { useSession } from "../hooks/useSession";
 import { FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -48,7 +48,7 @@ function SWNavbar()
         <div className="w-full flex p-8">
             <div className="flex basis-1/2">
                 <p className="flex sw-fw-1 justify-center items-center sw-text-gradient">
-                    solid-watchparty
+                    watchparty
                 </p>
             </div>
             <div className="flex items-center basis-2/2 ml-auto">

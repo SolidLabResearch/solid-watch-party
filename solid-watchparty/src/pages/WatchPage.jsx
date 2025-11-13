@@ -1,6 +1,6 @@
 /* library imports */
 import { useEffect, useState, useRef, useContext } from 'react';
-import { useSession, } from "@inrupt/solid-ui-react";
+import { useSession } from '../hooks/useSession';
 import { useSearchParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { FaUserFriends } from "react-icons/fa";
@@ -45,8 +45,6 @@ async function requestAccess(sessionContext, roomUrl) {
 }
 
 function WatchPage() {
-    const iframeRef = useRef(null);
-
     const [joinState, setJoinState] = useState('loading');
 
     const [peopleModalIsShown, setPeopleModalIsShown] = useState(false);
@@ -56,6 +54,10 @@ function WatchPage() {
     const sessionContext = useSession();
     const [,setMessageBox] = useContext(MessageBoxContext);
     const [room, setRoom] = useState({});
+
+    // Authenticated background thumbnail (like menu posters)
+    const [bgImageSrc, setBgImageSrc] = useState(null);
+    const bgObjectUrlRef = useRef(null);
 
     /* TODO(Elias): Add error handling, what if there is no parameter, or a wrong parameter */
     const [searchParams] = useSearchParams();
@@ -108,8 +110,42 @@ function WatchPage() {
         });
     }, [joinState, roomUrl, sessionContext.session, sessionContext.sessionRequestInProgress, setMessageBox]);
 
+    useEffect(() => {
+        // Load / refresh authenticated thumbnail once we have room info
+        if (joinState !== 'success') return;
+        // Cleanup previous URL first
+        if (bgObjectUrlRef.current) {
+            URL.revokeObjectURL(bgObjectUrlRef.current);
+            bgObjectUrlRef.current = null;
+        }
+        setBgImageSrc(null);
+        const url = room.thumbnailUrl;
+        if (!url) return;
+        let cancelled = false;
+        const controller = new AbortController();
+        (async () => {
+            try {
+                const resp = await sessionContext.fetch(url, { signal: controller.signal });
+                if (!resp.ok) return; // silently ignore
+                const blob = await resp.blob();
+                if (cancelled) return;
+                const objectUrl = URL.createObjectURL(blob);
+                bgObjectUrlRef.current = objectUrl;
+                setBgImageSrc(objectUrl);
+            } catch (_) { /* swallow */ }
+        })();
+        return () => {
+            cancelled = true;
+            controller.abort();
+            if (bgObjectUrlRef.current) {
+                URL.revokeObjectURL(bgObjectUrlRef.current);
+                bgObjectUrlRef.current = null;
+            }
+        };
+    }, [joinState, room.thumbnailUrl, sessionContext]);
+
     let body = <></>;
-    if (joinState != 'success') {
+    if (joinState !== 'success') {
         body = (
             <div className="flex w-full h-full items-center justify-center gap-3">
                 {joinState === 'error' && (
@@ -131,13 +167,15 @@ function WatchPage() {
     } else {
         body = (<>
             <div className="fixed top-0 left-0 w-full h-full -z-10">
-                <img src={room.thumbnailUrl} className="w-full h-full object-cover"/>
+                {bgImageSrc && (
+                    <img src={bgImageSrc} className="w-full h-full object-cover" alt="room background" />
+                )}
                 <div className="fixed top-0 left-0 w-full h-full bg-black opacity-50"/>
             </div>
             <div className=" flex justify-between px-8 py-4 gap-6 items-center flex-mobile">
                 <div className="flex gap-3">
                     <button className="flex items-center rgb-1 hover:rgb-2 hover:cursor-pointer"
-                            onClick={() => navigateTo(`${config.baseDir}/menu`)}>
+                            onClick={() => navigateTo(config.baseDir === '/' ? '/menu' : `${config.baseDir}/menu`)}>
                         <FaChevronLeft className="w-4 h-4"/>
                         <p className="sw-fw-1 text-center-mobile">Back to menu</p>
                     </button>
@@ -162,11 +200,17 @@ function WatchPage() {
                     </button>
                 </div>
             </div>
-            <div className="w-full flex px-8 gap-4 flex-mobile">
-                <div className={`w-2/3 h-fit flex bg-black sw-border width-mobile`} ref={iframeRef}>
-                    <SWVideoPlayer roomUrl={roomUrl}/>
+            <div className="w-full px-8">
+                <div className="aspect-[8/3] height-mobile">
+                    <div className="flex h-full gap-4 flex-mobile items-stretch">
+                        <div className="w-2/3 h-full bg-black sw-border overflow-hidden width-mobile">
+                            <SWVideoPlayer roomUrl={roomUrl}/>
+                        </div>
+                        <div className="w-1/3 h-full rgb-bg-2 sw-border p-3 flex flex-col justify-between width-mobile min-h-0 overflow-hidden">
+                            <SWChatComponent roomUrl={roomUrl}/>
+                        </div>
+                    </div>
                 </div>
-                <SWChatComponent roomUrl={roomUrl}/>
             </div>
             { settingsModalIsShown && (
                 <SettingsModal setModalIsShown={setSettingsModalIsShown} roomUrl={roomUrl}/>

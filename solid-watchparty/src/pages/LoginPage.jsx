@@ -2,25 +2,18 @@
 import { useState, } from 'react';
 import { useLocation } from 'react-router-dom';
 import { FaChevronLeft, FaQuestionCircle } from "react-icons/fa";
-import { LoginButton } from '@inrupt/solid-ui-react';
-import { FaChevronRight } from 'react-icons/fa';
 
 /* Component imports */
-import SWPageWrapper from '../components/SWPageWrapper'
 import SWLoginButton from '../components/SWLoginButton'
 
 /* config imports */
 import config from '../../config';
 
-const authOptions = {
-    clientName:  "solid-watchparty",
-};
-
 export default function LoginPage()
 {
-    const [oidcIssuer, setOidcIssuer] = useState("https://pod.playground.solidlab.be/");
+    const [oidcIssuer, setOidcIssuer] = useState("http://localhost:3000/");
     const currentLocation = useLocation();
-    const redirectLocation = (currentLocation.state?.from || `${config.baseDir}/menu`);
+    const redirectLocation = (currentLocation.state?.from || `${config.baseDir === '/' ? '' : config.baseDir}/menu`);
     const [error, setError] = useState("");
 
     const handleLoginError = (e) => {
@@ -33,7 +26,7 @@ export default function LoginPage()
 
     return (
         <div className="w-full h-full">
-            <a href={config.baseDir + '/'} className="flex gap-2 items-center fixed top-12 left-12">
+            <a href={config.baseDir === '/' ? '/' : (config.baseDir + '/')} className="flex gap-2 items-center fixed top-12 left-12">
                 <FaChevronLeft className="w-3 h-3 rgb-2"/>
                 <p className="sw-fw-1">Home</p>
             </a>
@@ -41,10 +34,10 @@ export default function LoginPage()
                 <div className="rounded">
                     <div className="h-screen flex flex-col justify-center sw-bg-gradient-2 items-center">
                         <div className="w-1/3 width-mobile padding-mobile">
-                            <h1 className="sw-fs-2 sw-fw-1 sw-text-gradient">Login to solid-watchparty</h1>
+                            <h1 className="sw-fs-2 sw-fw-1 sw-text-gradient">Login to watchparty</h1>
                             <div className="my-6">
                                 <p className="sw-fs-4 sw-fw-1 my-2 rgb-2 flex items-center gap-2">
-                                    Your solid pod provider
+                                    Your OIDC issuer
                                     <a href="#faq">
                                         <FaQuestionCircle className="hover:rgb-1"/>
                                     </a>
@@ -61,14 +54,11 @@ export default function LoginPage()
                                             setOidcIssuer(e.target.value);
                                             setError("");
                                         }}/>
-                                    <LoginButton authOptions={authOptions}
+                                    <SWLoginButton
                                         oidcIssuer={oidcIssuer}
-                                        redirectUrl={window.location.protocol + '//' + window.location.host + redirectLocation}
-                                        onError={handleLoginError}>
-                                        <button id="loginButton" className={"sw-btn w-fit"}>
-                                            <FaChevronRight className="w-4 h-4 "/>
-                                        </button>
-                                    </LoginButton>
+                                        redirectUrl={window.location.protocol + '//' + window.location.host + (redirectLocation.startsWith('/') ? redirectLocation : '/' + redirectLocation)}
+                                        setError={setError}
+                                    />
                                 </div>
                                 <div className="h-12 mt-3 rgb-alert sw-fw-1">
                                     <label>{error}</label>

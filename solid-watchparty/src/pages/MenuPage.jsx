@@ -1,5 +1,5 @@
 /* libary imports */
-import { useSession, } from '@inrupt/solid-ui-react';
+import { useSession, } from '../hooks/useSession';
 import { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMagnifyingGlass } from "react-icons/fa6";
@@ -35,9 +35,19 @@ async function joinRoom({input, setError, navigateTo}) {
         {run: validateIsUrl, message: "Provide a valid URL!"},
         {run: (s) => s.includes(config.baseDir), message: "Provide a valid URL!"}
     ])
-    input = input.split(`${config.baseDir}/`)[1];
+    // Normalize extraction of internal path without creating double slashes
+    if (config.baseDir === '/') {
+        // Remove origin if present, then leading slashes
+        try {
+            const u = new URL(input);
+            input = u.pathname + u.search;
+        } catch {_ /* keep original */ }
+        input = input.replace(/^\/+/, '');
+    } else if (input.includes(config.baseDir + '/')) {
+        input = input.split(config.baseDir + '/')[1];
+    }
     if (!errors) {
-        navigateTo(`${config.baseDir}/${input}`);
+        navigateTo(config.baseDir === '/' ? ('/' + input) : (config.baseDir + '/' + input));
     }
     return errors;
 }
@@ -71,7 +81,7 @@ async function createRoom({input, setError, sessionContext, setMessageBox, navig
             return "Something went wrong, try again";
         }
 
-        navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(roomResult.roomUrl)}`);
+        navigateTo(config.baseDir === '/' ? `/watch?roomUrl=${encodeURIComponent(roomResult.roomUrl)}` : `${config.baseDir}/watch?roomUrl=${encodeURIComponent(roomResult.roomUrl)}`);
     }
     return errors;
 }

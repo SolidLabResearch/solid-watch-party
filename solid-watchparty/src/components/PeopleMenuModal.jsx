@@ -1,6 +1,6 @@
 /* library imports */
 import { useEffect, useState, useContext } from 'react';
-import { useSession, } from "@inrupt/solid-ui-react";
+import { useSession } from "../hooks/useSession";
 import { FaUserCircle, FaCheck } from "react-icons/fa";
 import propTypes from 'prop-types';
 import QRCode from "react-qr-code";

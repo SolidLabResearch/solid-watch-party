@@ -1,0 +1,18 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/solid/oidc-context.jsonld",
+    "https://www.w3.org/ns/solid/oidc-metadata.jsonld"
+  ],
+  "client_id": "http://localhost:8080/client.jsonld",
+  "client_name": "watchparty",
+  "application_type": "web",
+  "redirect_uris": [
+    "http://localhost:8080/menu",
+    "http://127.0.0.1:8080/menu"
+  ],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none",
+  "scope": "openid webid offline_access"
+}
+

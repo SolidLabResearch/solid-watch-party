@@ -1,6 +1,6 @@
 /* library imports */
 import { useState, useEffect, useRef } from 'react';
-import { useSession, } from "@inrupt/solid-ui-react";
+import { useSession } from '../hooks/useSession';
 import { FullScreen, useFullScreenHandle } from 'react-full-screen';
 import { getUrl, getUrlAll } from "@inrupt/solid-client";
 import PropTypes from 'prop-types';
@@ -159,7 +159,7 @@ function SWVideoPlayer({roomUrl}) {
     };
 
     return (
-        <div className="h-full w-full relative aspect-video">
+        <div className="w-full relative aspect-video">
             <div className="absolute bottom-0 right-0 w-full flex flex-col justify-end" >
                 <SWVideoPlayerControls videoRef={videoRef} watchingEvent={watchingEvent}
                                        isPlaying={lastPause?.isPlaying} fullscreenHandle={fullscreenHandle}

@@ -1,9 +1,7 @@
 /* libary imports */
-import { useSession, } from '@inrupt/solid-ui-react';
-import { useState, useContext, useEffect, useRef } from 'react';
+import { useSession, } from '../hooks/useSession';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaMagnifyingGlass } from "react-icons/fa6";
-import { FaChevronRight } from 'react-icons/fa';
 import { MdHideImage } from "react-icons/md";
 import { FaDeleteLeft } from "react-icons/fa6";
 
@@ -86,21 +84,64 @@ function RoomPoster({room, onDelete}) {
         return null;
     }
 
-    const { name, lastActive, nMembers, isOrganizer, isPlaying, lastMovie, thumbnailUrl } = room;
+    const { name, nMembers, isOrganizer, thumbnailUrl } = room;
     const [deleteModalIsShown, setDeleteModalIsShown] = useState(false);
     const navigateTo = useNavigate();
+
+    // Use authenticated fetch to retrieve thumbnails from Pods
+    const sessionContext = useSession();
+    const [imageSrc, setImageSrc] = useState(null);
+    const objectUrlRef = useRef(null);
+
+    useEffect(() => {
+        let isCancelled = false;
+        const controller = new AbortController();
+        async function loadThumbnail() {
+            // Cleanup previous object URL
+            if (objectUrlRef.current) {
+                URL.revokeObjectURL(objectUrlRef.current);
+                objectUrlRef.current = null;
+            }
+            setImageSrc(null);
+            if (!thumbnailUrl) return;
+            try {
+                const resp = await sessionContext.fetch(thumbnailUrl, { signal: controller.signal });
+                if (!resp.ok) return;
+                const blob = await resp.blob();
+                if (isCancelled) return;
+                const url = URL.createObjectURL(blob);
+                objectUrlRef.current = url;
+                setImageSrc(url);
+            } catch (e) {
+                // swallow errors (e.g., 401) so component still renders
+            }
+        }
+        loadThumbnail();
+        return () => {
+            isCancelled = true;
+            controller.abort();
+            if (objectUrlRef.current) {
+                URL.revokeObjectURL(objectUrlRef.current);
+                objectUrlRef.current = null;
+            }
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [thumbnailUrl, sessionContext]);
 
     return (
         <div className={
             "sw-border relative flex-col justify-center items-center aspect-[27/39]"
-                + " h-96 shadow-lg rounded bg-black hover:cursor-pointer active:rgb-bg-1"
+                + " h-96 shadow-lg rounded bg-black hover:cursor-pointer active:rgb-bg-1 overflow-hidden"
             }>
             {/* there needs to be a name, last-active date, thumbnail, # members and movie title */}
             <button className="absolute h-full w-full z-10 bg-black opacity-0 hover:opacity-30 transition-opacity duration-200"
-                    onClick={() => navigateTo(`${config.baseDir}/watch?roomUrl=${encodeURIComponent(room.roomUrl)}`)}/>
-            <div className="h-full w-full">
-                {thumbnailUrl ? (
-                    <img className="absolute w-full h-full object-cover" src={thumbnailUrl} alt="room thumbnail"/>
+                    onClick={() => {
+                        const watchPath = config.baseDir === '/' ? '/watch' : `${config.baseDir}/watch`;
+                        navigateTo(`${watchPath}?roomUrl=${encodeURIComponent(room.roomUrl)}`);
+                    }}/>
+            <div className="h-full w-full rounded-lg overflow-hidden">
+                {imageSrc ? (
+                    <img className="absolute w-full h-full object-cover" src={imageSrc} alt="room thumbnail"/>
                 ) : (
                     <div className={`absolute h-full w-full bg-cover rounded-lg flex items-center justify-center`}>
                         <MdHideImage className="absolute h-8 w-8 rgb-2"/>

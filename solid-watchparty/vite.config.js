@@ -9,4 +9,13 @@ export default defineConfig({
   build: {
     outDir: config.outDir
   },
+  server: {
+    host: true, // 0.0.0.0
+    port: 8080,
+    strictPort: true,
+    watch: {
+      usePolling: true,
+      interval: 200
+    }
+  }
 })

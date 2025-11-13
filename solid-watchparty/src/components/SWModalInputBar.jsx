@@ -1,5 +1,4 @@
 /* libary imports */
-import { useSession, } from '@inrupt/solid-ui-react';
 import { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMagnifyingGlass } from "react-icons/fa6";

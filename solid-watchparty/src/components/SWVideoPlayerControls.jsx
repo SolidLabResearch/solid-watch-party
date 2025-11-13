@@ -1,6 +1,5 @@
 /* library imports */
 import { useState, useEffect } from 'react';
-import { useSession, } from "@inrupt/solid-ui-react";
 import { FaPlay, FaPause, FaExpandAlt } from "react-icons/fa";
 import { FiMinimize2 } from "react-icons/fi";
 import PropTypes from 'prop-types';

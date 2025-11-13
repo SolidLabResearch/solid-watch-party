@@ -1,6 +1,6 @@
 /* library imports */
 import { useState, useEffect, useContext } from 'react';
-import { useSession, } from "@inrupt/solid-ui-react";
+import { useSession } from "../hooks/useSession";
 import PropTypes from 'prop-types';
 
 /* component imports */
@@ -119,7 +119,7 @@ function SWChatComponent({roomUrl, joined}) {
     } else {
         pageContent = (
             <>
-                <SWAutoScrollDiv className="overflow-y-auto overflow-x-auto mb-2 shrink">
+                <SWAutoScrollDiv className="flex-1 min-h-0 overflow-y-auto overflow-x-auto mb-2">
                     {messages.map((message) => {
                         const sender = userNames[message.messageBoxUrl];
                         return (
@@ -138,9 +138,9 @@ function SWChatComponent({roomUrl, joined}) {
     }
 
     return (
-        <div className="w-1/3 rgb-bg-2 sw-border p-3 flex flex-col justify-between width-mobile height-40vh-mobile">
+        <>
             {pageContent}
-        </div>
+        </>
     );
 }
 

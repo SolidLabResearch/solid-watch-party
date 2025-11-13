@@ -1,6 +1,6 @@
 /* libary imports */
 import { useEffect } from 'react';
-import { useSession } from "@inrupt/solid-ui-react";
+import { useSession } from "../hooks/useSession";
 import { useNavigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 

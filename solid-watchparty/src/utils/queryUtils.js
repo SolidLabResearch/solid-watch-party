@@ -10,3 +10,4 @@ export async function sprql_patch(sessionContext, endpoint, query) {
     return result;
 }
 
+
