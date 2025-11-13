@@ -1,0 +1,17 @@
+# syntax=docker/dockerfile:1
+
+FROM node:20
+
+# Install build tools for native deps (e.g., node-gyp, microtime)
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+  && rm -rf /var/lib/apt/lists/*
+
+# Set workdir to the app folder inside the repo
+WORKDIR /app/solid-watchparty
+
+EXPOSE 8080
+CMD ["npm", "run", "dev", "--", "--port", "8080"]

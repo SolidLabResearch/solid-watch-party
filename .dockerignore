@@ -1,0 +1,12 @@
+# Ignore git, local modules, and build output
+.git
+.gitignore
+node_modules
+npm-debug.log*
+yarn-error.log*
+
+# Only needed from subfolder
+solid-watchparty/node_modules
+solid-watchparty/dist
+solid-watchparty/.vite
+
