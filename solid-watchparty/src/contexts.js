@@ -7,7 +7,6 @@ export const SessionContext = createContext({
     sessionRequestInProgress: false,
     fetch: (...args) => fetch(...args),
     auth: undefined,
-    // Aggregator toggle (default false)
     aggregatorEnabled: false,
     setAggregatorEnabled: () => {},
 });

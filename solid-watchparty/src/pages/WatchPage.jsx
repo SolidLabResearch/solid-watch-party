@@ -46,6 +46,7 @@ async function requestAccess(sessionContext, roomUrl) {
 
 function WatchPage() {
     const [joinState, setJoinState] = useState('loading');
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const [peopleModalIsShown, setPeopleModalIsShown] = useState(false);
     const [settingsModalIsShown, setSettingsModalIsShown] = useState(false);
@@ -65,6 +66,13 @@ function WatchPage() {
 
     const navigateTo = useNavigate();
 
+    // Global refresh trigger (e.g., after clearing UMA/aggregator cache)
+    useEffect(() => {
+        const handler = () => setRefreshKey((k) => k + 1);
+        window.addEventListener('app:refresh', handler);
+        return () => window.removeEventListener('app:refresh', handler);
+    }, []);
+
     useEffect(() => {
         if (joinState !== 'success') {
             return;
@@ -76,7 +84,7 @@ function WatchPage() {
             };
             setRoom(room);
         });
-    }, [roomUrl, sessionContext.session.requestInProgress, sessionContext.session, joinState]);
+    }, [roomUrl, sessionContext.session.requestInProgress, sessionContext.session, joinState, refreshKey]);
 
 
     useInterval(async () => {
@@ -99,7 +107,7 @@ function WatchPage() {
                 setJoinState((access && !access.error) ? 'requested' : 'error');
             });
         });
-    }, [sessionContext.sessionRequestInProgress, sessionContext.session, roomUrl, setMessageBox, joinState]);
+    }, [sessionContext.sessionRequestInProgress, sessionContext.session, roomUrl, setMessageBox, joinState, refreshKey]);
 
     useEffect(() => {
         if (!inSession(sessionContext) || sessionContext.sessionRequestInProgress || (joinState !== 'success')) {
@@ -108,7 +116,7 @@ function WatchPage() {
         MessageSolidService.getMessageBox(sessionContext, roomUrl).then((result) => {
             setMessageBox(result);
         });
-    }, [joinState, roomUrl, sessionContext.session, sessionContext.sessionRequestInProgress, setMessageBox]);
+    }, [joinState, roomUrl, sessionContext.session, sessionContext.sessionRequestInProgress, setMessageBox, refreshKey]);
 
     useEffect(() => {
         // Load / refresh authenticated thumbnail once we have room info
@@ -142,7 +150,7 @@ function WatchPage() {
                 bgObjectUrlRef.current = null;
             }
         };
-    }, [joinState, room.thumbnailUrl, sessionContext]);
+    }, [joinState, room.thumbnailUrl, sessionContext, refreshKey]);
 
     let body = <></>;
     if (joinState !== 'success') {
@@ -190,6 +198,9 @@ function WatchPage() {
                             Start new video
                         </button>
                     </div>
+                    <button type="button" className="sw-btn sw-btn-2 border" onClick={() => setRefreshKey((k) => k + 1)}>
+                        Refresh
+                    </button>
                     <button onClick={() => setPeopleModalIsShown(!peopleModalIsShown)}
                             className="sw-btn sw-btn-2 border">
                         <FaUserFriends className="w-6 h-6"/>

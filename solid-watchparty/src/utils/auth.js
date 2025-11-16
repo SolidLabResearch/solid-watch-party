@@ -1,8 +1,5 @@
 export class Auth {
     OidcAccessToken;
-    activeRequests = 0;
-    maxConcurrentRequests = 100;
-    requestQueue = [];
     OidcToken;
     OidcRefreshToken;
     OidcTokenExpiry;
@@ -166,181 +163,206 @@ export class Auth {
         return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     }
 
-    async createClaim(ticket) {
-        const payload = {
-            grant_type: 'urn:ietf:params:oauth:grant-type:uma-ticket',
-            ticket,
-        };
-        if (this.OidcAccessToken) {
-            payload.claim_token = this.OidcAccessToken;
-            payload.claim_token_format = 'http://openid.net/specs/openid-connect-core-1_0.html#IDToken';
+    async fetchAccessToken(tokenEndpoint, request, claims) {
+        // Reduced internal logging; track claims used for concise summary
+        let content;
+        let claimsUsed = claims ? [...claims] : undefined;
+        if (claims) {
+            content = { grant_type: 'urn:ietf:params:oauth:grant-type:uma-ticket', claim_tokens: claims };
+        } else {
+            content = {
+                grant_type: 'urn:ietf:params:oauth:grant-type:uma-ticket',
+                claim_token: this.OidcAccessToken,
+                claim_token_format: 'http://openid.net/specs/openid-connect-core-1_0.html#IDToken',
+            };
+            claimsUsed = [{ claim_token: this.OidcAccessToken, claim_token_format: 'http://openid.net/specs/openid-connect-core-1_0.html#IDToken' }];
         }
-        return payload;
-    }
+        if (typeof request === 'string') content.ticket = request; else content.permissions = request;
 
-    async acquireRequestSlot() {
-        return new Promise((resolve) => {
-            if (this.activeRequests < this.maxConcurrentRequests) {
-                this.activeRequests++;
-                resolve();
-            } else {
-                this.requestQueue.push(() => {
-                    this.activeRequests++;
-                    resolve();
-                });
-            }
+        const asRequestResponse = await fetch(tokenEndpoint, {
+            method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(content)
         });
+
+        if (asRequestResponse.status === 403) {
+            let asRequestResponseJson;
+            try { asRequestResponseJson = await asRequestResponse.json(); } catch { return { error: new Error('403 without JSON body'), token: undefined, tokenType: undefined, expiresIn: undefined, claimsUsed }; }
+            try {
+                claimsUsed = await this.gatherClaims(claimsUsed || [], asRequestResponseJson.required_claims);
+            } catch (e) {
+                return { error: e, token: undefined, tokenType: undefined, expiresIn: undefined, claimsUsed };
+            }
+            return this.fetchAccessToken(tokenEndpoint, asRequestResponseJson.ticket, claimsUsed);
+        }
+
+        if (asRequestResponse.status !== 200) {
+            const text = await asRequestResponse.text();
+            return { error: new Error(`Failed to fetch access token, error: ${text}`), token: undefined, tokenType: undefined, expiresIn: undefined, claimsUsed };
+        }
+
+        const asResponse = await asRequestResponse.json();
+        return { token: asResponse.access_token, tokenType: asResponse.token_type, expiresIn: asResponse.expires_in, error: undefined, claimsUsed };
     }
 
-    releaseRequestSlot() {
-        this.activeRequests--;
-        if (this.requestQueue.length > 0) {
-            const nextRequest = this.requestQueue.shift();
-            if (nextRequest) {
-                nextRequest();
+    async gatherClaims(claims, requiredClaims) {
+        for (const requiredClaim of requiredClaims) {
+            switch (requiredClaim['claim_token_format']) {
+                case 'http://openid.net/specs/openid-connect-core-1_0.html#IDToken':
+                    claims.push({ claim_token: await this.createClaimToken(), claim_token_format: 'http://openid.net/specs/openid-connect-core-1_0.html#IDToken' });
+                    break;
+                case 'urn:ietf:params:oauth:token-type:access_token':
+                    const { token, error } = await this.fetchAccessToken(
+                        requiredClaim.details.issuer + '/token',
+                        [{ resource_id: requiredClaim.details.resource_id, resource_scopes: requiredClaim.details.resource_scopes }]
+                    );
+                    if (error) throw error;
+                    claims.push({ claim_token: token, claim_token_format: 'urn:ietf:params:oauth:token-type:access_token' });
+                    break;
+                default:
+                    throw new Error(`Unsupported claim token format: ${requiredClaim['claim_token_format']}`);
             }
         }
+        return claims;
     }
 
-    async throttledFetch(input, init) {
-        await this.acquireRequestSlot();
-        try {
-            return await fetch(input, init);
-        } finally {
-            this.releaseRequestSlot();
-        }
-    }
-
+    // UMA token endpoint discovery
     async getTokenEndpoint(asUri) {
-        const uma2ConfigResponse = await this.throttledFetch(`${asUri}/.well-known/uma2-configuration`);
-        if (!uma2ConfigResponse.ok) {
+        const resp = await fetch(`${asUri}/.well-known/uma2-configuration`);
+        if (!resp.ok) { return undefined; }
+        try {
+            const uma2 = await resp.json();
+            return uma2.token_endpoint;
+        } catch {
             return undefined;
         }
-        const uma2Config = await uma2ConfigResponse.json();
-        return uma2Config.token_endpoint;
     }
 
-    buildUmaTokenKey(resourceUrl, method = 'GET') {
-        return `${method.toUpperCase()} ${resourceUrl}`;
-    }
-
+    // Token cache helpers
+    buildUmaTokenKey(resourceUrl, method = 'GET') { return `${method.toUpperCase()} ${resourceUrl}`; }
     hydrateUmaTokens() {
         try {
             const raw = sessionStorage.getItem('uma_permission_tokens');
-            if (!raw) return;
+            if (!raw) { return; }
             const parsed = JSON.parse(raw);
             const now = Date.now();
+            let kept = 0, skipped = 0;
             for (const [key, entry] of Object.entries(parsed)) {
                 if (entry && entry.access_token) {
-                    if (entry.expires_at && now > entry.expires_at) {
-                        continue; // skip expired
-                    }
-                    this.umaPermissionTokens.set(key, {
-                        token_type: entry.token_type,
-                        access_token: entry.access_token,
-                        expires_at: entry.expires_at
-                    });
+                    if (entry.expires_at && now > entry.expires_at) { skipped++; continue; }
+                    this.umaPermissionTokens.set(key, entry); kept++;
                 }
             }
-            // Persist again to drop any expired entries removed during hydration
             this.persistUmaTokens();
-        } catch { /* ignore parse errors */ }
+        } catch {
+        }
     }
-
     persistUmaTokens() {
         const obj = {};
-        for (const [key, entry] of this.umaPermissionTokens.entries()) {
-            obj[key] = entry;
-        }
-        try { sessionStorage.setItem('uma_permission_tokens', JSON.stringify(obj)); } catch { /* storage may fail */ }
+        for (const [key, entry] of this.umaPermissionTokens.entries()) obj[key] = entry;
+        try { sessionStorage.setItem('uma_permission_tokens', JSON.stringify(obj)); } catch { /* ignore */ }
     }
-
-    getStoredUmaToken(resourceUrl, method = 'GET') {
-        const key = this.buildUmaTokenKey(resourceUrl, method);
-        const entry = this.umaPermissionTokens.get(key);
-        if (!entry) return undefined;
-        if (entry.expires_at && Date.now() > entry.expires_at) {
-            this.umaPermissionTokens.delete(key);
-            this.persistUmaTokens();
-            return undefined;
-        }
+    getStoredUmaToken(resourceUrl, method='GET') {
+        const key = this.buildUmaTokenKey(resourceUrl, method); const entry = this.umaPermissionTokens.get(key);
+        if (!entry) return undefined; if (entry.expires_at && Date.now() > entry.expires_at) { this.umaPermissionTokens.delete(key); this.persistUmaTokens(); return undefined; }
         return entry;
     }
-
     storeUmaToken(resourceUrl, method, token) {
         const key = this.buildUmaTokenKey(resourceUrl, method);
-        const expires_at = token.expires_in ? Date.now() + (token.expires_in * 1000) : undefined;
-        this.umaPermissionTokens.set(key, {
-            token_type: token.token_type,
-            access_token: token.access_token,
-            expires_at
-        });
+        const expires_at = token.expires_in ? Date.now() + token.expires_in * 1000 : undefined;
+        this.umaPermissionTokens.set(key, { token_type: token.token_type, access_token: token.access_token, expires_at });
         this.persistUmaTokens();
     }
 
     async fetch(input, init) {
         const resourceUrl = typeof input === 'string' ? input : (input instanceof URL ? input.toString() : input.url);
         const method = init?.method || 'GET';
-
-        // Pre-attach UMA permission token if we already have a valid one for this resource+method
         const existingUmaToken = this.getStoredUmaToken(resourceUrl, method);
+        let usedCached = false;
+
         if (existingUmaToken) {
-            init = init || {};
-            init.headers = { ...(init.headers || {}), Authorization: `${existingUmaToken.token_type} ${existingUmaToken.access_token}` };
+            usedCached = true;
+            init = init || {}; init.headers = { ...(init.headers || {}), Authorization: `${existingUmaToken.token_type} ${existingUmaToken.access_token}` };
         }
 
-        let response = await this.throttledFetch(input, init);
+        let response = await fetch(input, init);
         if (response.status !== 401) {
+            if (usedCached) {
+                console.info(`retrieved ${resourceUrl} with cached token, status ${response.status}`);
+            } else {
+                console.info(`retrieved ${resourceUrl} without any tokens, status ${response.status}`);
+            }
             return response;
         }
-        // If we got a 401 while using a stored UMA token, discard it and retry without it once.
-        if (existingUmaToken) {
+
+        // If cached token failed, retry without it
+        if (usedCached) {
             this.umaPermissionTokens.delete(this.buildUmaTokenKey(resourceUrl, method));
-            // Remove Authorization header and retry once to obtain a new ticket.
             const retryInit = { ...(init || {}) };
-            if (retryInit.headers) {
-                const { Authorization, authorization, ...rest } = retryInit.headers; // strip any casing
-                retryInit.headers = rest;
+            if (retryInit.headers) { const { Authorization, authorization, ...rest } = retryInit.headers; retryInit.headers = rest; }
+            const retryResponse = await fetch(input, retryInit);
+            if (retryResponse.status !== 401) {
+                console.info(`retrieved ${resourceUrl} without any tokens, status ${retryResponse.status}`);
+                return retryResponse;
             }
-            response = await this.throttledFetch(input, retryInit);
-            if (response.status !== 401) {
-                return response;
-            }
+            response = retryResponse;
         }
 
         const wwwAuthenticateHeader = response.headers.get('WWW-Authenticate');
         if (!wwwAuthenticateHeader) {
-            return response; // Possibly non-UMA 401; respect suppression flag
-        }
-
-        // Parse UMA header: UMA as_uri="...", ticket="..." [, ...]
-        const { as_uri, ticket } = Object.fromEntries(wwwAuthenticateHeader.replace(/^UMA /, '').split(', ').map(
-            param => param.split('=').map(s => s.replace(/"/g, ''))
-        ));
-
-        const tokenEndpoint = await this.getTokenEndpoint(as_uri);
-        if (!tokenEndpoint) {
+            console.info(`retrieved ${resourceUrl} without any tokens, status ${response.status}`);
             return response;
         }
-
-        const asRequestResponse = await this.throttledFetch(tokenEndpoint, {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json'
-            },
-            body: JSON.stringify(await this.createClaim(ticket))
-        });
-        if (!asRequestResponse.ok) {
-            return asRequestResponse;
+        const parsed = Object.fromEntries(wwwAuthenticateHeader.replace(/^UMA /, '').split(', ').map(p => p.split('=').map(s => s.replace(/"/g, ''))));
+        const { as_uri, ticket } = parsed;
+        const tokenEndpoint = await this.getTokenEndpoint(as_uri);
+        if (!tokenEndpoint) {
+            console.info(`retrieved ${resourceUrl} without any tokens, status ${response.status}`);
+            return response;
         }
+        const { token, tokenType, expiresIn, error, claimsUsed } = await this.fetchAccessToken(tokenEndpoint, ticket);
+        if (error || !token || !tokenType) {
+            console.info(`retrieved ${resourceUrl} without any tokens, status ${response.status}`);
+            return response;
+        }
+        this.storeUmaToken(resourceUrl, method, { token_type: tokenType, access_token: token, expires_in: expiresIn });
+        const finalInit = init || {}; finalInit.headers = { ...(finalInit.headers || {}), Authorization: `${tokenType} ${token}` };
+        const finalResponse = await fetch(input, finalInit);
+        console.info(`retrieved ${resourceUrl} with claims, status ${finalResponse.status}`, claimsUsed);
+        return finalResponse;
+    }
 
-        const asResponse = await asRequestResponse.json();
-        this.storeUmaToken(resourceUrl, method, asResponse);
+    clearUmaCache() {
+        try {
+            this.umaPermissionTokens.clear();
+            sessionStorage.removeItem('uma_permission_tokens');
+        } catch { /* ignore */ }
+    }
 
-        // Attach the freshly obtained UMA permission token and retry the original request
-        const finalInit = init || {};
-        finalInit.headers = { ...(finalInit.headers || {}), Authorization: `${asResponse.token_type} ${asResponse.access_token}` };
-        return await this.throttledFetch(input, finalInit);
+    clearOidcTokens() {
+        try {
+            if (this.OidcRefreshTimerId) {
+                clearTimeout(this.OidcRefreshTimerId);
+                this.OidcRefreshTimerId = undefined;
+            }
+            this.OidcAccessToken = undefined;
+            this.OidcToken = undefined;
+            this.OidcRefreshToken = undefined;
+            this.OidcTokenExpiry = undefined;
+            this.WebId = undefined;
+            // Reduced verbosity: no info log
+        } catch { /* ignore */ }
+        try {
+            sessionStorage.removeItem('oidc_state');
+            sessionStorage.removeItem('oidc_code_verifier');
+            sessionStorage.removeItem('oidc_issuer');
+            sessionStorage.removeItem('oidc_client_id');
+            sessionStorage.removeItem('oidc_redirect_uri');
+        } catch { /* ignore */ }
+    }
+
+    clearCache() {
+        // Clear both UMA and OIDC related data
+        this.clearUmaCache();
+        this.clearOidcTokens();
     }
 
     extractWebId(idToken) {
@@ -353,36 +375,5 @@ export class Auth {
         } catch {
             return undefined;
         }
-    }
-
-    clearCache() {
-        try {
-            // Clear UMA tokens (memory + sessionStorage)
-            this.umaPermissionTokens.clear();
-            sessionStorage.removeItem('uma_permission_tokens');
-        } catch { /* ignore */ }
-
-        try {
-            // Cancel refresh timer
-            if (this.OidcRefreshTimerId) {
-                clearTimeout(this.OidcRefreshTimerId);
-                this.OidcRefreshTimerId = undefined;
-            }
-            // Wipe OIDC tokens and identity
-            this.OidcAccessToken = undefined;
-            this.OidcToken = undefined;
-            this.OidcRefreshToken = undefined;
-            this.OidcTokenExpiry = undefined;
-            this.WebId = undefined;
-        } catch { /* ignore */ }
-
-        try {
-            // Remove PKCE/login flow values from session storage
-            sessionStorage.removeItem('oidc_state');
-            sessionStorage.removeItem('oidc_code_verifier');
-            sessionStorage.removeItem('oidc_issuer');
-            sessionStorage.removeItem('oidc_client_id');
-            sessionStorage.removeItem('oidc_redirect_uri');
-        } catch { /* ignore */ }
     }
 }

@@ -21,9 +21,9 @@ import { MessageBoxContext } from '../contexts';
 
 /* util imports */
 import { validateAll, validateRequired, validateIsUrl, validateLength } from '../utils/validationUtils';
-import { displayDate } from '../utils/general';
-import { inSession } from '../utils/solidUtils';
+import {inSession} from '../utils/solidUtils';
 import { parseTitle } from '../utils/messageParser';
+import Aggregator from '../utils/aggregator';
 
 /* config imports */
 import config from '../../config';
@@ -93,6 +93,7 @@ function MenuPage()
     const [modalIsShown, setModalIsShown] = useState(false);
     const [action, setAction] = useState({name: "", f: null});
     const [isLoading, setIsLoading] = useState(true);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -107,30 +108,92 @@ function MenuPage()
 
     const [rooms, setRooms] = useState([]);
     const [filteredRooms, setFilteredRooms] = useState([]);
+    const aggregator = useRef(new Aggregator());
+
+    // Global refresh trigger (e.g., after clearing UMA/aggregator cache)
+    useEffect(() => {
+        const handler = () => setRefreshKey((k) => k + 1);
+        window.addEventListener('app:refresh', handler);
+        return () => window.removeEventListener('app:refresh', handler);
+    }, []);
+
     useEffect(() => {
         setIsLoading(true);
+        setRooms([]);
+        setFilteredRooms([]);
         if (!inSession(sessionContext) || sessionContext.sessionRequestInProgress) {
             return;
         }
         let stream = null;
+        let cancelled = false;
 
-        const timeout = setTimeout(() => {
-            setIsLoading(false);
-        }, 10000);
+        if (sessionContext.aggregatorEnabled) {
+            aggregator.current.getOverviewService(sessionContext).then((result) => {
+                if (cancelled) return;
+                const bindingsArray = result.results?.bindings || [];
+                setIsLoading(false);
+                setRooms(bindingsArray.map(bindings => {
+                    return {
+                        roomUrl:        bindings.room.value,
+                        name:           bindings.name.value,
+                        isOrganizer:    bindings.organizer.value === sessionContext.session.info.webId,
+                        nMembers:       bindings.membersCount?.value,
+                        endDate:        bindings.endDate?.value,
+                        thumbnailUrl:   bindings.thumbnailUrl.value,
+                    }
+                }));
+            }).catch(e => {
+                if (cancelled) return;
+                console.warn('Aggregator overview failed, falling back to message boxes', e);
+                // fallback below
+                MessageSolidService.getMessageBoxesStream(sessionContext).then((s) => {
+                    if (cancelled) return;
+                    if (!s || s.error) {
+                        setIsLoading(false);
+                        return;
+                    }
+                    stream = s;
+                    s.on('data', (r) => {
+                        if (cancelled) return;
+                        const roomUrl = r.get('roomUrl').value;
+                        const endDate = r.get('endDate')?.value;
+                        if (!roomUrl || endDate) {
+                            return;
+                        }
+                        RoomSolidService.getRoomInfo(sessionContext, roomUrl).then((room) => {
+                            if (cancelled) return;
+                            if (!room || room.error || room.endDate) {
+                                return;
+                            }
+                            setIsLoading(false);
+                            setRooms((rooms) => [...rooms, room]);
+                        });
+                    });
+                });
+            });
+            return () => {
+                cancelled = true;
+                try { stream?.removeAllListeners?.('data'); } catch {}
+                try { stream?.destroy?.(); } catch {}
+            };
+        }
 
         MessageSolidService.getMessageBoxesStream(sessionContext).then((s) => {
+            if (cancelled) return;
             if (!s || s.error) {
                 setIsLoading(false);
                 return;
             }
             stream = s
             s.on('data', (r) => {
+                if (cancelled) return;
                 const roomUrl = r.get('roomUrl').value;
                 const endDate = r.get('endDate')?.value;
                 if (!roomUrl || endDate) {
                     return;
                 }
                 RoomSolidService.getRoomInfo(sessionContext, roomUrl).then((room) => {
+                    if (cancelled) return;
                     if (!room || room.error || room.endDate) {
                         return;
                     }
@@ -139,7 +202,12 @@ function MenuPage()
                 });
             });
         });
-    }, [sessionContext.sessionRequestInProgress, sessionContext.session]);
+        return () => {
+            cancelled = true;
+            try { stream?.removeAllListeners?.('data'); } catch {}
+            try { stream?.destroy?.(); } catch {}
+        };
+    }, [sessionContext.sessionRequestInProgress, sessionContext.session, sessionContext.aggregatorEnabled, refreshKey]);
 
     useEffect(() => {
         const filteredrooms = rooms.filter((room) => room.name?.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -161,6 +229,10 @@ function MenuPage()
                     </button>
                 </div>
                 <div className="flex w-full gap-3 justify-end">
+                    <button className="hover:cursor-pointer sw-btn sw-btn-2 w-24"
+                            onClick={() => setRefreshKey((k) => k + 1)}>
+                        Refresh
+                    </button>
                     <button className="hover:cursor-pointer sw-btn sw-btn-2 w-24"
                             onClick={() => {
                                 setAction({name: "Room url", f: joinRoom});
