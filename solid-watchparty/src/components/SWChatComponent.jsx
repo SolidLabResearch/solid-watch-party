@@ -1,5 +1,5 @@
 /* library imports */
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { useSession } from "../hooks/useSession";
 import PropTypes from 'prop-types';
 
@@ -27,62 +27,100 @@ function SWChatComponent({roomUrl, joined}) {
     const [messageBox,] = useContext(MessageBoxContext);
     const [userNames, setUserNames] = useState({});
 
+    // Track all active streams so we can always cancel them
+    const streamsRef = useRef({
+        series: null,                // stream of message series for the room
+        creators: new Map(),         // per-series creator lookup streams
+        authChecks: new Map(),       // per-series temporary auth check streams
+        messages: new Map(),         // per-series message streams
+    });
+    const destroyStream = (s) => {
+        try { s?.destroy?.(); } catch {}
+        try { s?.close?.(); } catch {}
+        try { s?.removeAllListeners?.(); } catch {}
+    };
+    const clearAllStreams = () => {
+        destroyStream(streamsRef.current.series);
+        streamsRef.current.series = null;
+        for (const s of streamsRef.current.creators.values()) destroyStream(s);
+        streamsRef.current.creators.clear();
+        for (const s of streamsRef.current.authChecks.values()) destroyStream(s);
+        streamsRef.current.authChecks.clear();
+        for (const s of streamsRef.current.messages.values()) destroyStream(s);
+        streamsRef.current.messages.clear();
+    };
+
     useEffect(() => {
+        // Clean up any existing streams before starting new ones
+        clearAllStreams();
+        setMessages([]);
+
         const fetch = async () => {
             let messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(sessionContext, roomUrl);
-            if (messageSeriesStreams.error) {
+            if (messageSeriesStreams?.error) {
                 console.error(messageSeriesStreams.error)
                 messageSeriesStreams = null;
                 setState({isLoading: false, hasAccess: false});
                 return;
             }
+            streamsRef.current.series = messageSeriesStreams;
+
             messageSeriesStreams.on('data', async (data) => {
                 const messageSeries = data.get('messageSeries').value;
 
-                let senderName = "Unknown";
+                // Creator name stream per series
                 let creatorUrlStream = await MessageSolidService.getMessageSeriesCreatorStream(sessionContext, messageSeries);
-                creatorUrlStream.on('data', (data) => {
-                    const creatorUrl = data?.get('creator')?.value;
-                    UserSolidService.getName(sessionContext, creatorUrl).then((name) => {
-                        if (!name.error) {
-                            setUserNames((userNames) => {
-                                userNames[messageSeries] = name;
-                                return userNames;
-                            });
-                        }
+                if (creatorUrlStream && !creatorUrlStream.error) {
+                    streamsRef.current.creators.set(messageSeries, creatorUrlStream);
+                    creatorUrlStream.on('data', (data) => {
+                        const creatorUrl = data?.get('creator')?.value;
+                        UserSolidService.getName(sessionContext, creatorUrl).then((name) => {
+                            if (!name?.error) {
+                                setUserNames((userNames) => ({ ...userNames, [messageSeries]: name }));
+                            }
+                        });
                     });
-                });
+                }
 
-                // TODO(Elias): Switch out restart of stream when Incremunica has internal handling for this
+                // Temporary auth check stream (closed on first data)
                 let messageStreamAuthCheck = await MessageSolidService.getMessageStream(sessionContext, messageSeries);
-                messageStreamAuthCheck.on('data', async (data) => {
-                    messageStreamAuthCheck.close();
-                });
+                if (messageStreamAuthCheck && !messageStreamAuthCheck.error) {
+                    streamsRef.current.authChecks.set(messageSeries, messageStreamAuthCheck);
+                    messageStreamAuthCheck.on('data', async () => {
+                        try { messageStreamAuthCheck.close?.(); } catch {}
+                        try { messageStreamAuthCheck.destroy?.(); } catch {}
+                        streamsRef.current.authChecks.delete(messageSeries);
+                    });
+                }
 
+                // Main message stream per series
                 let messageStream = await MessageSolidService.getMessageStream(sessionContext, messageSeries);
                 if (!messageStream || messageStream.error) {
-                    messageStream = null;
                     return;
                 }
+                streamsRef.current.messages.set(messageSeries, messageStream);
                 messageStream.on('data', async (data) => {
                     const message = {
                         text:           data.get('text').value,
                         messageBoxUrl:  messageSeries,
                         date:           new Date(data.get('dateSent').value),
-                        key:            (name + data.get('dateSent').value),
+                        key:            (data.get('sender')?.value || '') + data.get('dateSent').value,
                     };
-                    // TODO: Make this more efficient
                     setMessages(messages => (
                         [...messages, message]
                         .sort((m1, m2) => (m1.date > m2.date) ? 1 : ((m1.date < m2.date) ? -1 :  0))
                         .filter((m, i, self) => i === self.findIndex((t) => (t.key === m.key)))
                     ));
-
-                })
-            })
+                });
+            });
             setState({isLoading: false, hasAccess: true});
         }
         fetch();
+
+        // Ensure all streams are cancelled when deps change or page unmounts
+        return () => {
+            clearAllStreams();
+        };
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl, joined])
 
 

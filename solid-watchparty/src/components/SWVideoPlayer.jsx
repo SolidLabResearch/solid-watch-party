@@ -88,56 +88,76 @@ function SWVideoPlayer({roomUrl}) {
     useEffect(() => {
         let watchingEventStream = null;
         let lastWatchingEvent = null;
+        let cancelled = false;
         const act = async () => {
-            watchingEventStream = await EventsSolidService.getWatchingEventStream(sessionContext, roomUrl);
-            if (watchingEventStream.error) {
-                watchingEventStream = null;
-                return;
-            }
-            watchingEventStream.on('data', (data) => {
-                handleNewWatchingEvent(sessionContext, data).then((data) => {
-                    if (!data) {
-                        return;
-                    }
-                    const { newWatchingEvent, lastPause } = data;
-                    if (lastWatchingEvent && newWatchingEvent.startDate <= lastWatchingEvent.startDate) {
-                        return;
-                    }
-                    lastWatchingEvent = newWatchingEvent;
-                    setWatchingEvent(lastWatchingEvent);
-                    setLastPause(lastPause);
+            try {
+                watchingEventStream = await EventsSolidService.getWatchingEventStream(sessionContext, roomUrl);
+                if (watchingEventStream?.error) {
+                    watchingEventStream = null;
+                    return;
+                }
+                watchingEventStream.on('data', (data) => {
+                    if (cancelled) return;
+                    handleNewWatchingEvent(sessionContext, data).then((data) => {
+                        if (cancelled || !data) return;
+                        const { newWatchingEvent, lastPause } = data;
+                        if (lastWatchingEvent && newWatchingEvent.startDate <= lastWatchingEvent.startDate) {
+                            return;
+                        }
+                        lastWatchingEvent = newWatchingEvent;
+                        setWatchingEvent(lastWatchingEvent);
+                        setLastPause(lastPause);
+                    });
                 });
-            });
+            } catch (_) { /* ignore */ }
         }
         act();
+        return () => {
+            cancelled = true;
+            try { watchingEventStream?.removeAllListeners?.('data'); } catch {}
+            try { watchingEventStream?.destroy?.(); } catch {}
+            try { watchingEventStream?.close?.(); } catch {}
+        };
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl]);
 
 
     useEffect(() => {
         let controlActionStream = null;
         let lastPause_ = null;
+        let cancelled = false;
         const act = async () => {
             if (!watchingEvent) {
                 return;
             }
-            controlActionStream = await EventsSolidService.getControlActionStream(sessionContext, watchingEvent?.eventUrl);
-            controlActionStream.on('data', (data) => {
-                handleControlAction(sessionContext, data, watchingEvent).then((pause) => {
-                    if (!pause) {
-                        return;
-                    }
-                    if (lastPause_ && pause.datetime <= lastPause_.datetime) {
-                        return;
-                    }
-                    lastPause_ = pause;
-                    if (pause.datetime < lastPause.datetime) {
-                        return;
-                    }
-                    setLastPause(pause);
-                });
-            })
+            try {
+                controlActionStream = await EventsSolidService.getControlActionStream(sessionContext, watchingEvent?.eventUrl);
+                if (controlActionStream?.error) {
+                    controlActionStream = null;
+                    return;
+                }
+                controlActionStream.on('data', (data) => {
+                    if (cancelled) return;
+                    handleControlAction(sessionContext, data, watchingEvent).then((pause) => {
+                        if (cancelled || !pause) return;
+                        if (lastPause_ && pause.datetime <= lastPause_.datetime) {
+                            return;
+                        }
+                        lastPause_ = pause;
+                        if (lastPause && pause.datetime < lastPause.datetime) {
+                            return;
+                        }
+                        setLastPause(pause);
+                    });
+                })
+            } catch (_) { /* ignore */ }
         }
         act();
+        return () => {
+            cancelled = true;
+            try { controlActionStream?.removeAllListeners?.('data'); } catch {}
+            try { controlActionStream?.destroy?.(); } catch {}
+            try { controlActionStream?.close?.(); } catch {}
+        };
     }, [sessionContext.session, sessionContext.sessionRequestInProgress, watchingEvent]);
 
     useEffect(() => {
