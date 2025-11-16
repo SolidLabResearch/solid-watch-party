@@ -1,22 +1,6 @@
 /* library imports */
-import {
-    getSolidDataset,
-    saveSolidDatasetAt,
-    setThing,
-    getThingAll,
-    getStringNoLocale,
-    getThing,
-    createThing,
-    buildThing,
-    asUrl,
-    getUrlAll,
-    getUrl,
-    universalAccess,
-} from '@inrupt/solid-client';
-import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngineBase } from '@comunica/actor-init-query';
 import { QueryEngine as QueryEngineLTS } from '@comunica/query-sparql-link-traversal-solid';
-import { QueryEngine } from '@comunica/query-sparql';
 
 /* util imports */
 import { SCHEMA_ORG } from '../utils/schemaUtils.js';
@@ -178,9 +162,9 @@ MessageSolidService
             return { error: "invalid webId", errorMsg: "The webId is invalid" };
         }
         try {
-            const accessModes = await universalAccess.getAgentAccess(messageBoxUrl, webId,
-                                                                     { fetch: sessionContext.fetch });
-            return accessModes;
+            sessionContext.fetch(messageBoxUrl);
+
+            return { success: true };
         } catch (error) {
             console.error(error);
             return { error: error, errorMsg: "Failed to check access" };

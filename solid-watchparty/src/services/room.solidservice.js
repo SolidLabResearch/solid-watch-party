@@ -6,7 +6,6 @@ import {
     setThing,
     buildThing,
     asUrl,
-    universalAccess,
 } from '@inrupt/solid-client';
 import { RDF } from "@inrupt/vocab-common-rdf";
 import { QueryEngine } from '@comunica/query-sparql';
@@ -63,16 +62,8 @@ class RoomSolidService
             // save the new room on the pod
             await saveSolidDatasetAt(roomUrl, roomDataset, {fetch: sessionContext.fetch});
 
-            // save the new register dataset on the pod and set access control
+            // save the new register dataset on the pod
             await saveSolidDatasetAt(registerUrl, registerInboxDataset, {fetch: sessionContext.fetch});
-            const authResult = await universalAccess.setPublicAccess(
-                registerUrl,
-                {append: true},
-                {fetch: sessionContext.fetch}
-            );
-            if (!authResult) {
-                throw new Error("failed to set access control for register dataset");
-            }
 
             return { roomUrl: asUrl(newRoom, roomUrl) };
         } catch (error) {
@@ -172,10 +163,7 @@ class RoomSolidService
                 console.error(registerDeleteResult);
                 throw new Error("failed to update registration status");
             }
-            const access = await universalAccess.setAgentAccess(roomUrl, webId,
-                                                                {read: true, write: true, append: true},
-                                                                {fetch: sessionContext.fetch});
-            return access;
+            return { success: true };
         } catch (error) {
             console.error(error);
             return { error: error, errorMsg: 'Failed to add person to the room'};
