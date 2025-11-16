@@ -71,8 +71,6 @@ function UserSettingsModal({ setModalIsShown, getAndSetName }) {
 
     const onClearUma = () => {
         try { sessionContext.auth?.clearUmaCache?.(); } catch { /* ignore */ }
-        // Trigger in-app refresh without full reload
-        try { window.dispatchEvent(new Event('app:refresh')); } catch { /* ignore */ }
     };
 
     const onClearAggregatorCache = () => {
@@ -81,8 +79,6 @@ function UserSettingsModal({ setModalIsShown, getAndSetName }) {
             localStorage.removeItem('messageBoxesServiceId');
             localStorage.removeItem('overviewServiceId');
         } catch { /* ignore */ }
-        // Trigger in-app refresh without full reload
-        try { window.dispatchEvent(new Event('app:refresh')); } catch { /* ignore */ }
     };
 
     return (

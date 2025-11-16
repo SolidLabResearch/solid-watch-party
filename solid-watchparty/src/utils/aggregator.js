@@ -37,6 +37,13 @@ class Aggregator {
     // Remove all cached aggregator stage IDs
     invalidateAggregatorCache() {
         try {
+            this.invalidateOverviewCache()
+            this.invalidateMessageCache()
+        } catch {}
+    }
+
+    invalidateOverviewCache() {
+        try {
             localStorage.removeItem('messageLocationsServiceId');
             localStorage.removeItem('messageBoxesServiceId');
             localStorage.removeItem('overviewServiceId');
@@ -106,7 +113,7 @@ class Aggregator {
                 const response = await sessionContext.fetch(`${this.aggregatorUrl}config/actors`);
                 if (!response.ok) {
                     // Aggregator likely unavailable or reset; clear caches and bail
-                    this.invalidateAggregatorCache();
+                    this.invalidateOverviewCache();
                     try { console.warn('Aggregator actors query failed:', await response.text()); } catch {}
                     return null;
                 }
@@ -146,7 +153,7 @@ class Aggregator {
         // If any stage is missing, re-create full chain in background and ask caller to retry
         if (!mlId || !mbId || !roomsId) {
             // Invalidate partial caches to avoid stale IDs
-            this.invalidateAggregatorCache();
+            this.invalidateOverviewCache();
             this.createChainInBackground(sessionContext, messageContainer);
             throw new Error('Aggregator initializing: rebuilding services. Please retry shortly.');
         }
@@ -157,13 +164,185 @@ class Aggregator {
         } catch (e) {
             if (e && typeof e === 'object' && 'status' in e && (e.status === 404 || e.status === 410)) {
                 // Services likely removed; rebuild
-                this.invalidateAggregatorCache();
+                this.invalidateOverviewCache();
                 this.createChainInBackground(sessionContext, messageContainer);
                 throw new Error('Aggregator was removed; rebuilding services. Please retry shortly.');
             }
             // Not a clear removal signal; wait in background and ask to retry
             (async () => { try { await this.waitForAggregatorReady(sessionContext.fetch, roomsId); } catch {} })();
             throw new Error('Aggregator services exist but are not ready yet. Please retry shortly.');
+        }
+    }
+
+    invalidateMessageCache(roomUrl) {
+        try {
+            localStorage.removeItem(`roomLookupServiceId:${roomUrl}`);
+            localStorage.removeItem(`messagesServiceId:${roomUrl}`);
+        } catch {}
+    }
+
+    createMessageChainInBackground(sessionContext, roomUrl) {
+        (async () => {
+            try {
+                const roomLookupId = await this.createAggregatorService(
+                    sessionContext.fetch,
+                    fnoConfRoom.replace("$room$", roomUrl)
+                );
+                await this.waitForAggregatorReady(sessionContext.fetch, roomLookupId);
+                localStorage.setItem(`roomLookupServiceId:${roomUrl}`, roomLookupId);
+
+                const messagesId = await this.createAggregatorService(
+                    sessionContext.fetch,
+                    fnoConfMessages.replace(
+                        "$MessageLocationsQueryResultLocation$",
+                        `${this.aggregatorUrl}${roomLookupId}/`
+                    )
+                );
+                await this.waitForAggregatorReady(sessionContext.fetch, messagesId);
+                localStorage.setItem(`messagesServiceId:${roomUrl}`, messagesId);
+            } catch (e) {
+                console.warn('Background creation of message chain failed', e);
+            }
+        })();
+    }
+
+    async getMessageService(sessionContext, roomUrl) {
+        const fetchServiceResults = async (id) => {
+            const response = await sessionContext.fetch(`${this.aggregatorUrl}${id}/`, {
+                method: 'GET',
+                headers: { 'Accept': 'application/sparql-results+json' }
+            });
+            if (!response.ok) {
+                const err = new Error(`Failed to get aggregator service results (${response.status}): ${await response.text()}`);
+                // @ts-ignore attach status for callers
+                err.status = response.status;
+                throw err;
+            }
+            return await response.json();
+        };
+
+        const normalize = (s) => typeof s === 'string' ? s.replace(/\s+/g, ' ').trim() : '';
+
+        const getOrFindId = async (cacheKey, predicate) => {
+            let id = localStorage.getItem(cacheKey);
+            if (id) {
+                const res = await sessionContext.fetch(`${this.aggregatorUrl}config/actors/${id}`);
+                if (res.ok) return id;
+                localStorage.removeItem(cacheKey);
+            }
+            try {
+                const response = await sessionContext.fetch(`${this.aggregatorUrl}config/actors`);
+                if (!response.ok) {
+                    // Aggregator likely unavailable or reset; clear caches and bail
+                    this.invalidateMessageCache(roomUrl);
+                    try { console.warn('Aggregator actors query failed:', await response.text()); } catch {}
+                    return null;
+                }
+                const { actors } = await response.json();
+                for (const actorId of actors) {
+                    const res = await sessionContext.fetch(`${this.aggregatorUrl}config/actors/${actorId}`);
+                    if (!res.ok) continue;
+                    const actor = await res.json();
+                    const transformation = typeof actor.transformation === 'string' ? normalize(actor.transformation) : '';
+                    if (predicate(transformation)) {
+                        localStorage.setItem(cacheKey, actorId);
+                        return actorId;
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to scan aggregator actors', e);
+            }
+            return null;
+        };
+
+        // Discover existing services for this room
+        const roomLookupId = await getOrFindId(
+            `roomLookupServiceId:${roomUrl}`,
+            (t) => t.includes(normalize(queryRoom)) && t.includes(roomUrl)
+        );
+        const roomResultUrl = roomLookupId ? `${this.aggregatorUrl}${roomLookupId}/` : undefined;
+
+        const messagesId = await getOrFindId(
+            `messagesServiceId:${roomUrl}`,
+            (t) => t.includes(normalize(queryMessages)) && (roomResultUrl ? t.includes(roomResultUrl) : true)
+        );
+
+        // If any stage is missing, re-create chain and ask caller to retry
+        if (!roomLookupId || !messagesId) {
+            this.invalidateMessageCache(roomUrl);
+            this.createMessageChainInBackground(sessionContext, roomUrl);
+            throw new Error('Aggregator initializing for room: rebuilding services. Please retry shortly.');
+        }
+
+        // Try returning results. If not ready or gone (404), rebuild and signal retry
+        try {
+            return await fetchServiceResults(messagesId);
+        } catch (e) {
+            if (e && typeof e === 'object' && 'status' in e && (e.status === 404 || e.status === 410)) {
+                this.invalidateMessageCache(roomUrl);
+                this.createMessageChainInBackground(sessionContext, roomUrl);
+                throw new Error('Aggregator for this room was removed; rebuilding services. Please retry shortly.');
+            }
+            (async () => { try { await this.waitForAggregatorReady(sessionContext.fetch, messagesId); } catch {} })();
+            throw new Error('Aggregator services for this room exist but are not ready yet. Please retry shortly.');
+        }
+    }
+
+    // Check if the per-room message chain exists and is responding without creating anything
+    async isMessageServiceReady(sessionContext, roomUrl) {
+        const normalize = (s) => typeof s === 'string' ? s.replace(/\s+/g, ' ').trim() : '';
+
+        const getOrFindId = async (cacheKey, predicate) => {
+            let id = localStorage.getItem(cacheKey);
+            if (id) {
+                const res = await sessionContext.fetch(`${this.aggregatorUrl}config/actors/${id}`);
+                if (res.ok) return id;
+                localStorage.removeItem(cacheKey);
+            }
+            try {
+                const response = await sessionContext.fetch(`${this.aggregatorUrl}config/actors`);
+                if (!response.ok) {
+                    return null;
+                }
+                const { actors } = await response.json();
+                for (const actorId of actors) {
+                    const res = await sessionContext.fetch(`${this.aggregatorUrl}config/actors/${actorId}`);
+                    if (!res.ok) continue;
+                    const actor = await res.json();
+                    const transformation = typeof actor.transformation === 'string' ? normalize(actor.transformation) : '';
+                    if (predicate(transformation)) {
+                        localStorage.setItem(cacheKey, actorId);
+                        return actorId;
+                    }
+                }
+            } catch (e) {
+                return null;
+            }
+            return null;
+        };
+
+        // Discover existing services for this room without creating
+        const roomLookupId = await getOrFindId(
+            `roomLookupServiceId:${roomUrl}`,
+            (t) => t.includes(normalize(queryRoom)) && t.includes(roomUrl)
+        );
+        if (!roomLookupId) return false;
+
+        const roomResultUrl = `${this.aggregatorUrl}${roomLookupId}/`;
+        const messagesId = await getOrFindId(
+            `messagesServiceId:${roomUrl}`,
+            (t) => t.includes(normalize(queryMessages)) && t.includes(roomResultUrl)
+        );
+        if (!messagesId) return false;
+
+        try {
+            const resp = await sessionContext.fetch(`${this.aggregatorUrl}${messagesId}/`, {
+                method: 'GET',
+                headers: { 'Accept': 'application/sparql-results+json' }
+            });
+            return resp.ok;
+        } catch {
+            return false;
         }
     }
 }
@@ -174,6 +353,7 @@ const prefixes = `
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 `;
 
+// ---- Overview page queries ----
 const queryMessageLocations = `PREFIX ldp: <http://www.w3.org/ns/ldp#>
 SELECT ?messageLocations WHERE {
     ?folder ldp:contains ?messageLocations .
@@ -233,4 +413,46 @@ _:RoomsQuery
     trans:sources ( _:MessageBoxesResultsSource ) .
 `;
 
+// ---- Watch page queries ----
+
+const queryRoom = `PREFIX schema: <http://schema.org/>
+SELECT ?messageBoxUrl
+WHERE {
+  ?eventSeries a schema:EventSeries .
+  ?eventSeries schema:subjectOf ?messageBoxUrl .
+}`;
+
+const queryMessages = `PREFIX schema: <http://schema.org/>
+SELECT ?messageBoxUrl ?message ?dateSent ?text ?sender
+WHERE {
+    ?messageBoxUrl schema:hasPart ?message .
+    ?message a schema:Message .
+    ?message schema:dateSent ?dateSent .
+    ?message schema:text ?text .
+    ?message schema:sender ?sender .
+}
+`;
+
+const fnoConfRoom = `${prefixes}
+_:MessageLocationsQuery
+    a fno:Execution ;
+    fno:executes trans:SPARQLEvaluation ;
+    trans:queryString """${queryRoom}"""^^xsd:string ;
+    trans:sources ( "$room$"^^xsd:string ) .
+`;
+
+const fnoConfMessages = `${prefixes}
+_:MessageLocationsResultsSource
+    a trans:SPARQLQueryResultSource ;
+    trans:sparqlQueryResult <$MessageLocationsQueryResultLocation$> ;
+    trans:extractVariables ( "messageBoxUrl" ) .
+
+_:MessageBoxesQuery
+    a fno:Execution ;
+    fno:executes trans:SPARQLEvaluation ;
+    trans:queryString """${queryMessages}"""^^xsd:string ;
+    trans:sources ( _:MessageLocationsResultsSource ) .
+`;
+
 export default Aggregator;
+

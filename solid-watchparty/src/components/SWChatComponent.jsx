@@ -17,6 +17,7 @@ import UserSolidService from '../services/user.solidservice.js'
 
 /* util imports */
 import { parseMessage } from '../utils/messageParser.js';
+import Aggregator from "../utils/aggregator.js";
 
 
 function SWChatComponent({roomUrl, joined}) {
@@ -26,6 +27,11 @@ function SWChatComponent({roomUrl, joined}) {
     const sessionContext = useSession();
     const [messageBox,] = useContext(MessageBoxContext);
     const [userNames, setUserNames] = useState({});
+    const aggregator = useRef(new Aggregator());
+    const pollRef = useRef(null);
+    const readinessRef = useRef(null);
+    const chainInitRef = useRef(false);
+    const resolvedSendersRef = useRef(new Set());
 
     // Track all active streams so we can always cancel them
     const streamsRef = useRef({
@@ -51,11 +57,103 @@ function SWChatComponent({roomUrl, joined}) {
     };
 
     useEffect(() => {
-        // Clean up any existing streams before starting new ones
+        // Clean up any existing streams/intervals before starting new ones
         clearAllStreams();
+        if (pollRef.current) { try { clearInterval(pollRef.current); } catch {} pollRef.current = null; }
+        if (readinessRef.current) { try { clearInterval(readinessRef.current); } catch {} readinessRef.current = null; }
+        chainInitRef.current = false;
+        resolvedSendersRef.current.clear();
         setMessages([]);
 
         const fetch = async () => {
+            if (sessionContext.aggregatorEnabled) {
+                // Ensure any legacy query-engine streams are terminated before starting polling
+                clearAllStreams();
+
+                const pollOnce = async () => {
+                    try {
+                        const res = await aggregator.current.getMessageService(sessionContext, roomUrl);
+                        const rows = res?.results?.bindings || [];
+                        if (!rows.length) return;
+
+                        const polledMessages = rows.map(r => {
+                            const messageBoxUrl = r?.messageBoxUrl?.value || '';
+                            const dateSent = r?.dateSent?.value || '';
+                            const sender = r?.sender?.value || '';
+                            const text = r?.text?.value || '';
+                            return {
+                                text,
+                                messageBoxUrl,
+                                date: new Date(dateSent),
+                                key: `${sender}${dateSent}`,
+                                senderWebId: sender,
+                            };
+                        }).filter(m => m.messageBoxUrl && m.date instanceof Date && !isNaN(m.date));
+
+                        if (!polledMessages.length) return;
+
+                        setMessages(prev => (
+                            [...prev, ...polledMessages]
+                                .sort((m1, m2) => (m1.date > m2.date) ? 1 : ((m1.date < m2.date) ? -1 :  0))
+                                .filter((m, i, self) => i === self.findIndex((t) => (t.key === m.key)))
+                        ));
+
+                        // Resolve sender names (by WebID) from aggregator results, avoiding duplicate lookups
+                        const senders = Array.from(new Set(polledMessages.map(m => m.senderWebId).filter(Boolean)));
+                        for (const senderWebId of senders) {
+                            if (!resolvedSendersRef.current.has(senderWebId)) {
+                                resolvedSendersRef.current.add(senderWebId);
+                                UserSolidService.getName(sessionContext, senderWebId).then((name) => {
+                                    if (!name?.error) {
+                                        setUserNames((prev) => ({ ...prev, [senderWebId]: name }));
+                                    }
+                                });
+                            }
+                        }
+
+                        setState({ isLoading: false, hasAccess: true });
+                    } catch (e) {
+                        // If a transient error happens during polling, just skip this tick
+                    }
+                };
+
+                const startPolling = async () => {
+                    await pollOnce();
+                    if (pollRef.current) { try { clearInterval(pollRef.current); } catch {} }
+                    pollRef.current = setInterval(pollOnce, 1000);
+                };
+
+                // Only start polling once the aggregator chain is ready
+                try {
+                    const ready = await aggregator.current.isMessageServiceReady(sessionContext, roomUrl);
+                    if (ready) {
+                        await startPolling();
+                        return;
+                    }
+                    // Not ready yet; ensure the chain creation is kicked off only once
+                    if (!chainInitRef.current) {
+                        chainInitRef.current = true;
+                        aggregator.current.createMessageChainInBackground(sessionContext, roomUrl);
+                    }
+                    // Check readiness every second; when ready, begin polling
+                    if (readinessRef.current) { try { clearInterval(readinessRef.current); } catch {} }
+                    readinessRef.current = setInterval(async () => {
+                        const r = await aggregator.current.isMessageServiceReady(sessionContext, roomUrl);
+                        if (r) {
+                            try { clearInterval(readinessRef.current); } catch {}
+                            readinessRef.current = null;
+                            await startPolling();
+                        }
+                    }, 1000);
+                } catch (e) {
+                    // If readiness check fails, try again next effect tick
+                }
+
+                // Skip streams when using aggregator polling
+                return; // skip legacy streaming path entirely
+            }
+
+            // Streaming fallback
             let messageSeriesStreams = await MessageSolidService.getMessageSeriesStream(sessionContext, roomUrl);
             if (messageSeriesStreams?.error) {
                 console.error(messageSeriesStreams.error)
@@ -100,28 +198,41 @@ function SWChatComponent({roomUrl, joined}) {
                 }
                 streamsRef.current.messages.set(messageSeries, messageStream);
                 messageStream.on('data', async (data) => {
+                    const senderWebIdVal = data.get('sender')?.value || '';
                     const message = {
                         text:           data.get('text').value,
                         messageBoxUrl:  messageSeries,
                         date:           new Date(data.get('dateSent').value),
-                        key:            (data.get('sender')?.value || '') + data.get('dateSent').value,
+                        key:            senderWebIdVal + data.get('dateSent').value,
+                        senderWebId:    senderWebIdVal,
                     };
                     setMessages(messages => (
                         [...messages, message]
                         .sort((m1, m2) => (m1.date > m2.date) ? 1 : ((m1.date < m2.date) ? -1 :  0))
                         .filter((m, i, self) => i === self.findIndex((t) => (t.key === m.key)))
                     ));
+
+                    // Resolve sender name on-the-fly for streaming path as well
+                    if (senderWebIdVal && !resolvedSendersRef.current.has(senderWebIdVal)) {
+                        resolvedSendersRef.current.add(senderWebIdVal);
+                        UserSolidService.getName(sessionContext, senderWebIdVal).then((name) => {
+                            if (!name?.error) {
+                                setUserNames((prev) => ({ ...prev, [senderWebIdVal]: name }));
+                            }
+                        });
+                    }
                 });
             });
             setState({isLoading: false, hasAccess: true});
         }
         fetch();
 
-        // Ensure all streams are cancelled when deps change or page unmounts
         return () => {
             clearAllStreams();
+            if (pollRef.current) { try { clearInterval(pollRef.current); } catch {} pollRef.current = null; }
+            if (readinessRef.current) { try { clearInterval(readinessRef.current); } catch {} readinessRef.current = null; }
         };
-    }, [sessionContext.session, sessionContext.sessionRequestInProgress, roomUrl, joined])
+    }, [sessionContext.session, sessionContext.sessionRequestInProgress, sessionContext.aggregatorEnabled, roomUrl, joined])
 
 
     const submitMessage = (e) => {
@@ -159,7 +270,7 @@ function SWChatComponent({roomUrl, joined}) {
             <>
                 <SWAutoScrollDiv className="flex-1 min-h-0 overflow-y-auto overflow-x-auto mb-2">
                     {messages.map((message) => {
-                        const sender = userNames[message.messageBoxUrl];
+                        const sender = userNames[message.senderWebId] ?? userNames[message.messageBoxUrl];
                         return (
                             <SWMessageComponent message={{...message, sender}} key={message.key}/>
                         );
