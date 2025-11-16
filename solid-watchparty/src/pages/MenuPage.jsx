@@ -3,12 +3,10 @@ import { useSession, } from '../hooks/useSession';
 import { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMagnifyingGlass } from "react-icons/fa6";
-import { FaChevronRight } from 'react-icons/fa';
 
 /* component imports */
 import SWPageWrapper from '../components/SWPageWrapper';
 import SWLoadingIcon from '../components/SWLoadingIcon';
-import SWModal from '../components/SWModal';
 import SWRoomPoster from '../components/SWRoomPoster';
 import SWModalInputBar from '../components/SWModalInputBar';
 
@@ -28,8 +26,11 @@ import Aggregator from '../utils/aggregator';
 /* config imports */
 import config from '../../config';
 
+// Sort helper: case-insensitive, numeric-aware
+const compareRoomsByName = (a, b) => (a?.name || '').localeCompare(b?.name || '', undefined, { numeric: true, sensitivity: 'base' });
 
-async function joinRoom({input, setError, navigateTo}) {
+
+async function joinRoom({input, navigateTo}) {
     const errors = validateAll(input, [
         {run: validateRequired, message: "Provide a URL!"},
         {run: validateIsUrl, message: "Provide a valid URL!"},
@@ -52,7 +53,7 @@ async function joinRoom({input, setError, navigateTo}) {
     return errors;
 }
 
-async function createRoom({input, setError, sessionContext, setMessageBox, navigateTo}) {
+async function createRoom({input, sessionContext, setMessageBox, navigateTo}) {
     const errors = validateAll(input, [
         {run: validateRequired, message: "Provide a name!"},
         {run: (v) => validateLength(v, 1, 42), message: "Your name can only be 42 characters long!"},
@@ -211,6 +212,8 @@ function MenuPage()
 
     useEffect(() => {
         const filteredrooms = rooms.filter((room) => room.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+        // Keep the UI sorted by room name
+        filteredrooms.sort(compareRoomsByName);
         setFilteredRooms(filteredrooms);
     }, [searchTerm, rooms]);
 
@@ -270,7 +273,7 @@ function MenuPage()
                 </div>
             )}
             { modalIsShown && (
-                <SWModalInputBar title={action.name}f={action.f} args={actionArgs} setModalIsShown={setModalIsShown}/>
+                <SWModalInputBar title={action.name} f={action.f} args={actionArgs} setModalIsShown={setModalIsShown}/>
             )}
         </SWPageWrapper>
     )
