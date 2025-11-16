@@ -215,10 +215,10 @@ function WatchPage() {
                 <div className="aspect-[8/3] height-mobile">
                     <div className="flex h-full gap-4 flex-mobile items-stretch">
                         <div className="w-2/3 h-full bg-black sw-border overflow-hidden width-mobile">
-                            <SWVideoPlayer roomUrl={roomUrl}/>
+                            <SWVideoPlayer key={refreshKey} roomUrl={roomUrl}/>
                         </div>
                         <div className="w-1/3 h-full rgb-bg-2 sw-border p-3 flex flex-col justify-between width-mobile min-h-0 overflow-hidden">
-                            <SWChatComponent roomUrl={roomUrl}/>
+                            <SWChatComponent key={refreshKey} roomUrl={roomUrl}/>
                         </div>
                     </div>
                 </div>
