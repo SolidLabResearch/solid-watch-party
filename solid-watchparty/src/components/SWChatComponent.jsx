@@ -93,7 +93,7 @@ function SWChatComponent({roomUrl, joined}) {
                         if (!polledMessages.length) return;
 
                         setMessages(prev => (
-                            [...prev, ...polledMessages]
+                            polledMessages
                                 .sort((m1, m2) => (m1.date > m2.date) ? 1 : ((m1.date < m2.date) ? -1 :  0))
                                 .filter((m, i, self) => i === self.findIndex((t) => (t.key === m.key)))
                         ));
