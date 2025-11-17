@@ -10,6 +10,7 @@ import SWSwitch from '../components/SWSwitch';
 
 /* util imports */
 import { parseTitle } from '../utils/messageParser';
+import Aggregator from '../utils/aggregator';
 
 /* service imports */
 import UserSolidService from "../services/user.solidservice";
@@ -21,6 +22,7 @@ function UserSettingsModal({ setModalIsShown, getAndSetName }) {
     const [error, setError] = useState('');
 
     const nameRef = useRef(null);
+    const aggregatorRef = useRef(new Aggregator());
 
     useEffect(() => {
         // Prefill current name if available
@@ -74,11 +76,7 @@ function UserSettingsModal({ setModalIsShown, getAndSetName }) {
     };
 
     const onClearAggregatorCache = () => {
-        try {
-            localStorage.removeItem('messageLocationsServiceId');
-            localStorage.removeItem('messageBoxesServiceId');
-            localStorage.removeItem('overviewServiceId');
-        } catch { /* ignore */ }
+        try { aggregatorRef.current.invalidateAggregatorCache(); } catch { /* ignore */ }
     };
 
     return (
