@@ -35,7 +35,9 @@ export class Auth {
             scope,
             state,
             code_challenge: codeChallenge,
-            code_challenge_method: 'S256'
+            code_challenge_method: 'S256',
+            prompt:'consent',
+            response_mode:'query'
         });
         const authUrl = `${config.authorization_endpoint}?${params.toString()}`;
         // Redirect browser
